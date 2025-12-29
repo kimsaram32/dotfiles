@@ -189,10 +189,6 @@ to prevent resizing windows when changing fonts.
 (keymap-set tab-prefix-map "[" 'tab-previous)
 (setq tab-bar-auto-width-max '((140) 20))
 #+end_src
-** Electric pair mode
-#+begin_src elisp
-  (electric-pair-mode)
-#+end_src
 ** Visual line mode
 #+begin_src elisp
 (global-visual-line-mode)
@@ -537,6 +533,11 @@ Current stack is:
 - Tree-sitter
   - Experimenting with Combobulate for structured editing
 
+** Electric pair mode
+Enable them locally
+#+begin_src elisp
+  (add-hook 'prog-mode-hook #'electric-pair-local-mode)
+#+end_src
 ** Eglot
 #+begin_src elisp
   (keymap-set prog-mode-map "C-c C-r" #'eglot-rename)
