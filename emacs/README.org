@@ -533,6 +533,10 @@ Current stack is:
 - Tree-sitter
   - Experimenting with Combobulate for structured editing
 
+** Line numbers
+#+begin_src elisp
+  (add-hook 'prog-mode-hook #'display-line-numbers-mode)
+#+end_src
 ** Electric pair mode
 Enable them locally
 #+begin_src elisp
