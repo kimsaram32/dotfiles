@@ -7,41 +7,45 @@
 * Constants
 ** Directories
 #+begin_src elisp
-  (defconst me:dotfiles-directory (expand-file-name "~/me/dotfiles")
+  (defconst sr/dotfiles-directory (expand-file-name "~/me/dotfiles")
     "Root directory for dotfiles.")
 
-  (defconst me:emacs-load-directory
-    (file-name-concat me:dotfiles-directory "emacs/lisp")
+  (defconst sr/emacs-load-directory
+    (file-name-concat sr/dotfiles-directory "emacs/lisp")
     "Directory for personal lisp libraries.")
 
-  (defconst me:note-root-directory (expand-file-name "~/me/myself/")
+  (defconst sr/note-root-directory (expand-file-name "~/me/myself/")
     "Root directory for notes.")
 
-  (defconst me:note-periodic-directory
-    (file-name-concat me:note-root-directory "life/")
+  (defconst sr/note-periodic-directory
+    (file-name-concat sr/note-root-directory "life/")
     "Directory for periodic notes.")
 
-  (defconst me:note-project-directory
-    (file-name-concat me:note-root-directory "projects/")
-    "Directory for projects.")
+  (defconst sr/note-project-directory
+    (file-name-concat sr/note-root-directory "projects/")
+    "Directory for project notes.")
 
-  (defconst me:note-zk-directory
-    (file-name-concat me:note-root-directory "zk/")
+  (defconst sr/note-zk-directory
+    (file-name-concat sr/note-root-directory "zk/")
     "Directory for Zettelkasten.")
 
-  (defconst me:note-media-directory
-    (file-name-concat me:note-root-directory "media/")
+  (defconst sr/note-media-directory
+    (file-name-concat sr/note-root-directory "media/")
     "Directory for media (e.g. images)")
+
+  (defconst sr/dev-project-directory
+    "~/me/ws/projects/"
+    "Directory for software projects")
 #+end_src
 ** Files
 #+begin_src elisp
-  (defconst me:readme-org-file-name
-    (expand-file-name "emacs/README.org" me:dotfiles-directory)
+  (defconst sr/readme-org-file-name
+    (expand-file-name "emacs/README.org" sr/dotfiles-directory)
     "File name for README.org configuration file.")
 #+end_src
 * Load
 #+begin_src elisp
-  (add-to-list 'load-path me:emacs-load-directory)
+  (add-to-list 'load-path sr/emacs-load-directory)
 #+end_src
 
 Small enhancement packages are not loaded here
@@ -117,24 +121,24 @@ These are ad-hoc configurations for my local environment.
 * Repeated key bindings
 From [[https://karthinks.com/software/persistent-prefix-keymaps-in-emacs/][Persistent prefifx keymaps in Emacs]]
 #+begin_src elisp
-  (defun me:repeated-prefix-help-command ()
+  (defun sr/repeated-prefix-help-command ()
     (interactive)
     (when-let* ((keys (this-command-keys-vector))
                 (prefix (seq-take keys (1- (length keys))))
                 (orig-keymap (key-binding prefix t))
                 (keymap (copy-keymap orig-keymap)))
-      (setq me:transient-map--exit-func (set-transient-map keymap t nil "Repeating"))
+      (setq sr/transient-map--exit-func (set-transient-map keymap t nil "Repeating"))
       (define-key keymap [remap keyboard-quit]
         		  (lambda ()
         		    (interactive)
-        		    (funcall me:transient-map--exit-func)))
+        		    (funcall sr/transient-map--exit-func)))
       (keymap-set keymap "C-h"
   		(lambda ()
   		  (interactive)
-  		  (funcall me:transient-map--exit-func)
+  		  (funcall sr/transient-map--exit-func)
   		  (describe-bindings prefix)))))
 
-  (setq prefix-help-command #'me:repeated-prefix-help-command)
+  (setq prefix-help-command #'sr/repeated-prefix-help-command)
 #+end_src
 * Use short answers
 #+begin_src elisp
@@ -219,15 +223,15 @@ Key binding for =M-x append-to-register=.
 #+end_src
 ** Insert quotes more easily
 #+begin_src elisp
-(defun me:insert-quotes (&optional arg)
+(defun sr/insert-quotes (&optional arg)
   "Like `insert-parentheses`, but for quotes."
   (interactive "P")
   (insert-pair arg ?\" ?\"))
-(keymap-global-set "M-\"" 'me:insert-quotes)
+(keymap-global-set "M-\"" 'sr/insert-quotes)
 #+end_src
 ** Clear empty lines
 #+begin_src elisp
-  (defun me:clear-empty-lines ()
+  (defun sr/clear-empty-lines ()
     "Clear empty lines on current buffer.
 
   When region is activated, operat on that region."
@@ -248,7 +252,11 @@ Key binding for =M-x append-to-register=.
 #+begin_src elisp
   (setq completions-format 'one-column)
 #+end_src
-
+** Icomplete
+#+begin_src elisp
+  (icomplete-mode)
+  (icomplete-vertical-mode)
+#+end_src
 * Windows
 ** Display-buffer
 #+begin_src elisp
@@ -273,7 +281,7 @@ Key binding for =M-x append-to-register=.
 #+end_src
 ** Helper function: delete current buffer's file
 #+begin_src elisp
-(defun me:delete-current-file ()
+(defun sr/delete-current-file ()
   "Delete current buffer's file."
   (interactive)
   (delete-file (buffer-file-name)))
@@ -281,17 +289,17 @@ Key binding for =M-x append-to-register=.
 * Workflow
 ** Starting hour of a day
 #+begin_src elisp
-(defconst me:note-day-start-hour 3 "The starting hour of a day for notes.")
+(defconst sr/note-day-start-hour 3 "The starting hour of a day for notes.")
 #+end_src
 ** Get current day for the note system
 #+begin_src elisp
-(defun me:note-current-date ()
+(defun sr/note-current-date ()
   "Return current time value for the note system. If the time is before
-`me:note-day-start-hour', return yesterday's date. Otherwise, return
+`sr/note-day-start-hour', return yesterday's date. Otherwise, return
 today's date."
   (let* ((time (decode-time))
 	 (current-day (decoded-time-day time))
-	 (day (if (< (decoded-time-hour time) me:note-day-start-hour)
+	 (day (if (< (decoded-time-hour time) sr/note-day-start-hour)
 		  (- current-day 1)
 		current-day)))
     (encode-time (append (list 0 0 0 day) (seq-subseq time 4)))))
@@ -301,10 +309,10 @@ I finish each day by committing changes I made in my dotfiles and personal files
 
 #+begin_src elisp
   (defconst sr/personal-git-repositories
-    `((,me:dotfiles-directory . "dotfiles")
-      (,me:note-root-directory . "notes"))
+    `((,sr/dotfiles-directory . "dotfiles")
+      (,sr/note-root-directory . "notes"))
     "Git repositories for personal workflow.
-  Used by `me:finish-today' for automatic daily commits.")
+  Used by `sr/finish-today' for automatic daily commits.")
 
   (defun sr/finish-today ()
     "Finish daily workflow; save all buffers associated with a file, commit
@@ -316,27 +324,23 @@ I finish each day by committing changes I made in my dotfiles and personal files
   	  (default-directory (car repo))
   	  (subcommands `(("add" ".")
   			 ("commit" "-m"
-  			  ,(format-time-string "%Y%m%d" (me:note-current-date)))
+  			  ,(format-time-string "%Y%m%d" (sr/note-current-date)))
   			 ("push"))))
         (dolist (args subcommands)
   	(apply 'call-process (append '("git" nil nil nil) args)))
         (message (format "Commited and pushed changes in %s." name))))
     (message "Done. Good night :)"))
 #+end_src
-* Projects
-#+begin_src elisp
-  (setq project-mode-line t)
-#+end_src
 * Migration
 ** Migrate inline latex
 #+begin_src elisp
-(defun me:migrate-latex ()
+(defun sr/migrate-latex ()
   (interactive)
   (save-excursion
     (goto-char (point-min))
     (while (re-search-forward "\\$\\(.+?\\)\\$" nil t)
       (replace-match "\\\\(\\1\\\\)"))))
-(keymap-global-set "C-c m l" 'me:migrate-latex)
+(keymap-global-set "C-c m l" 'sr/migrate-latex)
 #+end_src
 ** Check if the current line is empty
 Helper function for migration command
@@ -351,7 +355,7 @@ nil."
 ** Remove empty lines before/after headings
 #+begin_src elisp
   ;; this is a quite hacky implementation; fix later
-  (defun me:org-remove-empty-lines-around-headings ()
+  (defun sr/org-remove-empty-lines-around-headings ()
     "Remove empty lines before and after each headings."
     (interactive)
     (org-map-entries
@@ -365,14 +369,14 @@ nil."
        nil (if (region-active-p) 'region nil))
     (delete-matching-lines "##delete##"))
 
-  (keymap-global-set "C-c m h" 'me:org-remove-empty-lines-around-headings)
+  (keymap-global-set "C-c m h" 'sr/org-remove-empty-lines-around-headings)
 #+end_src
 ** Migrate old Org mode documents
 #+begin_src elisp
-(defun me:migrate-org-properties ()
+(defun sr/migrate-org-properties ()
   "Migrate current old Org document to follow the new format. Specifically:
 - move incorrect buffer options (created and updated) into properties.
-- if ZK, call `me:set-zettel-id-property'.
+- if ZK, call `sr/set-zettel-id-property'.
 - Move filetags into entry tags."
   (interactive)
   (save-excursion
@@ -396,7 +400,7 @@ nil."
       (when created-at (org-set-property "created" created-at))
       (when updated-at (org-set-property "updated" updated-at))
       (when filetags (org-set-tags (string-replace "-" "_" filetags))))
-    (me:set-zettel-id-property)))
+    (sr/set-zettel-id-property)))
 #+end_src
 ** Migration from markdown
 Previously, I used plain markdown documents for note taking.
@@ -410,13 +414,13 @@ the correctness of the conversion result.
 The path to the lua filter is hardcoded. This could be improved.
 
 #+begin_src elisp
-(defvar me:pandoc-migration-command
+(defvar sr/pandoc-migration-command
   "pandoc --wrap=preserve -f commonmark+task_lists+yaml_metadata_block -s -t org --lua-filter=/Users/kimsaram32/me/myself/pandoc-filter.lua"
-  "Command to use for `me:migrate-to-org'.")
+  "Command to use for `sr/migrate-to-org'.")
 #+end_src
 *** Convert from markdown to Org
 #+begin_src elisp
-  (defun me:migrate-markdown-to-org ()
+  (defun sr/migrate-markdown-to-org ()
     "Convert current markdown file into Org Mode document, using Pandoc.
   Open the converted document in current buffer.
   Perform the following transformations:
@@ -433,11 +437,11 @@ The path to the lua filter is hardcoded. This could be improved.
   			 (match-string 1)))
   	   (updated-at (when (re-search-forward "^updated: \\(.+\\)$" nil t)
   			 (match-string 1)))
-  	   (is-zk (me:is-zettel-name-p input-file-name)))
+  	   (is-zk (sr/is-zettel-name-p input-file-name)))
         (save-buffer)
         
         (with-temp-buffer
-  	(call-process-shell-command me:pandoc-migration-command input-file-name t)
+  	(call-process-shell-command sr/pandoc-migration-command input-file-name t)
   	(let ((temp-buffer (current-buffer)))
   	  (with-current-buffer input-buffer
   	    (replace-buffer-contents temp-buffer))))
@@ -464,7 +468,7 @@ The path to the lua filter is hardcoded. This could be improved.
         
         (if is-zk
   	  (progn
-  	    (me:set-zettel-id-property)
+  	    (sr/set-zettel-id-property)
   	    (save-excursion
   	      (replace-regexp "\\[\\[\\([0-9]+\\)]]" "[[id:\\1][\\1]]")))
   	(save-excursion
@@ -475,14 +479,14 @@ The path to the lua filter is hardcoded. This could be improved.
 Pandoc produces verbatim (=) in place of markdown code (`), but I
 prefer to use code (~).
 #+begin_src elisp
-(defun me:verbatim-to-code ()
+(defun sr/verbatim-to-code ()
   (interactive)
   (replace-regexp "=" "~"))
-(keymap-global-set "C-c m c" 'me:verbatim-to-code)
+(keymap-global-set "C-c m c" 'sr/verbatim-to-code)
 #+end_src
 ** Migration from Obsidian documents
 #+begin_src elisp
-  (defun me:migrate-insert-capture-heading ()
+  (defun sr/migrate-insert-capture-heading ()
     "Insert heading from current buffer's name."
     (interactive)
     (let* ((split (string-split (file-name-base (buffer-name))))
@@ -499,40 +503,75 @@ To distinguish old markdown documents, I included fixed indicator
 strings to them.
 
 #+begin_src elisp
-(defconst me:markdown-indicator-string "###MARKDOWN###"
+(defconst sr/markdown-indicator-string "###MARKDOWN###"
   "String that indicates the current file is a markdown document.")
 #+end_src
 *** DWIM migration
 #+begin_src elisp
-  (defun me:migrate-dwim ()
+  (defun sr/migrate-dwim ()
     "Migrate current file. DWIM."
     (interactive)
     (save-excursion
       (goto-char (point-min))
-      (if (search-forward me:markdown-indicator-string nil t)
+      (if (search-forward sr/markdown-indicator-string nil t)
           (progn
   	  (replace-match "" nil t)
-  	  (while (search-forward me:markdown-indicator-string nil t)
+  	  (while (search-forward sr/markdown-indicator-string nil t)
   	    (replace-match "" nil t))
-  	  (me:migrate-markdown-to-org))
-        (me:migrate-org-properties)
-        (me:migrate-latex)
-        ;; (me:org-remove-empty-lines-around-headings)
+  	  (sr/migrate-markdown-to-org))
+        (sr/migrate-org-properties)
+        (sr/migrate-latex)
+        ;; (sr/org-remove-empty-lines-around-headings)
         )
       (message "DWIM migration finished.")))
-  (keymap-global-set "C-c m m" 'me:migrate-dwim)
+  (keymap-global-set "C-c m m" 'sr/migrate-dwim)
 #+end_src
-* Programming
+* Software dev
 Current stack is:
 - Eglot for LSP client and general editor features
 - Format-all for formatting
 - Flymake for diagnostics and syntax checking
 - Xref
 - Company-mode for autocompletion
-- Emacs projects for workspace management
+- Projectile for project management
 - Tree-sitter
   - Experimenting with Combobulate for structured editing
 
+** Projectile
+[[https://docs.projectile.mx/projectile/index.html][Docs]]
+
+#+begin_src elisp
+  (require 'projectile)
+  (projectile-mode)
+#+end_src
+
+Key bindings
+#+begin_src elisp
+  (keymap-set projectile-mode-map "C-c p" 'projectile-command-map)
+#+end_src
+*** Project discovery
+[[https://docs.projectile.mx/projectile/usage.html#automated-project-discovery][Docs]]
+
+I recently moved all of my projects into a single directory. I think
+this works well when there's no clear boundary between personal and
+"work" projects.
+
+~projectile-project-search-path~ is used by the
+~projectile-discover-projects-in-directory~ command.
+~projectile-auto-discover~ automates calls to the command when using
+other Projectile commnads.
+
+#+begin_src elisp
+  (setq projectile-project-search-path
+        (list sr/dev-project-directory))
+#+end_src
+
+Enable automatic discovery on startup. Disable this if you're having
+performance issues.
+
+#+begin_src elisp
+  (setq projectile-auto-discover t)
+#+end_src
 ** Line numbers
 #+begin_src elisp
   (add-hook 'prog-mode-hook #'display-line-numbers-mode)
@@ -581,15 +620,15 @@ Disable tabs by default.
 Language major modes override key sequences I want to use,
 so bind them using a minor mode.
 #+begin_src elisp
-  (defvar-keymap me:prog-override-mode-map
+  (defvar-keymap sr/prog-override-mode-map
     :doc "Keymap for prog-mode overrides."
     "M-TAB" #'company-complete)
 
-  (define-minor-mode me:prog-override-mode
+  (define-minor-mode sr/prog-override-mode
     "Minor mode for overriding some prog-mode key bindings."
     :lighter "")
 
-  (add-hook 'prog-mode-hook #'me:prog-override-mode)
+  (add-hook 'prog-mode-hook #'sr/prog-override-mode)
 #+end_src
 *** Idle delay
 #+begin_src elisp
@@ -665,12 +704,22 @@ Use rainbow mode.
 #+begin_src elisp
   (setq c-ts-mode-indent-style 'bsd)
   (setq c-ts-mode-indent-offset 2)
+#+end_src
+**** Org mode integration
+By default, Org mode uses ~c-mode~ for editing C code.
+~org-src-lang-modes~ is used for major mode discovery, so it can be
+customized to use ~c-ts-mode~ instead.
 
+I both use "C" and "c" to identify C source code in Org mode buffers,
+so both variants should be defined.
+
+#+begin_src elisp
   (add-to-list 'org-src-lang-modes '("C" . c-ts))
+  (add-to-list 'org-src-lang-modes '("c" . c-ts))
 #+end_src
 **** Go to the body of the next defun
 #+begin_src elisp
-  (defun me:c-previous-defun-body ()
+  (defun sr/c-previous-defun-body ()
     "Go to body of the previous defun."
     (interactive)
     (if (c-defun-name)
@@ -678,15 +727,15 @@ Use rainbow mode.
     (c-beginning-of-defun)
     (c-syntactic-re-search-forward "{"))
 
-  (defun me:c-next-defun-body ()
+  (defun sr/c-next-defun-body ()
     "Go to body of the next defun."
     (interactive)
     (if (c-defun-name)
         (c-end-of-defun))
     (c-syntactic-re-search-forward "{"))
 
-  (keymap-set c-mode-map "C-M-x" 'me:c-next-defun-body)
-  (keymap-set c-mode-map "C-M-y" 'me:c-previous-defun-body)
+  (keymap-set c-ts-mode-map "C-M-x" 'sr/c-next-defun-body)
+  (keymap-set c-ts-mode-map "C-M-y" 'sr/c-previous-defun-body)
 #+end_src
 *** Go (TS)
 #+begin_src elisp
@@ -700,7 +749,6 @@ Use rainbow mode.
 #+begin_src elisp
   (require 'js)
 #+end_src
-
 
 #+begin_src elisp
   (setq js-indent-level 2)
@@ -745,83 +793,100 @@ I don't like them
 #+end_src
 *** Render navigation tree
 #+begin_src elisp
-  (defun me:combobulate-display-tree-at-point ()
+  (defun sr/combobulate-display-tree-at-point ()
     "Render a navigation tree around the node at point."
     (interactive)
     (combobulate-display-draw-node-tree (combobulate-node-at-point)))
 #+end_src
+* English learning
+** Open dictionary for word at point
+I use Merriam Webster as my dictionary. I tried using EWW to browse words inside Emacs, but the site feels broken when rendered in pure HTML.
+
+#+begin_src elisp
+  (defcustom sr/eng-dictionary-url
+    "https://www.merriam-webster.com/dictionary/%s"
+    "Format string for English dictionary.")
+
+  (defun sr/eng-browse-dictionary-at-point ()
+    "Look up dictionary for a word at point."
+    (interactive)
+    (if-let ((word (word-at-point t)))
+        (browse-url (url-encode-url (format sr/eng-dictionary-url word)))
+      (user-error "No word found at point")))
+
+  (keymap-global-set "C-c d d" #'sr/eng-browse-dictionary-at-point)
+#+end_src
 * Zettelkasten
 Depends on Org mode.
-
 ** Constants
 #+begin_src elisp
-  (defconst me:zettel-id-format
+  (defconst sr/zettel-id-format
     "%Y%m%d%H%M"
     "The format for zettel IDs.")
 
-  (defconst me:zk-backlinks-buffer-name
+  (defconst sr/zk-backlinks-buffer-name
     "*ZK Backlinks*"
     "Buffer name for displaying ZK backlinks.")
 #+end_src
 ** Zettel file name regex
 #+begin_src elisp
-  (defconst me:zettel-file-name-regex
+  (defconst sr/zettel-file-name-regex
     "zk-.+?\\.org$"
     "Regex for matching zettel file names.")
 #+end_src
 ** ZK Major mode
 #+begin_src elisp
-  (define-derived-mode me:zk-mode
+  (define-derived-mode sr/zk-mode
     org-mode "Zettelkasten"
     "Major mode for Zettels.")
 
-  (add-to-list 'auto-mode-alist `(,me:zettel-file-name-regex . me:zk-mode))
+  (add-to-list 'auto-mode-alist `(,sr/zettel-file-name-regex . sr/zk-mode))
 #+end_src
 ** helper: Goto top level heading
 #+begin_src elisp
-(defun me:org-goto-top-level-heading ()
+(defun sr/org-goto-top-level-heading ()
   "Goto upmost heading."
   (interactive)
   (while (org-up-heading-safe) nil))
 #+end_src
 ** Predicate for zettel file names
 #+begin_src elisp
-  (defun me:is-zettel-name-p (name)
+  (defun sr/is-zettel-name-p (name)
     "Return t if NAME is a file name to a zettel. else return nill."
-    (string-match-p me:zettel-file-name-regex name))
+    (string-match-p sr/zettel-file-name-regex name))
 #+end_src
 ** Get zettel timestamp
 #+begin_src elisp
-(defun me:get-zettel-timestamp ()
+(defun sr/get-zettel-timestamp ()
   "Get zettel timestamp for current time."
-  (format-time-string me:zettel-id-format))
+  (format-time-string sr/zettel-id-format))
 #+end_src
 ** Get zettel id for current entry
 #+begin_src elisp
-  (defun me:entry-zettel-id ()
+  (defun sr/entry-zettel-id ()
     "Return the zettel ID of current entry."
     (save-excursion
-      (me:org-goto-top-level-heading)
+      (sr/org-goto-top-level-heading)
       (let ((properties (org-entry-properties (point))))
         (cdr (or (assoc "id" properties)
   	       (assoc "ID" properties))))))
 
-  (defun me:entry-zettel-id-as-link ()
+  (defun sr/entry-zettel-id-as-link ()
     "Return the zettel ID of current entry as Org link format."
     (interactive)
-    (let ((id (me:entry-zettel-id)))
+    (let ((id (sr/entry-zettel-id)))
       (message id)
       (format "[[id:%s][%s]]" id id)))
 
-  (keymap-set me:zk-mode-map "C-c z l" (lambda ()
+  (keymap-set sr/zk-mode-map "C-c z l" (lambda ()
     				       (interactive)
-    				       (kill-new (me:entry-zettel-id-as-link))))
+    				       (kill-new (sr/entry-zettel-id-as-link))))
 #+end_src
 
 Integrate with Org agenda mode.
 
 #+begin_src elisp
-  (defun me:copy-zettel-link-in-agenda ()
+  (defun sr/copy-zettel-link-in-agenda ()
     "Add the zettel link to the kill ring from org-agenda-mode."
     (interactive)
     (let* ((marker (or (org-get-at-bol 'org-marker)
@@ -831,30 +896,30 @@ Integrate with Org agenda mode.
       (with-current-buffer buffer 
         (widen)
         (goto-char pos)
-        (kill-new (me:entry-zettel-id-as-link)))))
+        (kill-new (sr/entry-zettel-id-as-link)))))
 
-  (keymap-set org-agenda-mode-map "C-c z l" 'me:copy-zettel-link-in-agenda)
+  (keymap-set org-agenda-mode-map "C-c z l" 'sr/copy-zettel-link-in-agenda)
 #+end_src
 ** Managing properties
 *** Set the ID property
 #+begin_src elisp
-  (defun me:set-zettel-id-property ()
+  (defun sr/set-zettel-id-property ()
     "Set zettel ID of the current entry, if it's not set."
     (interactive)
     (save-excursion
-      (me:org-goto-top-level-heading)
+      (sr/org-goto-top-level-heading)
       (unless (org-entry-get (point) "id")
-        (org-entry-put (point) "ID" (me:get-zettel-timestamp)))))
+        (org-entry-put (point) "ID" (sr/get-zettel-timestamp)))))
 #+end_src
 *** Set date properties
 #+begin_src elisp
-  (defun me:set-date-properties ()
+  (defun sr/set-date-properties ()
     "Update the 'updated' property of current buffer as current date.
   Also update the 'created' property if one does not exist."
     (interactive)
-    (let ((date-string (format-time-string "%Y-%m-%d" (me:note-current-date))))
+    (let ((date-string (format-time-string "%Y-%m-%d" (sr/note-current-date))))
       (save-excursion
-        (me:org-goto-top-level-heading)
+        (sr/org-goto-top-level-heading)
         (unless (org-entry-get (point) "created")
   	(org-set-property "created" date-string))
         (org-set-property "updated" (concat "<" date-string ">"))))
@@ -862,24 +927,24 @@ Integrate with Org agenda mode.
 #+end_src
 *** Set all zettel properties
 #+begin_src elisp
-(defun me:set-zettel-properties ()
-  "Call `me:set-date-properties' and `me:set-zettel-id-property'."
+(defun sr/set-zettel-properties ()
+  "Call `sr/set-date-properties' and `sr/set-zettel-id-property'."
   (interactive)
-  (me:set-date-properties)
-  (me:set-zettel-id-property))
-(keymap-global-set "C-c z u" 'me:set-zettel-properties)
+  (sr/set-date-properties)
+  (sr/set-zettel-id-property))
+(keymap-global-set "C-c z u" 'sr/set-zettel-properties)
 #+end_src
 ** Backlinks
 #+begin_src elisp
-  (defun me:zettel-search-backlinks ()
+  (defun sr/zettel-search-backlinks ()
     "Search for ZK backlinks for current entry."
     (interactive)
     (org-ql-search (org-agenda-files)
-      `(regexp ,(me:entry-zettel-id))
+      `(regexp ,(sr/entry-zettel-id))
       :title "Backlinks"
       :buffer "*ZK Backlinks*"))
 
-  (keymap-global-set "C-c z b" 'me:zettel-search-backlinks)
+  (keymap-global-set "C-c z b" 'sr/zettel-search-backlinks)
 #+end_src
 ** Registers
 Create a custom register type.
@@ -936,13 +1001,13 @@ Store current zettel to register, overriding default binding
     (interactive (list (register-read-with-preview
                         "Store zettel in register: ")))
     (add-hook 'kill-buffer-hook 'register-swap-out nil t)
-    (set-register register (make-zk-zettel-register :id (me:entry-zettel-id))))
+    (set-register register (make-zk-zettel-register :id (sr/entry-zettel-id))))
 
-  (keymap-set me:zk-mode-map "C-x r SPC" #'zk-zettel-to-register)
+  (keymap-set sr/zk-mode-map "C-x r SPC" #'zk-zettel-to-register)
 #+end_src
 ** Jump to structure note
 #+begin_src elisp
-  (defun me:zk-show-structure-note (tag)
+  (defun sr/zk-show-structure-note (tag)
     "Show structure note for TAG."
     (interactive (list
   		(completing-read
@@ -959,7 +1024,7 @@ Store current zettel to register, overriding default binding
       (org-fold-show-subtree)
       (recenter 0)))
 
-  (keymap-global-set "C-c z s" #'me:zk-show-structure-note)
+  (keymap-global-set "C-c z s" #'sr/zk-show-structure-note)
 #+end_src
 * VMs
 I manage my virtual machines in Mac via UTM. UTM has its command-line
@@ -1048,7 +1113,7 @@ Those work well with repetitions.
 #+end_src
 ** Toggle subtree
 #+begin_src elisp
-  (defun me:org-toggle-subtree ()
+  (defun sr/org-toggle-subtree ()
     "Toggle all children of current heading."
     (interactive)
     (if (save-excursion
@@ -1057,15 +1122,15 @@ Those work well with repetitions.
         (org-fold-show-subtree)
       (org-fold-hide-subtree)))
     
-  (keymap-set org-mode-map "C-c C-x TAB" 'me:org-toggle-subtree)
-  (keymap-set me:zk-mode-map "TAB" 'me:org-toggle-subtree)
+  (keymap-set org-mode-map "C-c C-x TAB" 'sr/org-toggle-subtree)
+  (keymap-set sr/zk-mode-map "TAB" 'sr/org-toggle-subtree)
 #+end_src
 ** Directories
 #+begin_src elisp
-  (setq org-directory me:note-root-directory)
+  (setq org-directory sr/note-root-directory)
   (setq org-archive-location (expand-file-name
   			                      "archives/%s.archive::"
-  			                      me:note-root-directory))
+  			                      sr/note-root-directory))
 #+end_src
 ** File apps
 #+begin_src elisp
@@ -1075,7 +1140,7 @@ Those work well with repetitions.
 - Sync with the core note taking system.
 - Also used in org-journal.
 #+begin_src elisp
-(setq org-extend-today-until me:note-day-start-hour)
+(setq org-extend-today-until sr/note-day-start-hour)
 #+end_src
 ** Indent mode
 Use indented headings.
@@ -1119,7 +1184,7 @@ Dvisvgm configuration is patched for my environment...
 #+end_src
 *** Image location
 #+begin_src elisp
-  (setq org-preview-latex-image-directory (expand-file-name "ltximg/" me:note-root-directory))
+  (setq org-preview-latex-image-directory (expand-file-name "ltximg/" sr/note-root-directory))
 #+end_src
 ** New entry blanks
 #+begin_src elisp
@@ -1134,8 +1199,8 @@ Dvisvgm configuration is patched for my environment...
 ** Link abbrevations
 #+begin_src elisp
   (setq org-link-abbrev-alist
-        `(("zk" . ,(expand-file-name "id:%s" me:note-root-directory))
-  	("media" . ,me:note-media-directory)))
+        `(("zk" . ,(expand-file-name "id:%s" sr/note-root-directory))
+  	("media" . ,sr/note-media-directory)))
 #+end_src
 ** Tags
 *** Tag inheritance
@@ -1178,7 +1243,7 @@ Used to use timestamp here, but switched to use UUID (default).
 ZK links are inserted not by org-id but a custom function.
 Other entries should be inserted normal UUIDs to distinguish Zettels.
 #+begin_src elisp
-  (setq org-id-ts-format me:zettel-id-format)
+  (setq org-id-ts-format sr/zettel-id-format)
   (setq org-id-method 'uuid)
 #+end_src
 *** Disable global tracking
@@ -1188,10 +1253,10 @@ Other entries should be inserted normal UUIDs to distinguish Zettels.
 ** Org-agenda
 *** Set files for agenda
 #+begin_src elisp
-  (setq org-agenda-files (list me:note-root-directory
-  			     (expand-file-name "buffers/" me:note-root-directory)
-  			     (expand-file-name "projects/" me:note-root-directory)
-  			     me:note-zk-directory))
+  (setq org-agenda-files (list sr/note-root-directory
+  			     (expand-file-name "buffers/" sr/note-root-directory)
+  			     (expand-file-name "projects/" sr/note-root-directory)
+  			     sr/note-zk-directory))
 #+end_src
 *** Window setup
 #+begin_src elisp
@@ -1232,8 +1297,8 @@ I need to add tags inside the capture buffer.
 #+end_src
 ** Insert image from clipboard
 #+begin_src elisp
-  (defun me:insert-image-from-clipboard ()
-    "Prompt for image file name, and create the image in `me:note-media-directory'.
+  (defun sr/insert-image-from-clipboard ()
+    "Prompt for image file name, and create the image in `sr/note-media-directory'.
   Insert the image at point as an Org mode link.
 
   With a prefix argument, do not insert the link and store it instead."
@@ -1246,15 +1311,15 @@ I need to add tags inside the capture buffer.
         (user-error "Attempted to paste non-image content"))
       (setq image-name (read-from-minibuffer "image name (with extensions): "))
       (copy-file temp-file-name
-                 (expand-file-name image-name me:note-media-directory))
+                 (expand-file-name image-name sr/note-media-directory))
       (insert (format "[[media:%s]]" image-name))))
 
-  (keymap-set org-mode-map "C-c i" #'me:insert-image-from-clipboard)
+  (keymap-set org-mode-map "C-c i" #'sr/insert-image-from-clipboard)
 #+end_src
 ** Jump to heading
 Helper function to get all headings in a hierarchical format.
 #+begin_src elisp
-  (defun me:org-headings-hierarhcy-list (buffer)
+  (defun sr/org-headings-hierarhcy-list (buffer)
     "Return a list of all headings in org mode buffer BUFFER."
     (with-current-buffer buffer
       (org-map-entries
@@ -1265,11 +1330,11 @@ Helper function to get all headings in a hierarchical format.
 #+end_src
 
 #+begin_src elisp
-  (defun me:org-jump-to-heading ()
+  (defun sr/org-jump-to-heading ()
     "Ask for a heading in the current buffer, and jump to there."
     (interactive)
     (let* ((candidates
-            (me:org-headings-hierarhcy-list (current-buffer)))
+            (sr/org-headings-hierarhcy-list (current-buffer)))
            (target
             (map-elt candidates
                      (completing-read "Jump to headline: "
@@ -1279,18 +1344,18 @@ Helper function to get all headings in a hierarchical format.
       (org-fold-show-context)
       (org-fold-show-entry)))
 
-  (keymap-set org-mode-map "C-c C-j" #'me:org-jump-to-heading)
+  (keymap-set org-mode-map "C-c C-j" #'sr/org-jump-to-heading)
 #+end_src
 
 Quickly jump to =README.org= with a heading.
 #+begin_src elisp
-  (defun me:jump-to-readme-org ()
+  (defun sr/jump-to-readme-org ()
     "Jump to a heading inside README.org."
     (interactive)
-    (let* ((buf (or (get-file-buffer me:readme-org-file-name)
-                    (find-file-noselect me:readme-org-file-name)))
+    (let* ((buf (or (get-file-buffer sr/readme-org-file-name)
+                    (find-file-noselect sr/readme-org-file-name)))
            (candidates
-            (me:org-headings-hierarhcy-list buf))
+            (sr/org-headings-hierarhcy-list buf))
            (target
             (map-elt candidates
                      (completing-read "Jump to headline: "
@@ -1301,7 +1366,7 @@ Quickly jump to =README.org= with a heading.
       (org-fold-show-context)
       (org-fold-show-entry)))
 
-  (keymap-global-set "C-c r" #'me:jump-to-readme-org)
+  (keymap-global-set "C-c r" #'sr/jump-to-readme-org)
 #+end_src
 ** todo
 #+begin_src elisp
@@ -1341,7 +1406,7 @@ since creation of new entries is handled by org-capture.
 #+end_src
 ** Directory and files
 #+begin_src elisp
-(setq org-journal-dir me:note-periodic-directory)
+(setq org-journal-dir sr/note-periodic-directory)
 (setq org-journal-file-format "%Y/%m/%Y-%m-%d.org")
 #+end_src
 ** Date format
@@ -1451,38 +1516,38 @@ Groups
 ** Random thoughts (journaling)
 Integrate with org-journal.
 #+begin_src elisp
-(defun me:org-journal-find-location ()
+(defun sr/org-journal-find-location ()
   (org-journal-new-entry t)
   (goto-char (point-max))
   (recenter-top-bottom 0))
 
 (add-to-list 'org-capture-templates
 	     `("c" "Random thought"
-	       plain (function me:org-journal-find-location)
+	       plain (function sr/org-journal-find-location)
 	       "** %T %?"))
 #+end_src
 ** Zettelkasten entry
 #+begin_src elisp
   (add-to-list 'org-capture-templates
   	     `("z" "Zettel"
-  	       entry (file ,(expand-file-name "zk-current.org" me:note-zk-directory))
+  	       entry (file ,(expand-file-name "zk-current.org" sr/note-zk-directory))
   	       "* %?"
   	       :jump-to-captured t))
 
-  (defun me:org-capture-setup-zettel ()
+  (defun sr/org-capture-setup-zettel ()
     "Finish zettel captures."
     (when (equal (plist-get org-capture-current-plist :description) "Zettel")
       (if-let ((id (org-entry-get (point) "ID"))
                (buf (plist-get org-capture-current-plist :buffer)))
         (org-id-add-location id (buffer-file-name buf)))))
 
-  (add-hook 'org-capture-before-finalize-hook #'me:org-capture-setup-zettel)
+  (add-hook 'org-capture-before-finalize-hook #'sr/org-capture-setup-zettel)
 #+end_src
 ** Fleeting note
 #+begin_src elisp
 (add-to-list 'org-capture-templates
 	     `("ff" "Fleeting note"
-	       entry (file ,(expand-file-name "fleeting.org" me:note-root-directory))
+	       entry (file ,(expand-file-name "fleeting.org" sr/note-root-directory))
 	       "* IDEA %t %?"
 	       :prepend t
 	       :empty-lines-before 1))
@@ -1491,7 +1556,7 @@ Integrate with org-journal.
 #+begin_src elisp
   (add-to-list 'org-capture-templates
   	     `("fe" "Fleeting note (elfeed)"
-  	       entry (file ,(expand-file-name "fleeting.org" me:note-root-directory))
+  	       entry (file ,(expand-file-name "fleeting.org" sr/note-root-directory))
   	       "* IDEA %t %?
   [[%:external-link][%:title]]"
   	       :prepend t))
@@ -1500,7 +1565,7 @@ Integrate with org-journal.
 #+begin_src elisp
   (add-to-list 'org-capture-templates
   	     `("e" "Event"
-  	       entry (file ,(expand-file-name "events.org" me:note-root-directory))
+  	       entry (file ,(expand-file-name "events.org" sr/note-root-directory))
   	       "* %? :event:"
   	       :prepend t
   	       :empty-lines-after 1))
@@ -1509,7 +1574,7 @@ Integrate with org-journal.
 #+begin_src elisp
 (add-to-list 'org-capture-templates
 	     `("tt" "Todo item"
-	       entry (file ,(expand-file-name "todo.org" me:note-root-directory))
+	       entry (file ,(expand-file-name "todo.org" sr/note-root-directory))
 	       "* TODO %?"
 	       :prepend t
 	       :empty-lines-after 1))
@@ -1518,7 +1583,7 @@ Integrate with org-journal.
 #+begin_src elisp
   (add-to-list 'org-capture-templates
   	     `("pb" "Baekjoon problem"
-  	      entry (file ,(expand-file-name "problems/baekjoon.org" me:note-root-directory))
+  	      entry (file ,(expand-file-name "problems/baekjoon.org" sr/note-root-directory))
   	      "* %t %^{id}. %^{title}
   [[https://www.acmicpc.net/problem/%\\1][Baekjoon]]
   ,** Ideas
@@ -1529,7 +1594,7 @@ Integrate with org-journal.
 #+begin_src elisp
   (add-to-list 'org-capture-templates
   	     `("pp" "Programmers problem"
-  	      entry (file ,(expand-file-name "problems/programmers.org" me:note-root-directory))
+  	      entry (file ,(expand-file-name "problems/programmers.org" sr/note-root-directory))
   	      "* %t %^{id}. %^{title}
   [[%^{url}][Programmers]]
   ,** Ideas
@@ -1540,7 +1605,7 @@ Integrate with org-journal.
 #+begin_src elisp
   (add-to-list 'org-capture-templates
   	     `("v" "Capture"
-  	       entry (file ,(expand-file-name "captures.org" me:note-root-directory))
+  	       entry (file ,(expand-file-name "captures.org" sr/note-root-directory))
   	       "* %^{title}
   %T
   %?"
@@ -1548,14 +1613,14 @@ Integrate with org-journal.
 #+end_src
 ** Todo in a project
 #+begin_src elisp
-  (defun me:todo-project-find-location ()
+  (defun sr/todo-project-find-location ()
     (let ((project-file-name
-  	 (read-file-name "Project file name: " me:note-project-directory "" t nil
+  	 (read-file-name "Project file nasr/ " sr/note-project-directory "" t nil
   			 (lambda (name)
   			   (not (or (backup-file-name-p name)
   				    (auto-save-file-name-p name)))))))
       (unless (string-empty-p project-file-name)
-        (find-file (expand-file-name project-file-name me:note-project-directory))    
+        (find-file (expand-file-name project-file-name sr/note-project-directory))    
         (goto-char (point-min))
         (unless (search-forward-regexp "^\\* Todo" nil t)
   	(goto-char (point-max))
@@ -1563,7 +1628,7 @@ Integrate with org-journal.
 
   (add-to-list 'org-capture-templates
   	     `("tp" "Todo (in a project)"
-  	       plain (function me:todo-project-find-location)
+  	       plain (function sr/todo-project-find-location)
   	       "** TODO %?"))
 #+end_src
 
@@ -1652,23 +1717,23 @@ Integrate with org-journal.
 #+end_src
 ** EWW Integration
 #+begin_src elisp
-  (defun me:elfeed-show-visit-eww ()
+  (defun sr/elfeed-show-visit-eww ()
     "Visit the current entry with `eww'."
     (interactive)
     (when-let ((link (elfeed-entry-link elfeed-show-entry)))
       (eww link)))
 
-  (keymap-set elfeed-show-mode-map "w" 'me:elfeed-show-visit-eww)
+  (keymap-set elfeed-show-mode-map "w" 'sr/elfeed-show-visit-eww)
 #+end_src
 ** Managing 'to read' entries
 I often copy my elfeed entries to my iPhone so I can read them while
 walking around.
 
 #+begin_src elisp
-  (defvar me:elfeed-to-read-tag 'to-read-list
+  (defvar sr/elfeed-to-read-tag 'to-read-list
     "Elfeed tag for 'to read' entries.")
 
-  (defvar me:elfeed-to-read-list nil
+  (defvar sr/elfeed-to-read-list nil
     "List for storing 'to read' entries.")
 #+end_src
 
@@ -1682,20 +1747,20 @@ mark the entries as read.
 
 *** Add current entry to the list with =a=
 #+begin_src elisp
-  (defun me:elfeed-show-add-to-read ()
+  (defun sr/elfeed-show-add-to-read ()
     "Add current entry to 'to read' list and go to the next entry."
     (interactive)
     (when-let ((entry elfeed-show-entry))
-      (push entry me:elfeed-to-read-list)
-      (elfeed-show-tag 'unread me:elfeed-to-read-tag)
+      (push entry sr/elfeed-to-read-list)
+      (elfeed-show-tag 'unread sr/elfeed-to-read-tag)
       (message "Addded entry to to-read list")
       (elfeed-show-next)))
 
-  (keymap-set elfeed-show-mode-map "a" 'me:elfeed-show-add-to-read)
+  (keymap-set elfeed-show-mode-map "a" 'sr/elfeed-show-add-to-read)
 #+end_src
 *** Skip current entry with =s=
 #+begin_src elisp
-  (defun me:elfeed-show-skip ()
+  (defun sr/elfeed-show-skip ()
     "Skip the current entry.
 
   Mark the entry as unread and go to the next entry."
@@ -1703,7 +1768,7 @@ mark the entries as read.
     (elfeed-show-tag 'unread)
     (elfeed-show-next))
 
-  (keymap-set elfeed-show-mode-map "f" #'me:elfeed-show-skip)
+  (keymap-set elfeed-show-mode-map "f" #'sr/elfeed-show-skip)
 #+end_src
 *** Export the entries with =l=
 Currently, exporting is done by pushing the list to the mark ring. I
@@ -1711,45 +1776,45 @@ export the entries just before I leave, so I apply the filter to show
 only the entries in the reading list after I come back.
 
 #+begin_src elisp
-  (defun me:elfeed-save-to-reads (keep-list)
+  (defun sr/elfeed-save-to-reads (keep-list)
     "Push 'to read' entries to the mark ring and clear the list.
   With a prefix argument, keep the list."
     (interactive "P")
     (kill-new (string-join
   	     (mapcar
   	      (lambda (entry) (elfeed-entry-link entry))
-  	      me:elfeed-to-read-list) 
+  	      sr/elfeed-to-read-list) 
   	     "\n"))
     (unless keep-list
-      (setq me:elfeed-to-read-list nil))
+      (setq sr/elfeed-to-read-list nil))
     (elfeed-search-set-filter "+to-read-list"))
 
-  (keymap-set elfeed-search-mode-map "l" 'me:elfeed-save-to-reads)
+  (keymap-set elfeed-search-mode-map "l" 'sr/elfeed-save-to-reads)
 #+end_src
 ** Mark entries as read
 In search mode:
 #+begin_src elisp
-  (defun me:elfeed-search-read ()
+  (defun sr/elfeed-search-read ()
     "Read elfeed entries in search mode."
     (interactive)
     (let ((entries (elfeed-search-selected)))
       (elfeed-untag entries 'unread)
-      (elfeed-untag entries me:elfeed-to-read-tag)
+      (elfeed-untag entries sr/elfeed-to-read-tag)
       (mapc #'elfeed-search-update-entry entries)
       (unless (or elfeed-search-remain-on-entry (use-region-p))
         (forward-line))))
 
-  (keymap-set elfeed-search-mode-map "r" #'me:elfeed-search-read)
+  (keymap-set elfeed-search-mode-map "r" #'sr/elfeed-search-read)
 #+end_src
 
 In show mode:
 #+begin_src elisp
-  (defun me:elfeed-show-read ()
+  (defun sr/elfeed-show-read ()
     "Read current elfeed entry."
     (interactive)
     (elfeed-show-untag 'unread 'to-read-list))
 
-  (keymap-set elfeed-show-mode-map "r" #'me:elfeed-show-read)
+  (keymap-set elfeed-show-mode-map "r" #'sr/elfeed-show-read)
 #+end_src
 ** Load entries
 #+begin_src elisp
@@ -1773,11 +1838,6 @@ In show mode:
 #+begin_src elisp
 (use-package yasnippet :ensure t)
 #+end_src
-* Evil
-I don't enable it by default but it's nice to have
-#+begin_src elisp
-  (keymap-global-set "C-c e" 'evil-mode)
-#+end_src
 * Markdown-mode
 #+begin_src elisp
   (autoload 'markdown-mode "markdown-mode"
@@ -1793,10 +1853,15 @@ I don't enable it by default but it's nice to have
 #+begin_src elisp
   (eglot-booster-mode)
 #+end_src
+* Evil
+I don't enable it by default but it's nice to have
+#+begin_src elisp
+  (keymap-global-set "C-c e e" 'evil-mode)
+#+end_src
 * Docker
 Manage Docker in Emacs.
 #+begin_src elisp
-  (keymap-global-set "C-c d" #'docker)
+  (keymap-global-set "C-c e d" #'docker)
 #+end_src
 * Window setup
 ** Org mode source code editing
@@ -1847,20 +1912,20 @@ Manage Docker in Emacs.
 #+end_src
 ** Zettelkasten
 #+begin_src elisp
-  (defun me:in-tab-p (name)
+  (defun sr/in-tab-p (name)
     "Return t if the current tab bar name is NAME."
     (string-equal name
         (if tab-bar-mode
   	  (cdr (assq 'name (tab-bar--current-tab))) "")))
 
   (add-to-list 'display-buffer-alist
-  	     `((derived-mode me:zk-mode)
+  	     `((derived-mode sr/zk-mode)
   	       (display-buffer-reuse-mode-window display-buffer-in-tab)
   	       (tab-name . "ZK")))
 
   (add-to-list 'display-buffer-alist
   	     `((and (lambda (&rest args)
-  		      (me:in-tab-p "ZK"))
+  		      (sr/in-tab-p "ZK"))
   		    (mode org-agenda-mode))
   	       (display-buffer-in-side-window)
   	       (side . right)
