@@ -169,12 +169,12 @@ to prevent resizing windows when changing fonts.
 #+end_src
 *** Font faces
 #+begin_src elisp
-(set-face-attribute 'default nil
-		    :height 160
-		    :family "JetBrains Mono")
-(set-face-attribute 'variable-pitch nil
-		    :height 170
-		    :family "Helvetica Neue")
+  (set-face-attribute 'default nil
+  		    :height 160
+  		    :family "JetBrains Mono")
+  (set-face-attribute 'variable-pitch nil
+  		    :height 170
+  		    :family "Pretendard Variable")
 #+end_src
 *** Disable fixed windows
 #+begin_src elisp
@@ -206,7 +206,7 @@ to prevent resizing windows when changing fonts.
 ** Sentences
 #+begin_src elisp
   (setq sentence-end-double-space nil)
-  (setq sentence-end-base "[.?!…‽,][]\"'”’)}»›]*")
+  (setq sentence-end-base "[.?!…‽,\\n][]\"'”’)}»›]*")
 #+end_src
 ** Mark ring
 #+begin_src elisp
