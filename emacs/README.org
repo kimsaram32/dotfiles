@@ -206,7 +206,7 @@ to prevent resizing windows when changing fonts.
 ** Sentences
 #+begin_src elisp
   (setq sentence-end-double-space nil)
-  (setq sentence-end-base "[.?!…‽,\\n][]\"'”’)}»›]*")
+  (setq sentence-end-base "[.?!…‽,][]\"'”’)}»›]*")
 #+end_src
 ** Mark ring
 #+begin_src elisp
@@ -291,7 +291,7 @@ Key binding for =M-x append-to-register=.
 #+begin_src elisp
 (defconst sr/note-day-start-hour 3 "The starting hour of a day for notes.")
 #+end_src
-** Get current day for the note system
+** Get today for the note system
 #+begin_src elisp
 (defun sr/note-current-date ()
   "Return current time value for the note system. If the time is before
@@ -303,6 +303,41 @@ today's date."
 		  (- current-day 1)
 		current-day)))
     (encode-time (append (list 0 0 0 day) (seq-subseq time 4)))))
+#+end_src
+** Get file for today
+#+begin_src elisp
+  (defun sr/file-name-today ()
+    "Return the file name for today."
+    (expand-file-name
+     (format-time-string "%Y-%m.org" (sr/note-current-date))
+     sr/note-periodic-directory))
+#+end_src
+** Open buffer for today
+todo: move the point to today's entry, if needed.
+
+#+begin_src elisp
+  (defun sr/find-today-buffer ()
+    "Open buffer for today's daily note."
+    (interactive)
+    (find-file (sr/file-name-today)))
+
+  (keymap-global-set "C-c j j" #'sr/find-today-buffer)
+#+end_src
+** Start today
+#+begin_src elisp
+  (defun sr/start-today ()
+    "Begin today by creating an entry to the Org buffer for today."
+    (interactive)
+    (find-file (sr/file-name-today))
+    (goto-char (point-max))
+    (unless (is-empty-line-p)
+      (insert "\n"))
+    (insert (concat
+             "* "
+             (format-time-string "%Y-%m-%d" (sr/note-current-date))))
+    (recenter 0)
+    (save-excursion
+      (insert "\n** Logs")))
 #+end_src
 ** Finish today
 I finish each day by committing changes I made in my dotfiles and personal files into the Git repository.
@@ -1394,6 +1429,10 @@ I know what I'm doing
 (setq org-babel-results-keyword "results")
 #+end_src
 * Org-journal
+:PROPERTIES:
+:header-args:elisp: :tangle no
+:END:
+Currently migrating to manual setup, because I like the DIY approach better.
 ** Key bindings
 Custom lambda functions for opening today's journal file,
 since creation of new entries is handled by org-capture.
@@ -1516,15 +1555,14 @@ Groups
 ** Random thoughts (journaling)
 Integrate with org-journal.
 #+begin_src elisp
-(defun sr/org-journal-find-location ()
-  (org-journal-new-entry t)
-  (goto-char (point-max))
-  (recenter-top-bottom 0))
+  (defun sr/org-capture-daily-file ()
+    "Return the location to a file for daily capturing."
+    (sr/file-name-today))
 
-(add-to-list 'org-capture-templates
-	     `("c" "Random thought"
-	       plain (function sr/org-journal-find-location)
-	       "** %T %?"))
+  (add-to-list 'org-capture-templates
+  	     `("c" "Random thought"
+  	       plain (file sr/org-capture-daily-file)
+  	       "*** %T %?"))
 #+end_src
 ** Zettelkasten entry
 #+begin_src elisp
