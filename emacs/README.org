@@ -577,7 +577,7 @@ Current stack is:
 
 #+begin_src elisp
   (require 'projectile)
-  (projectile-mode)
+  (projectile-global-mode)
 #+end_src
 
 Key bindings
@@ -620,7 +620,7 @@ Enable them locally
 #+begin_src elisp
   (keymap-set prog-mode-map "C-c C-r" #'eglot-rename)
 #+end_src
-** Tab settings
+** Global tab settings
 Set tab width.
 #+begin_src elisp
   (setq-default tab-width 2)
@@ -704,13 +704,30 @@ If you encounter any problems, use the version from the [[https://github.com/mic
            (yaml-mode . yaml-ts-mode))
          major-mode-remap-alist))
 #+end_src
+*** Org mode integration
+By default, Org mode uses ~LANG-mode~ for editing LANG code.
+~org-src-lang-modes~ is used for major mode discovery, so it can be
+customized to use ~LANG-ts-mode~ instead.
+
+#+begin_src elisp
+  (add-to-list 'org-src-lang-modes '("javascript" . js-ts))
+#+end_src
+**** C
+I both use "C" and "c" to identify C source code in Org mode buffers,
+so both variants should be defined.
+
+#+begin_src elisp
+  (add-to-list 'org-src-lang-modes '("C" . c-ts))
+  (add-to-list 'org-src-lang-modes '("c" . c-ts))
+#+end_src
 ** Format-all
 #+begin_src elisp
   (keymap-set prog-mode-map "C-c C-f" #'format-all-region-or-buffer)
   (keymap-set prog-mode-map "C-c f" #'format-all-region-or-buffer)
 #+end_src
 
-Enable in html-ts-mode, because it's a text-mode.
+Enable in html-ts-mode manually.
+It's not enabled by default because it's a text-mode.
 #+begin_src elisp
   (with-eval-after-load 'html-ts-mode
     (keymap-set html-ts-mode-map "C-c C-f" #'format-all-region-or-buffer)
@@ -740,18 +757,6 @@ Use rainbow mode.
   (setq c-ts-mode-indent-style 'bsd)
   (setq c-ts-mode-indent-offset 2)
 #+end_src
-**** Org mode integration
-By default, Org mode uses ~c-mode~ for editing C code.
-~org-src-lang-modes~ is used for major mode discovery, so it can be
-customized to use ~c-ts-mode~ instead.
-
-I both use "C" and "c" to identify C source code in Org mode buffers,
-so both variants should be defined.
-
-#+begin_src elisp
-  (add-to-list 'org-src-lang-modes '("C" . c-ts))
-  (add-to-list 'org-src-lang-modes '("c" . c-ts))
-#+end_src
 **** Go to the body of the next defun
 #+begin_src elisp
   (defun sr/c-previous-defun-body ()
@@ -776,9 +781,15 @@ so both variants should be defined.
 #+begin_src elisp
   (require 'go-ts-mode)
 #+end_src
-
+**** Gofmt
+Normally, format-all is used for code formatting.
+But in Go, gofmt is the standard way for doing the job.
 #+begin_src elisp
   (keymap-set go-ts-mode-map "C-c C-f" #'gofmt)
+#+end_src
+**** Indentation
+#+begin_src elisp
+  (setq go-ts-mode-indent-offset 2)
 #+end_src
 *** JavaScript
 #+begin_src elisp
@@ -1603,8 +1614,10 @@ Integrate with org-journal.
 #+begin_src elisp
   (add-to-list 'org-capture-templates
   	     `("e" "Event"
-  	       entry (file ,(expand-file-name "events.org" sr/note-root-directory))
-  	       "* %? :event:"
+  	       entry (file ,(expand-file-name "captures.org" sr/note-root-directory))
+  	       "* %^{title} :event:
+  %^{date}t
+  %?"
   	       :prepend t
   	       :empty-lines-after 1))
 #+end_src
