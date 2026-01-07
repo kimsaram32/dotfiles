@@ -32,16 +32,8 @@ w () {
     cd "$DIR_WS/$1"
 }
 
-wl () {
-    cd "$DIR_WS/learnings/$1"
-}
-
 wp () {
     cd "$DIR_WS/projects/$1"
-}
-
-wo () {
-    cd "$DIR_WS/others/$1"
 }
 
 alias d="cd $DIR_DOTFILES"

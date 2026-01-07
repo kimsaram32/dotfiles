@@ -257,10 +257,30 @@ Key binding for =M-x append-to-register=.
   (icomplete-mode)
   (icomplete-vertical-mode)
 #+end_src
+** Key bindings
+Remap next and previous selection to =M-n= and =M-p=. I prefer to
+maintain the "Emacs rhythm" concept from Mastering Emacs.
+
+Now that I can select items with =M-n=, =M-p=, and =M-TAB=, I can hold
+the meta key to maintain the rhythm of pressing keys.
+
+#+begin_src elisp
+  (keymap-set icomplete-vertical-mode-minibuffer-map "M-n" #'icomplete-forward-completions)
+  (keymap-set icomplete-vertical-mode-minibuffer-map "M-p" #'icomplete-backward-completions)
+
+  (keymap-set icomplete-vertical-mode-minibuffer-map "C-n" #'next-history-element)
+  (keymap-set icomplete-vertical-mode-minibuffer-map "C-p" #'previous-history-element)
+#+end_src
 * Windows
 ** Display-buffer
 #+begin_src elisp
   (setq switch-to-buffer-obey-display-actions t)
+#+end_src
+** Switching
+[[https://karthinks.com/software/emacs-window-management-almanac][The Emacs Window Management Almanac]] is a good reference
+
+#+begin_src elisp
+  (keymap-global-set "M-o" #'other-window)
 #+end_src
 ** Winner mode
 #+begin_src elisp
@@ -577,7 +597,7 @@ Current stack is:
 
 #+begin_src elisp
   (require 'projectile)
-  (projectile-global-mode)
+  (projectile-mode)
 #+end_src
 
 Key bindings
@@ -854,7 +874,12 @@ indent offset.
 #+end_src
 * English learning
 ** Open dictionary for word at point
-I use Merriam Webster as my dictionary. I tried using EWW to browse words inside Emacs, but the site feels broken when rendered in pure HTML.
+I use Merriam Webster as my dictionary. I tried using EWW to browse
+words inside Emacs, but the site feels broken when rendered in pure
+HTML.
+
+EWW overrides ~browse-url-browser-function~ to ~eww-browse-url~, so to
+avoid using EWW, I overrode it.
 
 #+begin_src elisp
   (defcustom sr/eng-dictionary-url
@@ -864,14 +889,16 @@ I use Merriam Webster as my dictionary. I tried using EWW to browse words inside
   (defun sr/eng-browse-dictionary-at-point ()
     "Look up dictionary for a word at point."
     (interactive)
-    (if-let ((word (word-at-point t)))
+    (if-let* ((word (word-at-point t))
+              (browse-url-browser-function 'browse-url-default-browser)) ; do not use EWW
         (browse-url (url-encode-url (format sr/eng-dictionary-url word)))
       (user-error "No word found at point")))
 
   (keymap-global-set "C-c d d" #'sr/eng-browse-dictionary-at-point)
 #+end_src
 * Zettelkasten
-Depends on Org mode.
+I implemented my Zettelkasten in pure Org mode. I tried org-roam
+before, but it felt like an overkill for me.
 ** Constants
 #+begin_src elisp
   (defconst sr/zettel-id-format
@@ -1503,48 +1530,48 @@ No need for carry overs.
 #+end_src
 ** Daily agenda
 #+begin_src elisp
-  (add-to-list 'org-agenda-custom-commands
-        '("d" "Daily agenda"
-  	((agenda ""
-  		 ((org-agenda-span 'day)
-  		  (org-deadline-past-days 0)
-  		  (org-agenda-deadline-faces
-  		   '((1.0 . org-scheduled-today)
-  		     (0.5 . org-scheduled)
-  		     (0.0 . org-scheduled)))
-  		  (org-agenda-overriding-header "Events")
-  		  (org-super-agenda-groups
-  		   '((:name "Events"
-  			    :tag ("event"))
-  		     (:discard (:anything))))
-  		  (org-agenda-buffer-name "*Org Daily Agenda*")))
-  	 
-  	 (agenda ""
-  		 ((org-agenda-span 'day)
-  		  (org-agenda-overriding-header "Today")
-  		  (org-super-agenda-groups
-  		   '((:discard (:tag "event"))
-  		     (:name "Fleeting notes"
-  			          :and (:tag "fleeting"
-  				                   :not (:todo ("DONE")))
-  			          :order 1)
-  		     (:name "School"
-  			          :and (:todo t
-  					                  :tag ("schoolwork" "school" "내신")))
-  		     (:name "Todo"
-  			          :and (:todo ("TODO" "WORKING")
-                              :not (:tag "trivial")))
-           (:name "ZK"
-                  :category "zk")
-           (:name "Trivial tasks"
-  			          :and (:todo ("TODO" "WORKING")
-  					                  :tag "trivial"))
-  		     (:name "Journals"
-  			          :tag "journal"
-  			          :order 2)
-  		     (:name "Today"
-  			          :time-grid t
-  			          :order 2))))))))
+  (add-to-list
+   'org-agenda-custom-commands
+   '("d" "Daily agenda"
+  	 ((agenda ""
+  		        ((org-agenda-span 'day)
+  		         (org-deadline-past-days 0)
+  		         (org-agenda-deadline-faces
+  		          '((1.0 . org-scheduled-today)
+  		            (0.5 . org-scheduled)
+  		            (0.0 . org-scheduled)))
+  		         (org-agenda-overriding-header "Events")
+  		         (org-super-agenda-groups
+  		          '((:name "Events"
+  			                 :tag ("event"))
+  		            (:discard (:anything))))
+  		         (org-agenda-buffer-name "*Org Daily Agenda*")))
+  	  
+  	  (agenda ""
+  		        ((org-agenda-span 'day)
+  		         (org-agenda-overriding-header "Today")
+  		         (org-super-agenda-groups
+  		          '((:discard (:tag "event"))
+  		            (:name "Fleeting notes"
+  			                 :and (:tag "fleeting"
+  				                          :not (:todo ("DONE")))
+  			                 :order 1)
+  		            (:name "School"
+  			                 :tag ("schoolwork" "school" "내신"))
+  		            (:name "Todo"
+  			                 :and (:todo ("TODO" "WORKING")
+                                     :not (:tag "trivial")))
+                  (:name "Trivial tasks"
+  			                 :and (:todo ("TODO" "WORKING")
+  					                         :tag "trivial"))
+                  (:name "ZK"
+                         :category "zk")
+  		            (:name "Journals"
+  			                 :tag "journal"
+  			                 :order 2)
+  		            (:name "Today"
+  			                 :time-grid t
+  			                 :order 2))))))))
 #+end_src
 ** Project agenda
 #+begin_src elisp
@@ -1924,6 +1951,8 @@ Manage Docker in Emacs.
 #+end_src
 * Window setup
 ** Org mode source code editing
+~org-src-mode~ is a minor mode enabled when editing source code in Org mode.
+
 #+begin_src elisp
   (setq org-src-window-setup 'plain)
   (add-to-list 'display-buffer-alist
