@@ -1284,8 +1284,14 @@ Dvisvgm configuration is patched for my environment...
   	("media" . ,sr/note-media-directory)))
 #+end_src
 ** Tags
-*** Tag inheritance
-Exprimenting with this
+By default, the tag list only includes the tags in the current buffer.
+This can be customized to show all tags in agenda files instead.
+[[info:org#Setting Tags][org#Setting Tags]]
+#+begin_src elisp
+  (setq org-complete-tags-always-offer-all-agenda-tags t)
+#+end_src
+
+Exprimenting with tag inheritance.
 #+begin_src elisp
   (setq org-use-tag-inheritance '("fleeting" "capture"))
 #+end_src
