@@ -13,7 +13,6 @@ declare -A links=(
   ["mise.toml"]="${HOME}/.config/mise/config.toml"
   ["emacs/README.org"]="${HOME}/.emacs.d/README.org"
   ["emacs/init.el"]="${HOME}/.emacs.d/init.el"
-  ["emacs/elfeed.el"]="${HOME}/.emacs.d/elfeed.el"
 )
 
 relink() {
