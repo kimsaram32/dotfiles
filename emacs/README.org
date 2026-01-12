@@ -187,11 +187,11 @@ to prevent resizing windows when changing fonts.
 * Editing
 ** Tab bar mode
 #+begin_src elisp
-(tab-bar-mode)
-(keymap-global-set "C-c <SPC>" tab-prefix-map)
-(keymap-set tab-prefix-map "]" 'tab-next)
-(keymap-set tab-prefix-map "[" 'tab-previous)
-(setq tab-bar-auto-width-max '((140) 20))
+  (tab-bar-mode)
+  (keymap-global-set "C-c <SPC>" tab-prefix-map)
+  (keymap-set tab-prefix-map "]" 'tab-next)
+  (keymap-set tab-prefix-map "[" 'tab-previous)
+  (setq tab-bar-auto-width-max '((140) 20))
 #+end_src
 ** Visual line mode
 #+begin_src elisp
@@ -211,6 +211,10 @@ to prevent resizing windows when changing fonts.
 ** Mark ring
 #+begin_src elisp
 (setq set-mark-command-repeat-pop t)
+#+end_src
+** Kill whole line
+#+begin_src elisp
+  (setq kill-whole-line t)
 #+end_src
 ** Registers
 #+begin_src elisp
@@ -271,6 +275,12 @@ the meta key to maintain the rhythm of pressing keys.
   (keymap-set icomplete-vertical-mode-minibuffer-map "C-n" #'next-history-element)
   (keymap-set icomplete-vertical-mode-minibuffer-map "C-p" #'previous-history-element)
 #+end_src
+
+By default, =TAB= key is bound to =minibuffer-complete=. Override it.
+#+begin_src elisp
+  (keymap-set icomplete-vertical-mode-minibuffer-map
+              "TAB" #'icomplete-force-complete)
+#+end_src
 * Windows
 ** Display-buffer
 #+begin_src elisp
@@ -282,9 +292,36 @@ the meta key to maintain the rhythm of pressing keys.
 #+begin_src elisp
   (keymap-global-set "M-o" #'other-window)
 #+end_src
+** Keymap
+#+begin_src elisp
+  (defvar-keymap sr/window-map
+  	:doc "Keymap for window-related functionalities.")
+
+  (keymap-set ctl-x-map "C-w" sr/window-map)
+
+  ; Remove colliding maps
+  (keymap-unset org-agenda-mode-map "C-x C-w")
+#+end_src
+** Swap states (windmove)
+#+begin_src elisp
+  (require 'windmove)
+#+end_src
+
+#+begin_src elisp
+  (keymap-set sr/window-map "C-l" #'windmove-swap-states-right)
+  (keymap-set sr/window-map "C-h" #'windmove-swap-states-left)
+  (keymap-set sr/window-map "C-k" #'windmove-swap-states-up)
+  (keymap-set sr/window-map "C-j" #'windmove-swap-states-down)
+#+end_src
 ** Winner mode
 #+begin_src elisp
+  (setq winner-dont-bind-my-keys t)
   (winner-mode)
+#+end_src
+
+#+begin_src elisp
+  (keymap-set sr/window-map "<left>" #'winner-undo)
+  (keymap-set sr/window-map "<right>" #'winner-redo)
 #+end_src
 * Buffers
 ** Default scratch buffer message
@@ -583,15 +620,40 @@ strings to them.
 #+end_src
 * Software dev
 Current stack is:
-- Eglot for LSP client and general editor features
-- Format-all for formatting
-- Flymake for diagnostics and syntax checking
-- Xref
-- Company-mode for autocompletion
-- Projectile for project management
+- LSP client: Eglot
+- Autocompletion: Company-mode
+- Formatting: Format-all
+- Diagnostics: Flymake
+- Jump to definition: Xref (frontend) and dumb-jump (backend)
+- Symbol renaming: Eglot features
+- Projects: Projectile
 - Tree-sitter
   - Experimenting with Combobulate for structured editing
+    
+** Custom mode for shared configurations
+Previously, I would set configurations for programming major mode to
+=prog-mode=. This was based the assumption that all major modes for
+programming languages inherit =prog-mode=.
 
+However, =html-ts-mode= inherits =text-mode=, not =prog-mode=, which
+broke the assumption. The previous workaround was to redefine
+=html-ts-mode= myself but this felt an ad-hoc solution and was so
+buggy.
+
+The current solution is to define a minor mode for shared programming
+configurations and attaching it to all major modes.
+
+#+begin_src elisp
+  (defvar-keymap sr/prog-setup-mode-map
+    :doc "Keymap for `sr/prog-setup-mode'.")
+
+  (define-minor-mode sr/prog-setup-mode
+    "Minor mode for shared programming setups."
+    :lighter "")
+
+  (add-hook 'prog-mode-hook #'sr/prog-setup-mode)
+  (add-hook 'html-ts-mode-hook #'sr/prog-setup-mode)
+#+end_src
 ** Projectile
 [[https://docs.projectile.mx/projectile/index.html][Docs]]
 
@@ -629,16 +691,12 @@ performance issues.
 #+end_src
 ** Line numbers
 #+begin_src elisp
-  (add-hook 'prog-mode-hook #'display-line-numbers-mode)
+  (add-hook 'sr/prog-setup-mode-hook #'display-line-numbers-mode)
 #+end_src
 ** Electric pair mode
 Enable them locally
 #+begin_src elisp
-  (add-hook 'prog-mode-hook #'electric-pair-local-mode)
-#+end_src
-** Eglot
-#+begin_src elisp
-  (keymap-set prog-mode-map "C-c C-r" #'eglot-rename)
+  (add-hook 'sr/prog-setup-mode-hook #'electric-pair-local-mode)
 #+end_src
 ** Global tab settings
 Set tab width.
@@ -650,6 +708,20 @@ Disable tabs by default.
 #+begin_src elisp
   (setq-default indent-tabs-mode nil)
 #+end_src
+** Eglot
+*** Key bindings
+#+begin_src elisp
+  (keymap-set sr/prog-setup-mode-map "C-c C-r" #'eglot-rename)
+#+end_src
+*** Enabled languages
+#+begin_src elisp
+  (defvar sr/eglot-ensure-hooks
+    '(js-ts-mode-hook html-ts-mode-hook c-ts-mode-hook)
+    "Hooks to attach `eglot-ensure'.")
+
+  (dolist (hook sr/eglot-ensure-hooks)
+    (add-hook hook #'eglot-ensure))
+#+end_src
 ** Flymake
 *** Next and previous error
 #+begin_src elisp
@@ -658,7 +730,7 @@ Disable tabs by default.
 #+end_src
 ** Company-mode
 #+begin_src elisp
-  (add-hook 'prog-mode-hook #'company-mode)
+  (add-hook 'sr/prog-setup-mode-hook #'company-mode)
 #+end_src
 *** Active key bindings
 #+begin_src elisp
@@ -671,23 +743,59 @@ Disable tabs by default.
 #+begin_src elisp
   (keymap-global-set "C-M-i" #'company-complete)
 #+end_src
-*** Prog-mode key bindings
-Language major modes override key sequences I want to use,
-so bind them using a minor mode.
-#+begin_src elisp
-  (defvar-keymap sr/prog-override-mode-map
-    :doc "Keymap for prog-mode overrides."
-    "M-TAB" #'company-complete)
-
-  (define-minor-mode sr/prog-override-mode
-    "Minor mode for overriding some prog-mode key bindings."
-    :lighter "")
-
-  (add-hook 'prog-mode-hook #'sr/prog-override-mode)
-#+end_src
 *** Idle delay
 #+begin_src elisp
   (setq company-idle-delay 0)
+#+end_src
+** Whitespace-mode
+#+begin_src elisp
+  (add-hook 'sr/prog-setup-mode-hook #'whitespace-mode)
+#+end_src
+*** Toggle details
+#+begin_src elisp
+  (defvar sr/whitespace-style-basic
+    '(face trailing lines newline indentation empty missing-newline-at-eof)
+    "Value for `whitespace-style', highlighting essential stuff only.")
+
+  (defvar sr/whitespace-style-detailed
+    '(face tabs spaces trailing lines space-before-tab newline indentation empty space-after-tab space-mark tab-mark newline-mark missing-newline-at-eof)
+    "Value for `whitespace-style' with full details.")
+
+  (setq whitespace-style sr/whitespace-style-basic)
+
+  (setq-default sr/whitespace-use-detailed nil)
+
+  (defun sr/whitespace-toggle-details ()
+    "Toggle detailed whitespace visualization."
+    (interactive)
+    (if (not whitespace-mode)
+        (user-error "whitespace-mode not enabled")
+      (setq-local sr/whitespace-use-detailed
+                  (not sr/whitespace-use-detailed))
+      (setq-local whitespace-style
+                  (if sr/whitespace-use-detailed
+                      sr/whitespace-style-detailed
+                    sr/whitespace-style-basic))
+                                          ; reload `whitespace-mode'.
+      (whitespace-mode -1)
+      (whitespace-mode 1)))
+
+  (keymap-set sr/prog-setup-mode-map "C-c C-w" #'sr/whitespace-toggle-details)
+#+end_src
+*** Display mappings
+#+begin_src elisp
+  (setq whitespace-display-mappings
+        '(
+          (space-mark   ?\     [?·]     [?.])
+          (space-mark   ?\xA0  [?¤]     [?_])
+          (newline-mark ?\n    [?$ ?\n])
+          (tab-mark     ?\t    [?» ?\t] [?\\ ?\t])
+          ))
+#+end_src
+** Dumb-jump
+*** Xref backend
+#+begin_src elisp
+  (add-hook 'xref-backend-functions #'dumb-jump-xref-activate)
 #+end_src
 ** Tree-sitter
 *** Grammars
@@ -717,7 +825,7 @@ If you encounter any problems, use the version from the [[https://github.com/mic
 *** Remaps
 #+begin_src elisp
   (defvar sr/tree-sitter-remap-list
-    '(c js python go yaml)
+    '(c css js python go yaml)
     "List of tree-sitter remapped languages.
   For each LANG, LANG-mode is remapped to LANG-ts-mode,
   and LANG-ts-mode is used with org mode source codes.")
@@ -741,34 +849,34 @@ If you encounter any problems, use the version from the [[https://github.com/mic
               (cons
                pre
                (intern (concat pre "-ts")))))
-          sr/tree-sitter-remap-list)                
+          sr/tree-sitter-remap-list)
          org-src-lang-modes))
 #+end_src
 ** Format-all
+*** Formatters
 #+begin_src elisp
-  (keymap-set prog-mode-map "C-c C-f" #'format-all-region-or-buffer)
-  (keymap-set prog-mode-map "C-c f" #'format-all-region-or-buffer)
+  (setq-default format-all-formatters
+                '(("CSS" (prettier))
+                  ("JavaScript" (prettier))
+                  ("HTML" (prettier))))
 #+end_src
-
-Enable in html-ts-mode manually.
-It's not enabled by default because it's a text-mode.
+*** Key bindings
+I use =C-c C-f= by default. But some major modes use =C-c C-f= for
+their own functionality. In that case, I use =C-c f= instead.
 #+begin_src elisp
-  (with-eval-after-load 'html-ts-mode
-    (keymap-set html-ts-mode-map "C-c C-f" #'format-all-region-or-buffer)
-    (keymap-set html-ts-mode-map "C-c f" #'format-all-region-or-buffer))
+  (keymap-set sr/prog-setup-mode-map "C-c C-f" #'format-all-region-or-buffer)
+  (keymap-set sr/prog-setup-mode-map "C-c f" #'format-all-region-or-buffer)
 #+end_src
-** Languages
+** Language-specific configurations
 *** CSS
 #+begin_src elisp
   (require 'css-mode)
 #+end_src
-
-Indent offset.
+**** Indentation
 #+begin_src elisp
   (setq css-indent-offset 2)
 #+end_src
-
-Use rainbow mode.
+**** Rainbow mode
 #+begin_src elisp
   (add-hook 'css-ts-mode-hook #'rainbow-mode)
 #+end_src
@@ -776,7 +884,7 @@ Use rainbow mode.
 #+begin_src elisp
   (require 'c-ts-mode)
 #+end_src
-
+**** Indentation
 #+begin_src elisp
   (setq c-ts-mode-indent-style 'bsd)
   (setq c-ts-mode-indent-offset 2)
@@ -805,15 +913,15 @@ Use rainbow mode.
 #+begin_src elisp
   (require 'go-ts-mode)
 #+end_src
+**** Indentation
+#+begin_src elisp
+  (setq go-ts-mode-indent-offset 2)
+#+end_src
 **** Gofmt
 Normally, format-all is used for code formatting.
 But in Go, gofmt is the standard way for doing the job.
 #+begin_src elisp
   (keymap-set go-ts-mode-map "C-c C-f" #'gofmt)
-#+end_src
-**** Indentation
-#+begin_src elisp
-  (setq go-ts-mode-indent-offset 2)
 #+end_src
 *** Dockerfile
 #+begin_src elisp
@@ -864,6 +972,7 @@ indent offset.
   (setq sr/combobulate-enable-hooks
         '(js-ts-mode-hook
           python-ts-mode-hook
+          css-ts-mode-hook
           json-ts-mode-hook
           html-ts-mode-hook
           yaml-ts-mode-hook))
@@ -880,12 +989,13 @@ indent offset.
 #+end_src
 * English learning
 ** Open dictionary for word at point
-I use Merriam Webster as my dictionary. I tried using EWW to browse
-words inside Emacs, but the site feels broken when rendered in pure
-HTML.
+I use Merriam Webster as my dictionary. To foster my learning, I wrote
+a simple function to open the word at point in the browser.
 
-EWW overrides ~browse-url-browser-function~ to ~eww-browse-url~, so to
-avoid using EWW, I overrode it.
+I tried using EWW to browse words inside Emacs, but the site feels
+broken when rendered in pure HTML. EWW overrides
+~browse-url-browser-function~ to ~eww-browse-url~, so to avoid using
+EWW, I overrode it.
 
 #+begin_src elisp
   (defcustom sr/eng-dictionary-url
@@ -1344,15 +1454,18 @@ Other entries should be inserted normal UUIDs to distinguish Zettels.
   (setq org-id-ts-format sr/zettel-id-format)
   (setq org-id-method 'uuid)
 #+end_src
-*** Disable global tracking
+*** Global tracking
 #+begin_src elisp
 (setq org-id-track-globally t)
+#+end_src
+*** Do not track archives
+#+begin_src elisp
+  (setq org-id-search-archives nil)
 #+end_src
 ** Org-agenda
 *** Set files for agenda
 #+begin_src elisp
   (setq org-agenda-files (list sr/note-root-directory
-  			     (expand-file-name "buffers/" sr/note-root-directory)
   			     (expand-file-name "projects/" sr/note-root-directory)
   			     sr/note-zk-directory))
 #+end_src
@@ -1811,7 +1924,7 @@ Integrate with org-journal.
 * Elfeed
 ** Key bindings
 #+begin_src elisp
-  (keymap-global-set "C-x w" 'elfeed)
+  (keymap-global-set "C-c w" 'elfeed)
 #+end_src
 ** Default search filter
 #+begin_src elisp
@@ -1949,12 +2062,19 @@ In show mode:
 #+begin_src elisp
   (autoload 'markdown-mode "markdown-mode"
      "Major mode for editing Markdown files" t)
-  (add-to-list 'auto-mode-alist
-               '("\\.\\(?:md\\|markdown\\|mkd\\|mdown\\|mkdn\\|mdwn\\)\\'" . markdown-mode))
+  (add-to-list
+   'auto-mode-alist
+   '("\\.\\(?:md\\|markdown\\|mkd\\|mdown\\|mkdn\\|mdwn\\)\\'" . markdown-mode))
 
   (autoload 'gfm-mode "markdown-mode"
      "Major mode for editing GitHub Flavored Markdown files" t)
   (add-to-list 'auto-mode-alist '("README\\.md\\'" . gfm-mode))
+#+end_src
+* Man
+** Disable autocompletion
+#+begin_src elisp
+  (defun Man-completion-table ()
+  	nil)
 #+end_src
 * Eglot-booster
 #+begin_src elisp
