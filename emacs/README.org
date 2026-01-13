@@ -170,10 +170,10 @@ to prevent resizing windows when changing fonts.
 *** Font faces
 #+begin_src elisp
   (set-face-attribute 'default nil
-  		    :height 160
+  		    :height 150
   		    :family "JetBrains Mono")
   (set-face-attribute 'variable-pitch nil
-  		    :height 170
+  		    :height 160
   		    :family "Pretendard Variable")
 #+end_src
 *** Disable fixed windows
@@ -182,7 +182,7 @@ to prevent resizing windows when changing fonts.
 #+end_src
 ** Line height
 #+begin_src elisp
-(setq-default line-spacing 2)
+(setq-default line-spacing 3)
 #+end_src
 * Editing
 ** Tab bar mode
@@ -635,10 +635,10 @@ Previously, I would set configurations for programming major mode to
 =prog-mode=. This was based the assumption that all major modes for
 programming languages inherit =prog-mode=.
 
-However, =html-ts-mode= inherits =text-mode=, not =prog-mode=, which
-broke the assumption. The previous workaround was to redefine
-=html-ts-mode= myself but this felt an ad-hoc solution and was so
-buggy.
+However, some major modes (e.g. =html-ts-mode=) inherits =text-mode=,
+not =prog-mode=, which broke the assumption. The previous workaround
+was to redefine those major modes myself but this felt an ad-hoc
+solution and was so buggy.
 
 The current solution is to define a minor mode for shared programming
 configurations and attaching it to all major modes.
@@ -653,6 +653,7 @@ configurations and attaching it to all major modes.
 
   (add-hook 'prog-mode-hook #'sr/prog-setup-mode)
   (add-hook 'html-ts-mode-hook #'sr/prog-setup-mode)
+  (add-hook 'yaml-ts-mode-hook #'sr/prog-setup-mode)
 #+end_src
 ** Projectile
 [[https://docs.projectile.mx/projectile/index.html][Docs]]
