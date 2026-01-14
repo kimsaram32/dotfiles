@@ -64,7 +64,6 @@ Small enhancement packages are not loaded here
   (require 'rg)
   (require 'elfeed)
   (require 'modus-themes)
-  (require 'evil)
   (require 'magit)
   (require 'vterm)
   (require 'rfc-mode)
@@ -74,7 +73,6 @@ Small enhancement packages are not loaded here
   (require 'company)
   (require 'eglot-booster)
   (require 'format-all)
-  (require 'docker)
   (require 'rainbow-mode)
 #+end_src
 
@@ -97,7 +95,7 @@ These are ad-hoc configurations for my local environment.
 ** Workaround: =Invalid function: org-element-with-disabled-cache=
 [[https://www.reddit.com/r/emacs/comments/1hayavx/invalid_function_orgelementwithdisabledcache/][Reddit]]
 #+begin_src elisp
-  (setq native-comp-jit-compilation-deny-list '(".*org-element.*")) 
+  (setq native-comp-jit-compilation-deny-list '(".*org-element.*"))
 #+end_src
 ** mise integration
 [[https://mise.jdx.dev/ide-integration.html#emacs][IDE integration with mise]]
@@ -262,6 +260,7 @@ Key binding for =M-x append-to-register=.
   (icomplete-vertical-mode)
 #+end_src
 ** Key bindings
+*** Remap next and previous selection
 Remap next and previous selection to =M-n= and =M-p=. I prefer to
 maintain the "Emacs rhythm" concept from Mastering Emacs.
 
@@ -269,28 +268,36 @@ Now that I can select items with =M-n=, =M-p=, and =M-TAB=, I can hold
 the meta key to maintain the rhythm of pressing keys.
 
 #+begin_src elisp
-  (keymap-set icomplete-vertical-mode-minibuffer-map "M-n" #'icomplete-forward-completions)
-  (keymap-set icomplete-vertical-mode-minibuffer-map "M-p" #'icomplete-backward-completions)
+  (keymap-set
+   icomplete-vertical-mode-minibuffer-map
+   "M-n" #'icomplete-forward-completions)
+  (keymap-set
+   icomplete-vertical-mode-minibuffer-map
+   "M-p" #'icomplete-backward-completions)
 
-  (keymap-set icomplete-vertical-mode-minibuffer-map "C-n" #'next-history-element)
-  (keymap-set icomplete-vertical-mode-minibuffer-map "C-p" #'previous-history-element)
+  (keymap-set
+   icomplete-vertical-mode-minibuffer-map
+   "C-n" #'next-history-element)
+  (keymap-set
+   icomplete-vertical-mode-minibuffer-map
+   "C-p" #'previous-history-element)
 #+end_src
-
-By default, =TAB= key is bound to =minibuffer-complete=. Override it.
+*** Override =TAB=
+By default, =TAB= key is bound to =minibuffer-complete=. Override it
+to use icomplete.
 #+begin_src elisp
   (keymap-set icomplete-vertical-mode-minibuffer-map
               "TAB" #'icomplete-force-complete)
 #+end_src
+*** Unmap space
+#+begin_src elisp
+  (keymap-unset minibuffer-local-completion-map "SPC")
+#+end_src
 * Windows
+[[https://karthinks.com/software/emacs-window-management-almanac][The Emacs Window Management Almanac]] is a good reference
 ** Display-buffer
 #+begin_src elisp
   (setq switch-to-buffer-obey-display-actions t)
-#+end_src
-** Switching
-[[https://karthinks.com/software/emacs-window-management-almanac][The Emacs Window Management Almanac]] is a good reference
-
-#+begin_src elisp
-  (keymap-global-set "M-o" #'other-window)
 #+end_src
 ** Keymap
 #+begin_src elisp
@@ -531,7 +538,7 @@ The path to the lua filter is hardcoded. This could be improved.
   			 (match-string 1)))
   	   (is-zk (sr/is-zettel-name-p input-file-name)))
         (save-buffer)
-        
+
         (with-temp-buffer
   	(call-process-shell-command sr/pandoc-migration-command input-file-name t)
   	(let ((temp-buffer (current-buffer)))
@@ -557,7 +564,7 @@ The path to the lua filter is hardcoded. This could be improved.
   	(org-set-property "created" created-at))
         (when updated-at
   	(org-set-property "updated" updated-at))
-        
+
         (if is-zk
   	  (progn
   	    (sr/set-zettel-id-property)
@@ -629,7 +636,7 @@ Current stack is:
 - Projects: Projectile
 - Tree-sitter
   - Experimenting with Combobulate for structured editing
-    
+
 ** Custom mode for shared configurations
 Previously, I would set configurations for programming major mode to
 =prog-mode=. This was based the assumption that all major modes for
@@ -693,6 +700,7 @@ performance issues.
 ** Line numbers
 #+begin_src elisp
   (add-hook 'sr/prog-setup-mode-hook #'display-line-numbers-mode)
+  (setq display-line-numbers-type 'relative)
 #+end_src
 ** Electric pair mode
 Enable them locally
@@ -709,7 +717,7 @@ Disable tabs by default.
 #+begin_src elisp
   (setq-default indent-tabs-mode nil)
 #+end_src
-** Eglot
+** LSP: Eglot
 *** Key bindings
 #+begin_src elisp
   (keymap-set sr/prog-setup-mode-map "C-c C-r" #'eglot-rename)
@@ -723,7 +731,7 @@ Disable tabs by default.
   (dolist (hook sr/eglot-ensure-hooks)
     (add-hook hook #'eglot-ensure))
 #+end_src
-** Flymake
+** diagnostics: Flymake
 *** Next and previous error
 #+begin_src elisp
   (keymap-set flymake-mode-map "M-n" 'flymake-goto-next-error)
@@ -853,7 +861,7 @@ If you encounter any problems, use the version from the [[https://github.com/mic
           sr/tree-sitter-remap-list)
          org-src-lang-modes))
 #+end_src
-** Format-all
+** formatting: Format-all
 *** Formatters
 #+begin_src elisp
   (setq-default format-all-formatters
@@ -967,12 +975,11 @@ indent offset.
 #+begin_src elisp
   (add-to-list 'auto-mode-alist '("\\.yml\\'" . yaml-ts-mode))
 #+end_src
-** Combobulate
+** movement: Combobulate
 *** Language integration
 #+begin_src elisp
   (setq sr/combobulate-enable-hooks
         '(js-ts-mode-hook
-          python-ts-mode-hook
           css-ts-mode-hook
           json-ts-mode-hook
           html-ts-mode-hook
@@ -987,6 +994,10 @@ indent offset.
     "Render a navigation tree around the node at point."
     (interactive)
     (combobulate-display-draw-node-tree (combobulate-node-at-point)))
+#+end_src
+** movement: Move by indentation
+#+begin_src elisp
+  (require 'sr-indentation)
 #+end_src
 * English learning
 ** Open dictionary for word at point
@@ -1091,7 +1102,7 @@ Integrate with Org agenda mode.
   		                 (org-agenda-error)))
   	       (buffer (marker-buffer marker))
   	       (pos (marker-position marker)))
-      (with-current-buffer buffer 
+      (with-current-buffer buffer
         (widen)
         (goto-char pos)
         (kill-new (sr/entry-zettel-id-as-link)))))
@@ -1319,7 +1330,7 @@ Those work well with repetitions.
           (outline-invisible-p (line-end-position)))
         (org-fold-show-subtree)
       (org-fold-hide-subtree)))
-    
+
   (keymap-set org-mode-map "C-c C-x TAB" 'sr/org-toggle-subtree)
   (keymap-set sr/zk-mode-map "TAB" 'sr/org-toggle-subtree)
 #+end_src
@@ -1404,6 +1415,10 @@ Dvisvgm configuration is patched for my environment...
   (setq org-link-abbrev-alist
         `(("zk" . ,(expand-file-name "id:%s" sr/note-root-directory))
   	("media" . ,sr/note-media-directory)))
+#+end_src
+** Lists
+#+begin_src elisp
+  (keymap-set org-mode-map "C-c C-8" #'org-list-make-subtree)
 #+end_src
 ** Tags
 By default, the tag list only includes the tags in the current buffer.
@@ -1677,7 +1692,7 @@ No need for carry overs.
   			                 :tag ("event"))
   		            (:discard (:anything))))
   		         (org-agenda-buffer-name "*Org Daily Agenda*")))
-  	  
+
   	  (agenda ""
   		        ((org-agenda-span 'day)
   		         (org-agenda-overriding-header "Today")
@@ -1724,22 +1739,22 @@ No need for carry overs.
 
 Groups
 #+begin_src elisp
-  (add-to-list 'org-capture-templates '("f" "Fleeting"))
+  (add-to-list 'org-capture-templates '("v" "Capture"))
   (add-to-list 'org-capture-templates '("t" "Todo"))
   (add-to-list 'org-capture-templates '("p" "Problem"))
 #+end_src
 
 ** Random thoughts (journaling)
-Integrate with org-journal.
 #+begin_src elisp
   (defun sr/org-capture-daily-file ()
     "Return the location to a file for daily capturing."
     (sr/file-name-today))
 
-  (add-to-list 'org-capture-templates
-  	     `("c" "Random thought"
-  	       plain (file sr/org-capture-daily-file)
-  	       "*** %T %?"))
+  (add-to-list
+   'org-capture-templates
+   `("c" "Random thought"
+  	 plain (file sr/org-capture-daily-file)
+  	 "*** %T %?"))
 #+end_src
 ** Zettelkasten entry
 #+begin_src elisp
@@ -1758,24 +1773,6 @@ Integrate with org-journal.
 
   (add-hook 'org-capture-before-finalize-hook #'sr/org-capture-setup-zettel)
 #+end_src
-** Fleeting note
-#+begin_src elisp
-(add-to-list 'org-capture-templates
-	     `("ff" "Fleeting note"
-	       entry (file ,(expand-file-name "fleeting.org" sr/note-root-directory))
-	       "* IDEA %t %?"
-	       :prepend t
-	       :empty-lines-before 1))
-#+end_src
-** Fleeting note (elfeed)
-#+begin_src elisp
-  (add-to-list 'org-capture-templates
-  	     `("fe" "Fleeting note (elfeed)"
-  	       entry (file ,(expand-file-name "fleeting.org" sr/note-root-directory))
-  	       "* IDEA %t %?
-  [[%:external-link][%:title]]"
-  	       :prepend t))
-#+end_src
 ** Event
 #+begin_src elisp
   (add-to-list 'org-capture-templates
@@ -1787,47 +1784,15 @@ Integrate with org-journal.
   	       :prepend t
   	       :empty-lines-after 1))
 #+end_src
-** Todo item
+** Todo (Trivial)
 #+begin_src elisp
   (add-to-list 'org-capture-templates
-  	     `("tt" "Todo item"
+  	     `("tt" "Todo (Trivial)"
   	       entry (file ,(expand-file-name "todo.org" sr/note-root-directory))
   	       "* TODO %?"
   	       :prepend t))
 #+end_src
-** Baekjoon problem
-#+begin_src elisp
-  (add-to-list 'org-capture-templates
-  	     `("pb" "Baekjoon problem"
-  	      entry (file ,(expand-file-name "problems/baekjoon.org" sr/note-root-directory))
-  	      "* %t %^{id}. %^{title}
-  [[https://www.acmicpc.net/problem/%\\1][Baekjoon]]
-  ,** Ideas
-  %?"
-  	      :jump-to-captured t))
-#+end_src
-** Programmers problem
-#+begin_src elisp
-  (add-to-list 'org-capture-templates
-  	     `("pp" "Programmers problem"
-  	      entry (file ,(expand-file-name "problems/programmers.org" sr/note-root-directory))
-  	      "* %t %^{id}. %^{title}
-  [[%^{url}][Programmers]]
-  ,** Ideas
-  %?"
-  	      :jump-to-captured t))
-#+end_src
-** Captures
-#+begin_src elisp
-  (add-to-list 'org-capture-templates
-  	     `("v" "Capture"
-  	       entry (file ,(expand-file-name "captures.org" sr/note-root-directory))
-  	       "* %^{title}
-  %T
-  %?"
-  	       :prepend t))
-#+end_src
-** Todo in a project
+** Todo (In a project)
 #+begin_src elisp
   (defun sr/todo-project-find-location ()
     (let ((project-file-name
@@ -1836,7 +1801,8 @@ Integrate with org-journal.
   			   (not (or (backup-file-name-p name)
   				    (auto-save-file-name-p name)))))))
       (unless (string-empty-p project-file-name)
-        (find-file (expand-file-name project-file-name sr/note-project-directory))    
+        (find-file
+         (expand-file-name project-file-name sr/note-project-directory))
         (goto-char (point-min))
         (unless (search-forward-regexp "^\\* Todo" nil t)
   	(goto-char (point-max))
@@ -1847,7 +1813,64 @@ Integrate with org-journal.
   	       plain (function sr/todo-project-find-location)
   	       "** TODO %?"))
 #+end_src
-
+** Project
+#+begin_src elisp
+  (add-to-list
+   'org-capture-templates
+   `("x" "Project"
+  	 entry (file+headline
+            ,(expand-file-name "second-brain.org" sr/note-root-directory)
+            "Projects")
+  	 (file
+      ,(expand-file-name
+        "templates/capture-project.org"
+        sr/note-root-directory))
+  	 :prepend t
+     :immediate-finish t
+     :jump-to-captured t))
+#+end_src
+** Problem (Baekjoon)
+#+begin_src elisp
+  (add-to-list 'org-capture-templates
+  	     `("pb" "Baekjoon problem"
+  	      entry (file ,(expand-file-name "problems/baekjoon.org" sr/note-root-directory))
+  	      "* %t %^{id}. %^{title}
+  [[https://www.acmicpc.net/problem/%\\1][Baekjoon]]
+  ,** Ideas
+  %?"
+  	      :jump-to-captured t))
+#+end_src
+** Problem (Programmers)
+#+begin_src elisp
+  (add-to-list 'org-capture-templates
+  	     `("pp" "Programmers problem"
+  	      entry (file ,(expand-file-name "problems/programmers.org" sr/note-root-directory))
+  	      "* %t %^{id}. %^{title}
+  [[%^{url}][Programmers]]
+  ,** Ideas
+  %?"
+  	      :jump-to-captured t))
+#+end_src
+** Capture
+#+begin_src elisp
+  (add-to-list 'org-capture-templates
+  	     `("vv" "Capture"
+  	       entry (file ,(expand-file-name "captures.org" sr/note-root-directory))
+  	       "* %^{title}
+  %T
+  %?"
+  	       :prepend t))
+#+end_src
+** Capture (elfeed)
+#+begin_src elisp
+  (add-to-list 'org-capture-templates
+    	         `("ve" "Capture (elfeed)"
+    	           entry (file ,(expand-file-name "captures.org" sr/note-root-directory))
+    	           "* %^{title}
+  [[%:external-link][%:title]]
+  %?"
+    	           :prepend t))
+#+end_src
 * Help enhancements
 ** Elisp-demos
 #+begin_src elisp
@@ -1897,10 +1920,22 @@ Integrate with org-journal.
   (setq delete-by-moving-to-trash t)
 #+end_src
 * Info
-** Linux docs (VMs)
+** Toggle Linux docs (VMs)
+This assumes that the =Info-additional-directory-list= is used
+exclusively with it.
 #+begin_src elisp
-  (add-to-list 'Info-additional-directory-list
-                "/ssh:vm-ubuntu:/usr/share/info")
+  (defconst sr/info-vm-directory-list
+    '("/ssh:vm-ubuntu:/usr/share/info")
+    "Additional info directories in VMs.")
+
+  (defun sr/info-toggle-vm-directory ()
+    (interactive)
+    (if Info-additional-directory-list
+        (progn
+          (setq Info-additional-directory-list nil)
+          (message "Removed VM directories from the list"))
+      (setq Info-additional-directory-list sr/info-vm-directory-list)
+      (message "Added VM directories to the list")))
 #+end_src
 * Shr / EWW
 ** Set max width for readability
@@ -1999,7 +2034,7 @@ only the entries in the reading list after I come back.
     (kill-new (string-join
   	     (mapcar
   	      (lambda (entry) (elfeed-entry-link entry))
-  	      sr/elfeed-to-read-list) 
+  	      sr/elfeed-to-read-list)
   	     "\n"))
     (unless keep-list
       (setq sr/elfeed-to-read-list nil))
@@ -2072,6 +2107,9 @@ In show mode:
   (add-to-list 'auto-mode-alist '("README\\.md\\'" . gfm-mode))
 #+end_src
 * Man
+#+begin_src elisp
+  (require 'man)
+#+end_src
 ** Disable autocompletion
 #+begin_src elisp
   (defun Man-completion-table ()
@@ -2081,15 +2119,46 @@ In show mode:
 #+begin_src elisp
   (eglot-booster-mode)
 #+end_src
-* Evil
+* Tools
+#+begin_src elisp
+  (defvar-keymap sr/external-tools-map
+    :doc "Keymap for various tools.")
+
+  (keymap-global-set "C-c e" sr/external-tools-map)
+#+end_src
+** Evil
+#+begin_src elisp
+  (require 'evil)
+#+end_src
+
 I don't enable it by default but it's nice to have
 #+begin_src elisp
-  (keymap-global-set "C-c e e" 'evil-mode)
+  (keymap-set sr/external-tools-map "e" #'evil-mode)
 #+end_src
-* Docker
+** Docker
+#+begin_src elisp
+  (require 'docker)
+#+end_src
+
 Manage Docker in Emacs.
 #+begin_src elisp
-  (keymap-global-set "C-c e d" #'docker)
+  (keymap-set sr/external-tools-map "d" #'docker)
+#+end_src
+** Kubernetes
+#+begin_src elisp
+  (require 'kele)
+#+end_src
+
+=kele-mode= is not enabled by default, because the cluster might be
+unreachable at startup. When this is the case, Kele still tries to
+connect, causing Emacs to freeze on launch.
+
+#+begin_src elisp
+  (keymap-set kele-mode-map "C-c k" kele-command-map)
+#+end_src
+** Kubedoc
+#+begin_src elisp
+  (require 'kubedoc)
 #+end_src
 * Window setup
 ** Org mode source code editing
@@ -2103,42 +2172,53 @@ Manage Docker in Emacs.
 #+end_src
 ** Side window (bottom): Help and occur
 #+begin_src elisp
-  (add-to-list 'display-buffer-alist
-  	     `((or
+  (add-to-list
+   'display-buffer-alist
+   `((or
   		(derived-mode help-mode)
-                  (derived-mode helpful-mode)
+      (derived-mode helpful-mode)
   		(derived-mode occur-mode))
-  	       (display-buffer-in-side-window)
-  	       (side . bottom)
-  	       (window-height . 0.5)
-  	       (post-command-select-window . t)))
+  	 (display-buffer-in-side-window)
+  	 (side . bottom)
+  	 (window-height . 0.6)
+  	 (post-command-select-window . t)))
 #+end_src
 ** Side window (right): Info and apropos
 #+begin_src elisp
-  (add-to-list 'display-buffer-alist
-  	     `((or
+  (add-to-list
+   'display-buffer-alist
+   `((or
   		(derived-mode Info-mode)
   		(derived-mode apropos-mode))
-  	       (display-buffer-reuse-mode-window display-buffer-in-side-window)
-  	       (mode . Info-mode)
-  	       (side . right)
-  	       (window-width . 0.5)
-  	       (post-command-select-window . t)))
+  	 (display-buffer-reuse-mode-window display-buffer-in-side-window)
+  	 (mode . Info-mode)
+  	 (side . right)
+  	 (window-width . 0.5)
+  	 (post-command-select-window . t)))
 #+end_src
-** Man
+** Manuals
+#+begin_src elisp
+  (defconst sr/manual-mode-list
+    '(Man-mode kubedoc-mode)
+    "List of major modes that function as manuals.")
+
+  (add-to-list
+   'display-buffer-alist
+   `((or
+      ,@(mapcar (lambda (x) (list 'derived-mode x)) sr/manual-mode-list))
+     (display-buffer-reuse-mode-window display-buffer-in-side-window)
+     (mode . ,sr/manual-mode-list)
+     (side . right)
+     (window-width . 0.5)
+     (post-command-select-window . t)))
+#+end_src
+
+Man specific configs.
 #+begin_src elisp
   (setq Man-notify-method 'thrifty)
 
   (add-hook 'Man-mode-hook (lambda ()
   			  (set-window-dedicated-p (selected-window) nil)))
-
-  (add-to-list 'display-buffer-alist
-  	     `((derived-mode Man-mode)
-  	       (display-buffer-reuse-mode-window display-buffer-in-side-window)
-  	       (mode . Man-mode)
-  	       (side . right)
-  	       (window-width . 0.5)
-  	       (post-command-select-window . t)))
 #+end_src
 ** Zettelkasten
 #+begin_src elisp
@@ -2173,9 +2253,11 @@ Manage Docker in Emacs.
 Major mode for browsing a list of items e.g. Docker mode.
 
 #+begin_src elisp
-  (add-to-list 'display-buffer-alist
-  	     `((derived-mode tabulated-list-mode)
-  	       (display-buffer-in-side-window)
-  	       (side . bottom)
-  	       (post-command-select-window . t)))
+  (add-to-list
+   'display-buffer-alist
+   `((derived-mode tabulated-list-mode)
+  	 (display-buffer-in-side-window)
+  	 (side . bottom)
+     (window-height . 0.6)
+  	 (post-command-select-window . t)))
 #+end_src
