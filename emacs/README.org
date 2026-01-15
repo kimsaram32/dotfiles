@@ -25,6 +25,10 @@
     (file-name-concat sr/note-root-directory "projects/")
     "Directory for project notes.")
 
+  (defconst sr/note-second-brain-directory
+    (file-name-concat sr/note-root-directory "second-brain/")
+    "Directory for second bran.")
+
   (defconst sr/note-zk-directory
     (file-name-concat sr/note-root-directory "zk/")
     "Directory for Zettelkasten.")
@@ -50,30 +54,32 @@
 
 Small enhancement packages are not loaded here
 #+begin_src elisp
-  (require 'flymake)
+  (require 'auctex)
   (require 'cc-mode)
-  (require 'yaml-mode)
+  (require 'cdlatex)
+  (require 'company)
+  (require 'consult)
+  (require 'eglot-booster)
+  (require 'elfeed)
+  (require 'flymake)
+  (require 'format-all)
+  (require 'magit)
+  (require 'markdown-mode)
+  (require 'modus-themes)
   (require 'org)
   (require 'org-agenda)
+  (require 'org-bookmark-heading)
   (require 'org-capture)
   (require 'org-journal)
-  (require 'org-super-agenda)
   (require 'org-ql)
   (require 'org-social)
-  (require 'org-bookmark-heading)
-  (require 'rg)
-  (require 'elfeed)
-  (require 'modus-themes)
-  (require 'magit)
-  (require 'vterm)
-  (require 'rfc-mode)
-  (require 'auctex)
-  (require 'cdlatex)
-  (require 'markdown-mode)
-  (require 'company)
-  (require 'eglot-booster)
-  (require 'format-all)
+  (require 'org-super-agenda)
   (require 'rainbow-mode)
+  (require 'rfc-mode)
+  (require 'rg)
+  (require 'vertico)
+  (require 'vterm)
+  (require 'yaml-mode)
 #+end_src
 
 Personal libraries
@@ -96,6 +102,7 @@ These are ad-hoc configurations for my local environment.
 [[https://www.reddit.com/r/emacs/comments/1hayavx/invalid_function_orgelementwithdisabledcache/][Reddit]]
 #+begin_src elisp
   (setq native-comp-jit-compilation-deny-list '(".*org-element.*"))
+  (load-library "org-element.el")
 #+end_src
 ** mise integration
 [[https://mise.jdx.dev/ide-integration.html#emacs][IDE integration with mise]]
@@ -250,16 +257,34 @@ Key binding for =M-x append-to-register=.
 (setq delete-pair-blink-delay 0)
 (keymap-global-set "C-M-z" 'delete-pair)
 #+end_src
-* Minibuffer completions
+* Completion
+I use default completion system with multiple frontends.
+** Vertico (UI, default)
 #+begin_src elisp
-  (setq completions-format 'one-column)
+  (vertico-mode)
 #+end_src
-** Icomplete
+
 #+begin_src elisp
-  (icomplete-mode)
-  (icomplete-vertical-mode)
+  (setq vertico-cycle t)
 #+end_src
-** Key bindings
+*** Key bindings
+#+begin_src elisp
+  (keymap-set vertico-map "M-n" #'vertico-next)
+  (keymap-set vertico-map "M-p" #'vertico-previous)
+  (keymap-set vertico-map "M-TAB" #'vertico-insert)
+
+  (keymap-set vertico-map "C-n" #'next-history-element)
+  (keymap-set vertico-map "C-p" #'previous-history-element)
+#+end_src
+** Marginalia
+#+begin_src elisp
+  (marginalia-mode)
+#+end_src
+** Icomplete (UI)
+*** Vertical mode
+#+begin_src elisp
+  (add-hook 'icomplete-mode-hook #'icomplete-vertical-mode)
+#+end_src
 *** Remap next and previous selection
 Remap next and previous selection to =M-n= and =M-p=. I prefer to
 maintain the "Emacs rhythm" concept from Mastering Emacs.
@@ -292,6 +317,78 @@ to use icomplete.
 *** Unmap space
 #+begin_src elisp
   (keymap-unset minibuffer-local-completion-map "SPC")
+#+end_src
+** List of categories
+Non-exhaustive.
+- org-heading: [[*Jump to heading][Jump to heading]] and =consult-org-heading=
+** Completion styles
+[[help:completion-styles-alist]]
+
+#+begin_src elisp
+  (setq completion-styles '(basic partial-completion emacs22 orderless))
+#+end_src
+
+Category overrides. I cleared the defaults because I want complete
+control over my completions.
+
+#+begin_src elisp
+  (setq completion-category-defaults nil)
+
+  (setq
+   completion-category-overrides
+   '((command (styles basic substring partial-completion initials orderless))
+     (file (styles partial-completion orderless basic))
+     (project-file (styles partial-completion substring orderless))
+     (xref-location (styles substring))
+     (info-menu (styles basic substring))
+     (org-heading (styles orderless substring))
+     (symbol (styles basic initials substring orderless))
+     (kubedoc (styles partial-completion))))
+#+end_src
+** Testing completion styles
+#+begin_src elisp
+  (defvar sr/--completion-testing nil)
+
+  (defun sr/completion-test-start (style)
+    "Test a completion style STYLE.
+    This makes `'completing-read' to only use STYLE as completion style to
+    use. call `sr/completion-test-end' when finished."
+    (interactive (list (completing-read
+                        "Completion style: "
+                        (mapcar (lambda (x) (car x)) completion-styles-alist))))
+    (when (not sr/--completion-testing)
+      (setq sr/--completion-testing t)
+      (setq sr/--completion-styles-prev completion-styles)
+      (setq sr/--completion-category-overrides-prev completion-category-overrides)
+      (setq sr/--completion-category-defaults-prev completion-category-defaults))
+    (setq-default completion-styles (list (intern style)))
+    (setq-default completion-category-overrides nil)
+    (setq-default completion-category-defaults nil))
+
+  (defun sr/completion-test-end ()
+    "Revert completion styles altered by `sr/completion-style-start'."
+    (interactive)
+    (when (not sr/--completion-testing)
+      (user-error "Not testing"))
+    (setq sr/--completion-testing nil)
+    (setq-default completion-styles sr/--completion-styles-prev)
+    (setq-default completion-category-overrides sr/--completion-category-overrides-prev)
+    (setq-default completion-category-defaults sr/--completion-category-defaults-prev))
+#+end_src
+** Show current completion category
+#+begin_src elisp
+  (defun sr/show-completion-category ()
+    "Show category in current completion context."
+    (interactive)
+    (message "%S"
+             (completion-metadata-get
+              (completion-metadata
+               (minibuffer-contents)
+               minibuffer-completion-table
+               minibuffer-completion-predicate)
+              'category)))
+
+  (keymap-set minibuffer-local-map "C-c C-k" #'sr/show-completion-category)
 #+end_src
 * Windows
 [[https://karthinks.com/software/emacs-window-management-almanac][The Emacs Window Management Almanac]] is a good reference
@@ -376,6 +473,12 @@ today's date."
      (format-time-string "%Y-%m.org" (sr/note-current-date))
      sr/note-periodic-directory))
 #+end_src
+** Key map
+#+begin_src elisp
+  (defvar-keymap sr/workflow-map)
+
+  (keymap-global-set "C-c j" sr/workflow-map)
+#+end_src
 ** Open buffer for today
 todo: move the point to today's entry, if needed.
 
@@ -385,7 +488,7 @@ todo: move the point to today's entry, if needed.
     (interactive)
     (find-file (sr/file-name-today)))
 
-  (keymap-global-set "C-c j j" #'sr/find-today-buffer)
+  (keymap-set sr/workflow-map "j" #'sr/find-today-buffer)
 #+end_src
 ** Start today
 #+begin_src elisp
@@ -402,6 +505,8 @@ todo: move the point to today's entry, if needed.
     (recenter 0)
     (save-excursion
       (insert "\n** Logs")))
+
+  (keymap-set sr/workflow-map "s" #'sr/start-today)
 #+end_src
 ** Finish today
 I finish each day by committing changes I made in my dotfiles and personal files into the Git repository.
@@ -429,6 +534,8 @@ I finish each day by committing changes I made in my dotfiles and personal files
   	(apply 'call-process (append '("git" nil nil nil) args)))
         (message (format "Commited and pushed changes in %s." name))))
     (message "Done. Good night :)"))
+
+  (keymap-set sr/workflow-map "f" #'sr/finish-today)
 #+end_src
 * Migration
 ** Migrate inline latex
@@ -725,7 +832,11 @@ Disable tabs by default.
 *** Enabled languages
 #+begin_src elisp
   (defvar sr/eglot-ensure-hooks
-    '(js-ts-mode-hook html-ts-mode-hook c-ts-mode-hook)
+    '(js-ts-mode-hook
+      typescript-ts-mode-hook
+      tsx-ts-mode-hook
+      html-ts-mode-hook
+      c-ts-mode-hook)
     "Hooks to attach `eglot-ensure'.")
 
   (dolist (hook sr/eglot-ensure-hooks)
@@ -980,6 +1091,8 @@ indent offset.
 #+begin_src elisp
   (setq sr/combobulate-enable-hooks
         '(js-ts-mode-hook
+          typescript-ts-mode-hook
+          tsx-ts-mode-hook
           css-ts-mode-hook
           json-ts-mode-hook
           html-ts-mode-hook
@@ -1219,14 +1332,14 @@ Store current zettel to register, overriding default binding
   (defun sr/zk-show-structure-note (tag)
     "Show structure note for TAG."
     (interactive (list
-  		(completing-read
-  		 "Tag: "
-  		 (org-global-tags-completion-table))))
+  		            (completing-read
+  		             "Tag: "
+  		             (org-global-tags-completion-table))))
     (when-let* ((result (org-ql-select
-  			org-agenda-files
-  			`(tags ,(concat "@" tag))
-  			:action 'element-with-markers))
-  	      (m (plist-get (nth 1 (car result)) :org-marker)))
+  			                  org-agenda-files
+  			                  `(tags ,(concat "@" tag))
+  			                  :action 'element-with-markers))
+  	            (m (plist-get (nth 1 (car result)) :org-marker)))
       (pop-to-buffer-same-window (marker-buffer m))
       (goto-char m)
       (org-fold-show-context 'mark-goto)
@@ -1286,6 +1399,11 @@ utility named =utmctl=, so I can use it to work with UTM in Emacs.
 
   (keymap-global-set "C-c v m" #'sr/man-change-program)
 #+end_src
+* Consult
+** Jump to Org mode heading
+#+begin_src elisp
+  (keymap-set org-mode-map "C-c C-j" #'consult-org-heading)
+#+end_src
 * Org mode
 ** Key bindings
 *** Global bindings
@@ -1320,19 +1438,12 @@ Those work well with repetitions.
   (keymap-set org-mode-map "C-c C-x &" 'org-mark-ring-goto)
   (keymap-set org-mode-map "C-c C-x C-o" 'org-open-at-point)
 #+end_src
-** Toggle subtree
+*** Swap footnotes and emphasize mappings
+I use footnotes more frequently, and =C-c C-x f= is more harder to
+type than =C-c C-x C-f=.
 #+begin_src elisp
-  (defun sr/org-toggle-subtree ()
-    "Toggle all children of current heading."
-    (interactive)
-    (if (save-excursion
-          (beginning-of-line)
-          (outline-invisible-p (line-end-position)))
-        (org-fold-show-subtree)
-      (org-fold-hide-subtree)))
-
-  (keymap-set org-mode-map "C-c C-x TAB" 'sr/org-toggle-subtree)
-  (keymap-set sr/zk-mode-map "TAB" 'sr/org-toggle-subtree)
+  (keymap-set org-mode-map "C-c C-x C-f" #'org-footnote-action)
+  (keymap-set org-mode-map "C-c C-x f" #'org-emphasize)
 #+end_src
 ** Directories
 #+begin_src elisp
@@ -1360,6 +1471,20 @@ Use indented headings.
 I often have many entries, so it's better to fold them on startup.
 #+begin_src elisp
   (setq-default org-startup-folded 'fold)
+#+end_src
+** Toggle subtree
+#+begin_src elisp
+  (defun sr/org-toggle-subtree ()
+    "Toggle all children of current heading."
+    (interactive)
+    (if (save-excursion
+          (beginning-of-line)
+          (outline-invisible-p (line-end-position)))
+        (org-fold-show-subtree)
+      (org-fold-hide-subtree)))
+
+  (keymap-set org-mode-map "C-c C-x TAB" 'sr/org-toggle-subtree)
+  (keymap-set sr/zk-mode-map "TAB" 'sr/org-toggle-subtree)
 #+end_src
 ** Latex
 *** LuaLaTeX
@@ -1420,6 +1545,14 @@ Dvisvgm configuration is patched for my environment...
 #+begin_src elisp
   (keymap-set org-mode-map "C-c C-8" #'org-list-make-subtree)
 #+end_src
+** Footnotes
+Currently, I use footnotes only inside my Zettelkasten. Because the
+zettels are created as entries, footnotes for an entry should go
+directly below it, not a special heading in the file (which is the
+default behavior).
+#+begin_src elisp
+  (setq org-footnote-section nil)
+#+end_src
 ** Tags
 By default, the tag list only includes the tags in the current buffer.
 This can be customized to show all tags in agenda files instead.
@@ -1430,7 +1563,7 @@ This can be customized to show all tags in agenda files instead.
 
 Exprimenting with tag inheritance.
 #+begin_src elisp
-  (setq org-use-tag-inheritance '("fleeting" "capture"))
+  (setq org-use-tag-inheritance nil)
 #+end_src
 ** Todo
 *** Todo keywords
@@ -1461,6 +1594,32 @@ Exprimenting with tag inheritance.
 #+begin_src elisp
 (setq org-edit-src-content-indentation 2)
 #+end_src
+** Revealing
+#+begin_src elisp
+  (setq
+   org-fold-show-context-detail
+   '((isearch . lineage)
+     (default . tree)))
+#+end_src
+** Refiling
+- To use =completing-read=, I should set
+  =org-outline-path-complete-in-steps= to =nil=.
+- Set =org-refile-use-outline-path= to ='file= to use the path of the
+  file as a refile target.
+
+#+begin_src elisp
+  (setq org-refile-use-outline-path 'file)
+  (setq org-outline-path-complete-in-steps nil)
+  (setq
+   org-refile-targets
+   `(((,(expand-file-name "second-brain/projects.org" sr/note-root-directory)
+       ,(expand-file-name "second-brain/aor.org" sr/note-root-directory)
+       ,(expand-file-name "second-brain/resources.org" sr/note-root-directory)
+       ,(expand-file-name "second-brain/archive.org" sr/note-root-directory))
+      :maxlevel 1)
+     (,(expand-file-name "writings.org" sr/note-root-directory)
+      :level 0)))
+#+end_src
 ** Org-id
 *** ID format
 Used to use timestamp here, but switched to use UUID (default).
@@ -1479,11 +1638,14 @@ Other entries should be inserted normal UUIDs to distinguish Zettels.
   (setq org-id-search-archives nil)
 #+end_src
 ** Org-agenda
-*** Set files for agenda
+*** Agenda files
 #+begin_src elisp
-  (setq org-agenda-files (list sr/note-root-directory
-  			     (expand-file-name "projects/" sr/note-root-directory)
-  			     sr/note-zk-directory))
+  (setq
+   org-agenda-files
+   (list sr/note-root-directory
+         sr/note-second-brain-directory
+  			 (expand-file-name "projects/" sr/note-root-directory)
+  			 sr/note-zk-directory))
 #+end_src
 *** Window setup
 #+begin_src elisp
@@ -1543,61 +1705,9 @@ I need to add tags inside the capture buffer.
 
   (keymap-set org-mode-map "C-c i" #'sr/insert-image-from-clipboard)
 #+end_src
-** Jump to heading
-Helper function to get all headings in a hierarchical format.
-#+begin_src elisp
-  (defun sr/org-headings-hierarhcy-list (buffer)
-    "Return a list of all headings in org mode buffer BUFFER."
-    (with-current-buffer buffer
-      (org-map-entries
-       (lambda ()
-         (cons
-          (string-join (org-get-outline-path t) "/")
-          (point))))))
-#+end_src
-
-#+begin_src elisp
-  (defun sr/org-jump-to-heading ()
-    "Ask for a heading in the current buffer, and jump to there."
-    (interactive)
-    (let* ((candidates
-            (sr/org-headings-hierarhcy-list (current-buffer)))
-           (target
-            (map-elt candidates
-                     (completing-read "Jump to headline: "
-                                      candidates
-                                      nil 'require-match))))
-      (goto-char target)
-      (org-fold-show-context)
-      (org-fold-show-entry)))
-
-  (keymap-set org-mode-map "C-c C-j" #'sr/org-jump-to-heading)
-#+end_src
-
-Quickly jump to =README.org= with a heading.
-#+begin_src elisp
-  (defun sr/jump-to-readme-org ()
-    "Jump to a heading inside README.org."
-    (interactive)
-    (let* ((buf (or (get-file-buffer sr/readme-org-file-name)
-                    (find-file-noselect sr/readme-org-file-name)))
-           (candidates
-            (sr/org-headings-hierarhcy-list buf))
-           (target
-            (map-elt candidates
-                     (completing-read "Jump to headline: "
-                                      candidates
-                                      nil 'require-match))))
-      (switch-to-buffer buf)
-      (goto-char target)
-      (org-fold-show-context)
-      (org-fold-show-entry)))
-
-  (keymap-global-set "C-c r" #'sr/jump-to-readme-org)
-#+end_src
 ** todo
 #+begin_src elisp
-(setf (cdr (assoc 'file org-link-frame-setup)) 'find-file)
+  (setf (cdr (assoc 'file org-link-frame-setup)) 'find-file)
 #+end_src
 * Org-babel
 ** Key bindings
@@ -1818,9 +1928,10 @@ Groups
   (add-to-list
    'org-capture-templates
    `("x" "Project"
-  	 entry (file+headline
-            ,(expand-file-name "second-brain.org" sr/note-root-directory)
-            "Projects")
+  	 entry (file
+            ,(expand-file-name
+              "second-brain/projects.org"
+              sr/note-root-directory))
   	 (file
       ,(expand-file-name
         "templates/capture-project.org"
@@ -2111,9 +2222,10 @@ In show mode:
   (require 'man)
 #+end_src
 ** Disable autocompletion
+Override the completion table function =man= command uses.
 #+begin_src elisp
-  (defun Man-completion-table ()
-  	nil)
+  (defun Man-completion-table (str pred flag)
+  	'())
 #+end_src
 * Eglot-booster
 #+begin_src elisp
@@ -2180,7 +2292,7 @@ connect, causing Emacs to freeze on launch.
   		(derived-mode occur-mode))
   	 (display-buffer-in-side-window)
   	 (side . bottom)
-  	 (window-height . 0.6)
+  	 (window-height . 0.4)
   	 (post-command-select-window . t)))
 #+end_src
 ** Side window (right): Info and apropos
