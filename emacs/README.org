@@ -2131,13 +2131,10 @@ walking around.
 #+begin_src elisp
   (defvar sr/elfeed-to-read-tag 'to-read-list
     "Elfeed tag for 'to read' entries.")
-
-  (defvar sr/elfeed-to-read-list nil
-    "List for storing 'to read' entries.")
 #+end_src
 
 My workflow is as follows: I go through the unread entries, and for
-each entry, I hit =a= to add it, and =s= to skip it. When I'm done, I
+each entry, I hit =a= to add it, and =f= to skip it. When I'm done, I
 export the entries to clipboard, paste them to the Notes app, and read
 them on my iPhone.
 
@@ -2150,14 +2147,13 @@ mark the entries as read.
     "Add current entry to 'to read' list and go to the next entry."
     (interactive)
     (when-let ((entry elfeed-show-entry))
-      (push entry sr/elfeed-to-read-list)
       (elfeed-show-tag 'unread sr/elfeed-to-read-tag)
       (message "Addded entry to to-read list")
       (elfeed-show-next)))
 
   (keymap-set elfeed-show-mode-map "a" 'sr/elfeed-show-add-to-read)
 #+end_src
-*** Skip current entry with =s=
+*** Skip current entry with =f=
 #+begin_src elisp
   (defun sr/elfeed-show-skip ()
     "Skip the current entry.
@@ -2169,26 +2165,29 @@ mark the entries as read.
 
   (keymap-set elfeed-show-mode-map "f" #'sr/elfeed-show-skip)
 #+end_src
-*** Export the entries with =l=
-Currently, exporting is done by pushing the list to the mark ring. I
+*** Export the entries with =l= and =f=
+Currently, exporting is done by pushing items to the mark ring. I
 export the entries just before I leave, so I apply the filter to show
 only the entries in the reading list after I come back.
 
 #+begin_src elisp
-  (defun sr/elfeed-save-to-reads (keep-list)
-    "Push 'to read' entries to the mark ring and clear the list.
-  With a prefix argument, keep the list."
-    (interactive "P")
+  (defun sr/elfeed-search-show-to-reads ()
+    "Set Elfeed filter to show 'to read' entries only."
+    (interactive)
+    (elfeed-search-set-filter "+to-read-list"))
+
+  (defun sr/elfeed-export-entries ()
+    "Push current entries to the mark ring."
+    (interactive)
     (kill-new (string-join
   	     (mapcar
   	      (lambda (entry) (elfeed-entry-link entry))
-  	      sr/elfeed-to-read-list)
+  	      elfeed-search-entries)
   	     "\n"))
-    (unless keep-list
-      (setq sr/elfeed-to-read-list nil))
-    (elfeed-search-set-filter "+to-read-list"))
+    (message "Pushed current entries to the mark ring."))
 
-  (keymap-set elfeed-search-mode-map "l" 'sr/elfeed-save-to-reads)
+  (keymap-set elfeed-search-mode-map "l" 'sr/elfeed-search-show-to-reads)
+  (keymap-set elfeed-search-mode-map "f" 'sr/elfeed-export-entries)
 #+end_src
 ** Mark entries as read
 In search mode:
