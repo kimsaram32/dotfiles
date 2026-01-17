@@ -379,11 +379,12 @@ todo: move the point to today's entry, if needed.
   (keymap-set sr/workflow-map "s" #'sr/start-today)
 #+end_src
 ** Finish today
-I finish each day by committing changes I made in my dotfiles and personal files into the Git repository.
+I finish each day by committing changes I made in personal files into the Git repository.
 
 #+begin_src elisp
   (defconst sr/personal-git-repositories
-    `((,sr/dotfiles-directory . "dotfiles")
+    `(
+      ; (,sr/dotfiles-directory . "dotfiles")
       (,sr/note-root-directory . "notes"))
     "Git repositories for personal workflow.
   Used by `sr/finish-today' for automatic daily commits.")
