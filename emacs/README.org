@@ -57,7 +57,7 @@ Small enhancement packages are not loaded here
   (require 'auctex)
   (require 'cc-mode)
   (require 'cdlatex)
-  (require 'company)
+  (require 'corfu)
   (require 'consult)
   (require 'eglot-booster)
   (require 'elfeed)
@@ -79,7 +79,6 @@ Small enhancement packages are not loaded here
   (require 'rg)
   (require 'vertico)
   (require 'vterm)
-  (require 'yaml-mode)
 #+end_src
 
 Personal libraries
@@ -257,139 +256,6 @@ Key binding for =M-x append-to-register=.
 (setq delete-pair-blink-delay 0)
 (keymap-global-set "C-M-z" 'delete-pair)
 #+end_src
-* Completion
-I use default completion system with multiple frontends.
-** Vertico (UI, default)
-#+begin_src elisp
-  (vertico-mode)
-#+end_src
-
-#+begin_src elisp
-  (setq vertico-cycle t)
-#+end_src
-*** Key bindings
-#+begin_src elisp
-  (keymap-set vertico-map "M-n" #'vertico-next)
-  (keymap-set vertico-map "M-p" #'vertico-previous)
-  (keymap-set vertico-map "M-TAB" #'vertico-insert)
-
-  (keymap-set vertico-map "C-n" #'next-history-element)
-  (keymap-set vertico-map "C-p" #'previous-history-element)
-#+end_src
-** Marginalia
-#+begin_src elisp
-  (marginalia-mode)
-#+end_src
-** Icomplete (UI)
-*** Vertical mode
-#+begin_src elisp
-  (add-hook 'icomplete-mode-hook #'icomplete-vertical-mode)
-#+end_src
-*** Remap next and previous selection
-Remap next and previous selection to =M-n= and =M-p=. I prefer to
-maintain the "Emacs rhythm" concept from Mastering Emacs.
-
-Now that I can select items with =M-n=, =M-p=, and =M-TAB=, I can hold
-the meta key to maintain the rhythm of pressing keys.
-
-#+begin_src elisp
-  (keymap-set
-   icomplete-vertical-mode-minibuffer-map
-   "M-n" #'icomplete-forward-completions)
-  (keymap-set
-   icomplete-vertical-mode-minibuffer-map
-   "M-p" #'icomplete-backward-completions)
-
-  (keymap-set
-   icomplete-vertical-mode-minibuffer-map
-   "C-n" #'next-history-element)
-  (keymap-set
-   icomplete-vertical-mode-minibuffer-map
-   "C-p" #'previous-history-element)
-#+end_src
-*** Override =TAB=
-By default, =TAB= key is bound to =minibuffer-complete=. Override it
-to use icomplete.
-#+begin_src elisp
-  (keymap-set icomplete-vertical-mode-minibuffer-map
-              "TAB" #'icomplete-force-complete)
-#+end_src
-*** Unmap space
-#+begin_src elisp
-  (keymap-unset minibuffer-local-completion-map "SPC")
-#+end_src
-** List of categories
-Non-exhaustive.
-- org-heading: [[*Jump to heading][Jump to heading]] and =consult-org-heading=
-** Completion styles
-[[help:completion-styles-alist]]
-
-#+begin_src elisp
-  (setq completion-styles '(basic partial-completion emacs22 orderless))
-#+end_src
-
-Category overrides. I cleared the defaults because I want complete
-control over my completions.
-
-#+begin_src elisp
-  (setq completion-category-defaults nil)
-
-  (setq
-   completion-category-overrides
-   '((command (styles basic substring partial-completion initials orderless))
-     (file (styles partial-completion orderless basic))
-     (project-file (styles partial-completion substring orderless))
-     (xref-location (styles substring))
-     (info-menu (styles basic substring))
-     (org-heading (styles orderless substring))
-     (symbol (styles basic initials substring orderless))
-     (kubedoc (styles partial-completion))))
-#+end_src
-** Testing completion styles
-#+begin_src elisp
-  (defvar sr/--completion-testing nil)
-
-  (defun sr/completion-test-start (style)
-    "Test a completion style STYLE.
-    This makes `'completing-read' to only use STYLE as completion style to
-    use. call `sr/completion-test-end' when finished."
-    (interactive (list (completing-read
-                        "Completion style: "
-                        (mapcar (lambda (x) (car x)) completion-styles-alist))))
-    (when (not sr/--completion-testing)
-      (setq sr/--completion-testing t)
-      (setq sr/--completion-styles-prev completion-styles)
-      (setq sr/--completion-category-overrides-prev completion-category-overrides)
-      (setq sr/--completion-category-defaults-prev completion-category-defaults))
-    (setq-default completion-styles (list (intern style)))
-    (setq-default completion-category-overrides nil)
-    (setq-default completion-category-defaults nil))
-
-  (defun sr/completion-test-end ()
-    "Revert completion styles altered by `sr/completion-style-start'."
-    (interactive)
-    (when (not sr/--completion-testing)
-      (user-error "Not testing"))
-    (setq sr/--completion-testing nil)
-    (setq-default completion-styles sr/--completion-styles-prev)
-    (setq-default completion-category-overrides sr/--completion-category-overrides-prev)
-    (setq-default completion-category-defaults sr/--completion-category-defaults-prev))
-#+end_src
-** Show current completion category
-#+begin_src elisp
-  (defun sr/show-completion-category ()
-    "Show category in current completion context."
-    (interactive)
-    (message "%S"
-             (completion-metadata-get
-              (completion-metadata
-               (minibuffer-contents)
-               minibuffer-completion-table
-               minibuffer-completion-predicate)
-              'category)))
-
-  (keymap-set minibuffer-local-map "C-c C-k" #'sr/show-completion-category)
-#+end_src
 * Windows
 [[https://karthinks.com/software/emacs-window-management-almanac][The Emacs Window Management Almanac]] is a good reference
 ** Display-buffer
@@ -416,6 +282,10 @@ control over my completions.
   (keymap-set sr/window-map "C-h" #'windmove-swap-states-left)
   (keymap-set sr/window-map "C-k" #'windmove-swap-states-up)
   (keymap-set sr/window-map "C-j" #'windmove-swap-states-down)
+#+end_src
+** Scroll other window
+#+begin_src elisp
+  (keymap-global-set "C-M-c" #'scroll-other-window-down)
 #+end_src
 ** Winner mode
 #+begin_src elisp
@@ -732,10 +602,146 @@ strings to them.
       (message "DWIM migration finished.")))
   (keymap-global-set "C-c m m" 'sr/migrate-dwim)
 #+end_src
+* Completion
+I use default completion system with multiple frontends.
+** Vertico (UI, default)
+#+begin_src elisp
+  (vertico-mode)
+#+end_src
+
+#+begin_src elisp
+  (setq vertico-cycle t)
+#+end_src
+*** Key bindings
+#+begin_src elisp
+  (keymap-set vertico-map "M-n" #'vertico-next)
+  (keymap-set vertico-map "M-p" #'vertico-previous)
+  (keymap-set vertico-map "M-TAB" #'vertico-insert)
+
+  (keymap-set vertico-map "C-n" #'next-history-element)
+  (keymap-set vertico-map "C-p" #'previous-history-element)
+#+end_src
+** Marginalia
+#+begin_src elisp
+  (marginalia-mode)
+#+end_src
+** Icomplete (UI)
+*** Vertical mode
+#+begin_src elisp
+  (add-hook 'icomplete-mode-hook #'icomplete-vertical-mode)
+#+end_src
+*** Remap next and previous selection
+Remap next and previous selection to =M-n= and =M-p=. I prefer to
+maintain the "Emacs rhythm" concept from Mastering Emacs.
+
+Now that I can select items with =M-n=, =M-p=, and =M-TAB=, I can hold
+the meta key to maintain the rhythm of pressing keys.
+
+#+begin_src elisp
+  (keymap-set
+   icomplete-vertical-mode-minibuffer-map
+   "M-n" #'icomplete-forward-completions)
+  (keymap-set
+   icomplete-vertical-mode-minibuffer-map
+   "M-p" #'icomplete-backward-completions)
+
+  (keymap-set
+   icomplete-vertical-mode-minibuffer-map
+   "C-n" #'next-history-element)
+  (keymap-set
+   icomplete-vertical-mode-minibuffer-map
+   "C-p" #'previous-history-element)
+#+end_src
+*** Override =TAB=
+By default, =TAB= key is bound to =minibuffer-complete=. Override it
+to use icomplete.
+#+begin_src elisp
+  (keymap-set icomplete-vertical-mode-minibuffer-map
+              "TAB" #'icomplete-force-complete)
+#+end_src
+*** Unmap space
+#+begin_src elisp
+  (keymap-unset minibuffer-local-completion-map "SPC")
+#+end_src
+** List of categories
+Non-exhaustive.
+- eglot-capf: =eglot-completion-at-point=
+- org-heading: [[*Jump to heading][Jump to heading]] and =consult-org-heading=
+- info-menu
+** Completion styles
+[[help:completion-styles-alist]]
+
+#+begin_src elisp
+  (setq completion-styles '(basic partial-completion emacs22 orderless))
+#+end_src
+
+Category overrides. I cleared the defaults because I want complete
+control over my completions.
+
+#+begin_src elisp
+  (setq completion-category-defaults nil)
+
+  (setq
+   completion-category-overrides
+   '((command (styles basic substring partial-completion initials orderless))
+     (file (styles partial-completion orderless))
+     (eglot-capf (styles basic initials substring orderless))
+     (project-file (styles partial-completion substring orderless))
+     (xref-location (styles substring))
+     (info-menu (styles substring basic))
+     (org-heading (styles orderless substring))
+     (symbol (styles basic initials substring orderless))
+     (kubedoc (styles partial-completion))))
+#+end_src
+** Testing completion styles
+#+begin_src elisp
+  (defvar sr/--completion-testing nil)
+
+  (defun sr/completion-test-start (style)
+    "Test a completion style STYLE.
+    This makes `'completing-read' to only use STYLE as completion style to
+    use. call `sr/completion-test-end' when finished."
+    (interactive (list (completing-read
+                        "Completion style: "
+                        (mapcar (lambda (x) (car x)) completion-styles-alist))))
+    (when (not sr/--completion-testing)
+      (setq sr/--completion-testing t)
+      (setq sr/--completion-styles-prev completion-styles)
+      (setq sr/--completion-category-overrides-prev completion-category-overrides)
+      (setq sr/--completion-category-defaults-prev completion-category-defaults))
+    (setq-default completion-styles (list (intern style)))
+    (setq-default completion-category-overrides nil)
+    (setq-default completion-category-defaults nil))
+
+  (defun sr/completion-test-end ()
+    "Revert completion styles altered by `sr/completion-style-start'."
+    (interactive)
+    (when (not sr/--completion-testing)
+      (user-error "Not testing"))
+    (setq sr/--completion-testing nil)
+    (setq-default completion-styles sr/--completion-styles-prev)
+    (setq-default completion-category-overrides sr/--completion-category-overrides-prev)
+    (setq-default completion-category-defaults sr/--completion-category-defaults-prev))
+#+end_src
+** Show current completion category
+#+begin_src elisp
+  (defun sr/show-completion-category ()
+    "Show category in current completion context."
+    (interactive)
+    (message "%S"
+             (completion-metadata-get
+              (completion-metadata
+               (minibuffer-contents)
+               minibuffer-completion-table
+               minibuffer-completion-predicate)
+              'category)))
+
+  (keymap-set minibuffer-local-map "C-c C-k" #'sr/show-completion-category)
+#+end_src
 * Software dev
-Current stack is:
+** Current stack
 - LSP client: Eglot
-- Autocompletion: Company-mode
+- In-buffer completion: Corfu
 - Formatting: Format-all
 - Diagnostics: Flymake
 - Jump to definition: Xref (frontend) and dumb-jump (backend)
@@ -743,7 +749,6 @@ Current stack is:
 - Projects: Projectile
 - Tree-sitter
   - Experimenting with Combobulate for structured editing
-
 ** Custom mode for shared configurations
 Previously, I would set configurations for programming major mode to
 =prog-mode=. This was based the assumption that all major modes for
@@ -847,25 +852,6 @@ Disable tabs by default.
 #+begin_src elisp
   (keymap-set flymake-mode-map "M-n" 'flymake-goto-next-error)
   (keymap-set flymake-mode-map "M-p" 'flymake-goto-prev-error)
-#+end_src
-** Company-mode
-#+begin_src elisp
-  (add-hook 'sr/prog-setup-mode-hook #'company-mode)
-#+end_src
-*** Active key bindings
-#+begin_src elisp
-  (keymap-set company-active-map "M-TAB" #'company-complete-selection)
-  (keymap-set company-active-map "M-n" #'company-select-next-or-abort)
-  (keymap-set company-active-map "M-p" #'company-select-previous-or-abort)
-  (keymap-set company-active-map "M-h" #'company-show-doc-buffer)
-#+end_src
-*** Global key bindings
-#+begin_src elisp
-  (keymap-global-set "C-M-i" #'company-complete)
-#+end_src
-*** Idle delay
-#+begin_src elisp
-  (setq company-idle-delay 0)
 #+end_src
 ** Whitespace-mode
 #+begin_src elisp
@@ -1118,6 +1104,50 @@ indent offset.
 ** movement: Move by indentation
 #+begin_src elisp
   (require 'sr-indentation)
+#+end_src
+* In-buffer completion
+** Stack
+I use the default =completion-at-point= with corfu.
+** Key bindings
+#+begin_src elisp
+  (keymap-set sr/prog-setup-mode-map "M-TAB" #'completion-at-point)
+#+end_src
+** Corfu
+#+begin_src elisp
+  (global-corfu-mode)
+  (corfu-popupinfo-mode)
+#+end_src
+*** Display options
+#+begin_src elisp
+  (setq corfu-cycle t)
+  (setq corfu-preview-current nil)
+#+end_src
+*** Key bindings
+#+begin_src elisp
+  (keymap-set corfu-map "M-TAB" #'corfu-insert)
+#+end_src
+
+Do not complete on =RET=.
+#+begin_src elisp
+  (keymap-unset corfu-map "RET")
+#+end_src
+*** Popup info
+#+begin_src elisp
+  (setq corfu-popupinfo-direction 'vertical)
+  (setq corfu-popupinfo-delay '(nil . 0))
+  (setq corfu-popupinfo-max-height 20)
+#+end_src
+*** Autocompletion
+#+begin_src elisp
+  (setq corfu-auto t)
+  (setq corfu-auto-delay 0.1)
+  (setq corfu-auto-trigger ".-")
+#+end_src
+
+Disable on org buffers.
+#+begin_src elisp
+  (add-hook 'org-mode-hook (lambda ()
+                             (setq corfu-auto nil)))
 #+end_src
 * English learning
 ** Open dictionary for word at point
