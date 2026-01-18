@@ -1390,6 +1390,24 @@ Store current zettel to register, overriding default binding
 
   (keymap-global-set "C-c z s" #'sr/zk-show-structure-note)
 #+end_src
+** Search zettels (Consult)
+#+begin_src elisp
+  (defun sr/consult-org-heading-zettelkasten ()
+    (interactive)
+    (consult-org-heading
+     nil
+     (seq-filter #'sr/is-zettel-name-p (org-agenda-files))))
+
+  (keymap-global-set "C-c j z" #'sr/consult-org-heading-zettelkasten)
+
+  (add-to-list
+   'vertico-multiform-commands
+   '(sr/consult-org-heading-zettelkasten buffer))
+
+  (consult-customize
+   sr/consult-org-heading-zettelkasten
+   :group nil)
+#+end_src
 * VMs
 I manage my virtual machines in Mac via UTM. UTM has its command-line
 utility named =utmctl=, so I can use it to work with UTM in Emacs.
@@ -1442,9 +1460,46 @@ utility named =utmctl=, so I can use it to work with UTM in Emacs.
   (keymap-global-set "C-c v m" #'sr/man-change-program)
 #+end_src
 * Consult
+** Key bindings
+#+begin_src elisp
+  (keymap-global-set "M-g i" #'consult-imenu)
+  (keymap-global-set "M-g M-i" #'consult-imenu)
+  (keymap-global-set "M-g M-g" #'consult-goto-line)
+  (keymap-global-set "M-g g" #'consult-goto-line)
+
+  (keymap-global-set "M-s M-l" #'consult-line)
+#+end_src
+** Xref
+#+begin_src elisp
+    (setq xref-show-xrefs-function #'consult-xref
+          xref-show-definitions-function #'consult-xref)
+#+end_src
+** Narrowing
+#+begin_src elisp
+  (setq consult-narrow-key "<")
+  (keymap-set consult-narrow-map "?" #'consult-narrow-help)
+  (keymap-set consult-narrow-map "C-h" #'consult-narrow-help)
+#+end_src
+** Clear display-buffer-alist locally
+Live preview is messed up with =display-buffer-alist=, so fix it by
+temporarily resetting =display-buffer-alist=.
+#+begin_src elisp
+  (defun sr/consult-fix-display (consultf)
+    (let ((preview (funcall consultf)))
+      (lambda (action cand)
+        (let ((display-buffer-alist nil))
+          (funcall preview action cand)))))
+
+  (advice-add 'consult--buffer-preview :around #'sr/consult-fix-display)
+  (advice-add 'consult--man-preview :around #'sr/consult-fix-display)
+#+end_src
 ** Jump to Org mode heading
 #+begin_src elisp
   (keymap-set org-mode-map "C-c C-j" #'consult-org-heading)
+#+end_src
+
+#+begin_src elisp
+  (keymap-global-set "C-c j s" #'consult-org-agenda)
 #+end_src
 * Org mode
 ** Key bindings
@@ -1750,6 +1805,16 @@ I need to add tags inside the capture buffer.
 ** todo
 #+begin_src elisp
   (setf (cdr (assoc 'file org-link-frame-setup)) 'find-file)
+#+end_src
+* Org QL
+#+begin_src elisp
+  (defvar sr/org-ql-search-agenda-history nil)
+
+  (defun sr/org-ql-search-agenda (query)
+    (interactive (list (read-from-minibuffer
+                        "Query: "
+                        nil nil nil 'sr/org-ql-search-agenda-history)))
+    (org-ql-search (org-agenda-files) query))
 #+end_src
 * Org-babel
 ** Key bindings
@@ -2314,6 +2379,9 @@ connect, causing Emacs to freeze on launch.
   (require 'kubedoc)
 #+end_src
 * Window setup
+#+begin_src elisp
+  (setq display-buffer-alist nil)
+#+end_src
 ** Org mode source code editing
 ~org-src-mode~ is a minor mode enabled when editing source code in Org mode.
 
