@@ -939,11 +939,14 @@ If you encounter any problems, use the version from the [[https://github.com/mic
   (add-to-list
    'major-mode-remap-alist
    '(js-json-mode . json-ts-mode))
+  (add-to-list
+   'major-mode-remap-alist
+   '(javascript-mode . js-ts-mode))
 #+end_src
 
 #+begin_src elisp
   (defvar sr/tree-sitter-remap-list
-    '(c css js python go typescript yaml)
+    '(c css js json python go typescript yaml)
     "List of tree-sitter remapped languages.
   For each LANG, LANG-mode is remapped to LANG-ts-mode,
   and LANG-ts-mode is used with org mode source codes.")
