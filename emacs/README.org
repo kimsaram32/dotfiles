@@ -603,15 +603,20 @@ strings to them.
       (message "DWIM migration finished.")))
   (keymap-global-set "C-c m m" 'sr/migrate-dwim)
 #+end_src
+* Minibuffer
+#+begin_src elisp
+  (keymap-set minibuffer-mode-map "C-p" #'previous-history-element)
+  (keymap-set minibuffer-mode-map "C-n" #'next-history-element)
+#+end_src
 * Completion
 I use default completion system with multiple frontends.
 ** Vertico (UI, default)
 #+begin_src elisp
   (vertico-mode)
 #+end_src
-
+*** Multiform
 #+begin_src elisp
-  (setq vertico-cycle t)
+  (vertico-multiform-mode)
 #+end_src
 *** Key bindings
 #+begin_src elisp
@@ -861,7 +866,7 @@ Disable tabs by default.
 *** Toggle details
 #+begin_src elisp
   (defvar sr/whitespace-style-basic
-    '(face trailing lines newline indentation empty missing-newline-at-eof)
+    '(face trailing newline indentation empty missing-newline-at-eof)
     "Value for `whitespace-style', highlighting essential stuff only.")
 
   (defvar sr/whitespace-style-detailed
@@ -1114,8 +1119,10 @@ I use the default =completion-at-point= with corfu.
   (keymap-set sr/prog-setup-mode-map "M-TAB" #'completion-at-point)
 #+end_src
 ** Corfu
+*** Enable
 #+begin_src elisp
-  (global-corfu-mode)
+  (add-hook 'sr/prog-setup-mode-hook #'corfu-mode)
+  (add-hook 'minibuffer-setup-hook #'corfu-mode)
   (corfu-popupinfo-mode)
 #+end_src
 *** Display options
@@ -1142,13 +1149,7 @@ Do not complete on =RET=.
 #+begin_src elisp
   (setq corfu-auto t)
   (setq corfu-auto-delay 0.1)
-  (setq corfu-auto-trigger ".-")
-#+end_src
-
-Disable on org buffers.
-#+begin_src elisp
-  (add-hook 'org-mode-hook (lambda ()
-                             (setq corfu-auto nil)))
+  (setq corfu-auto-trigger ".-/")
 #+end_src
 * English learning
 ** Open dictionary for word at point
