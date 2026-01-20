@@ -216,10 +216,6 @@ to prevent resizing windows when changing fonts.
 #+begin_src elisp
 (setq set-mark-command-repeat-pop t)
 #+end_src
-** Kill whole line
-#+begin_src elisp
-  (setq kill-whole-line t)
-#+end_src
 ** Registers
 #+begin_src elisp
   (setopt register-use-preview 'insist)
@@ -1462,6 +1458,8 @@ utility named =utmctl=, so I can use it to work with UTM in Emacs.
 * Consult
 ** Key bindings
 #+begin_src elisp
+  (keymap-global-set "C-x b" #'consult-buffer)
+
   (keymap-global-set "M-g i" #'consult-imenu)
   (keymap-global-set "M-g M-i" #'consult-imenu)
   (keymap-global-set "M-g M-g" #'consult-goto-line)
@@ -1921,6 +1919,8 @@ No need for carry overs.
   			                 :order 1)
   		            (:name "School"
   			                 :tag ("schoolwork" "school" "내신"))
+                  (:name "Work"
+  			                 :tag ("work"))
   		            (:name "Todo"
   			                 :and (:todo ("TODO" "WORKING")
                                      :not (:tag "trivial")))
@@ -2479,6 +2479,6 @@ Major mode for browsing a list of items e.g. Docker mode.
    `((derived-mode tabulated-list-mode)
   	 (display-buffer-in-side-window)
   	 (side . bottom)
-     (window-height . 0.6)
+     (window-height . 0.5)
   	 (post-command-select-window . t)))
 #+end_src
