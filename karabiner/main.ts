@@ -5,10 +5,7 @@ const App = {
 };
 
 function modifiers() {
-  const capsLockIsControlVar = "caps_is_control";
-
   const ifEmacs = K.ifApp({ bundle_identifiers: [App.emacs] });
-  const ifCapsLockIsControl = K.ifVar(capsLockIsControlVar, true);
 
   return K.rule("Modifiers").manipulators([
     K.map("left_command", "", "any").to("left_option"),
@@ -16,13 +13,8 @@ function modifiers() {
     K.map("caps_lock", "", "any").to("left_control").condition(ifEmacs),
 
     K.map("caps_lock", "", "any")
-      .to("left_control")
-      .toIfAlone(K.toSetVar(capsLockIsControlVar, false))
-      .condition(ifEmacs.unless(), ifCapsLockIsControl),
-    K.map("caps_lock", "", "any")
       .to("left_command")
-      .toIfAlone(K.toSetVar(capsLockIsControlVar, true))
-      .condition(ifEmacs.unless(), ifCapsLockIsControl.unless()),
+      .condition(ifEmacs.unless()),
   ]);
 }
 
