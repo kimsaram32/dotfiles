@@ -1634,7 +1634,7 @@ Dvisvgm configuration is patched for my environment...
 #+begin_src elisp
   (setq org-link-abbrev-alist
         `(("zk" . ,(expand-file-name "id:%s" sr/note-root-directory))
-  	("media" . ,sr/note-media-directory)))
+  	      ("media" . ,sr/note-media-directory)))
 #+end_src
 ** Lists
 #+begin_src elisp
@@ -1913,12 +1913,13 @@ No need for carry overs.
   		         (org-agenda-overriding-header "Today")
   		         (org-super-agenda-groups
   		          '((:discard (:tag "event"))
+                  (:name "Goals"
+                         :tag ("#weekly" "#monthly" "okr"))
   		            (:name "Fleeting notes"
-  			                 :and (:tag "fleeting"
-  				                          :not (:todo ("DONE")))
+  			                 :and (:tag "fleeting" :not (:todo ("DONE")))
   			                 :order 1)
   		            (:name "School"
-  			                 :tag ("schoolwork" "school" "내신"))
+  			                 :tag ("schoolwork" "내신"))
                   (:name "Work"
   			                 :tag ("work"))
   		            (:name "Todo"
@@ -1932,7 +1933,10 @@ No need for carry overs.
   		            (:name "Journals"
   			                 :tag "journal"
   			                 :order 2)
-  		            (:name "Today"
+  		            (:name "Captures"
+  			                 :and (:time-grid t :category "capture")
+  			                 :order 2)
+                  (:name "Today"
   			                 :time-grid t
   			                 :order 2))))))))
 #+end_src
@@ -2235,7 +2239,7 @@ mark the entries as read.
 
   (keymap-set elfeed-show-mode-map "f" #'sr/elfeed-show-skip)
 #+end_src
-*** Export the entries with =l= and =f=
+*** Export the entries with =l= and =e=
 Currently, exporting is done by pushing items to the mark ring. I
 export the entries just before I leave, so I apply the filter to show
 only the entries in the reading list after I come back.
@@ -2257,7 +2261,7 @@ only the entries in the reading list after I come back.
     (message "Pushed current entries to the mark ring."))
 
   (keymap-set elfeed-search-mode-map "l" 'sr/elfeed-search-show-to-reads)
-  (keymap-set elfeed-search-mode-map "f" 'sr/elfeed-export-entries)
+  (keymap-set elfeed-search-mode-map "e" 'sr/elfeed-export-entries)
 #+end_src
 ** Mark entries as read
 In search mode:
@@ -2306,6 +2310,10 @@ In show mode:
 #+begin_src elisp
   (setq modus-themes-common-palette-overrides modus-themes-preset-overrides-faint)
   (modus-themes-load-theme 'modus-vivendi-tinted)
+#+end_src
+* Spray
+#+begin_src elisp
+  (keymap-global-set "<f6>" #'spray-mode)
 #+end_src
 * YaSnippet
 #+begin_src elisp
