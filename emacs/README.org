@@ -404,18 +404,18 @@ I finish each day by committing changes I made in personal files into the Git re
   (keymap-set sr/workflow-map "f" #'sr/finish-today)
 #+end_src
 * Migration
-** Migrate inline latex
-#+begin_src elisp
-(defun sr/migrate-latex ()
-  (interactive)
-  (save-excursion
-    (goto-char (point-min))
-    (while (re-search-forward "\\$\\(.+?\\)\\$" nil t)
-      (replace-match "\\\\(\\1\\\\)"))))
-(keymap-global-set "C-c m l" 'sr/migrate-latex)
-#+end_src
+Whenever I change my note-taking system, I need to migrate my existing
+notes to the new one. I create automated scripts for this. Many of
+these scripts are not well cleaned up because I expected them to be
+temporary and never planned to edit then again.
+
+I commented out the scripts I don't currently use (mostly because the
+migration process is finished). I'm keeping them for now just in case
+I need them later.
+
 ** Check if the current line is empty
-Helper function for migration command
+Helper function for migration commands.
+
 #+begin_src elisp
 (defun is-empty-line-p ()
   "Return t if current line only includes whitespace, else return
@@ -443,7 +443,59 @@ nil."
 
   (keymap-global-set "C-c m h" 'sr/org-remove-empty-lines-around-headings)
 #+end_src
-** Migrate old Org mode documents
+** Migration from Obsidian documents
+#+begin_src elisp
+  (defun sr/migrate-insert-capture-heading ()
+    "Insert heading from current buffer's name."
+    (interactive)
+    (let* ((split (string-split (file-name-base (buffer-name))))
+  	 (time (date-to-time (nth 0 split)))
+  	 (name (string-join (cdr split) " ")))
+      (insert "* " (format-time-string "<%Y-%m-%d> " time) name)))
+#+end_src
+** Automatic migration
+*** Markdown indicator string
+I renamed all *.md documents to *.org for easier file searching and
+file name resolutions.
+
+To distinguish old markdown documents, I included fixed indicator
+strings to them.
+
+#+begin_src elisp
+(defconst sr/markdown-indicator-string "###MARKDOWN###"
+  "String that indicates the current file is a markdown document.")
+#+end_src
+*** DWIM migration
+#+begin_src elisp
+  (defun sr/migrate-dwim ()
+    "Migrate current file. DWIM."
+    (interactive)
+    (save-excursion
+      (goto-char (point-min))
+      (if (search-forward sr/markdown-indicator-string nil t)
+          (progn
+  	  (replace-match "" nil t)
+  	  (while (search-forward sr/markdown-indicator-string nil t)
+  	    (replace-match "" nil t))
+  	  (sr/migrate-markdown-to-org))
+        (sr/migrate-org-properties)
+        (sr/migrate-latex)
+        ;; (sr/org-remove-empty-lines-around-headings)
+        )
+      (message "DWIM migration finished.")))
+  (keymap-global-set "C-c m m" 'sr/migrate-dwim)
+#+end_src
+** COMMENT Migrate inline latex
+#+begin_src elisp
+(defun sr/migrate-latex ()
+  (interactive)
+  (save-excursion
+    (goto-char (point-min))
+    (while (re-search-forward "\\$\\(.+?\\)\\$" nil t)
+      (replace-match "\\\\(\\1\\\\)"))))
+(keymap-global-set "C-c m l" 'sr/migrate-latex)
+#+end_src
+** COMMENT Migrate old Org mode documents
 #+begin_src elisp
 (defun sr/migrate-org-properties ()
   "Migrate current old Org document to follow the new format. Specifically:
@@ -474,7 +526,7 @@ nil."
       (when filetags (org-set-tags (string-replace "-" "_" filetags))))
     (sr/set-zettel-id-property)))
 #+end_src
-** Migration from markdown
+** COMMENT Migration from markdown
 Previously, I used plain markdown documents for note taking.
 Now I have to migrate from it.
 
@@ -555,48 +607,6 @@ prefer to use code (~).
   (interactive)
   (replace-regexp "=" "~"))
 (keymap-global-set "C-c m c" 'sr/verbatim-to-code)
-#+end_src
-** Migration from Obsidian documents
-#+begin_src elisp
-  (defun sr/migrate-insert-capture-heading ()
-    "Insert heading from current buffer's name."
-    (interactive)
-    (let* ((split (string-split (file-name-base (buffer-name))))
-  	 (time (date-to-time (nth 0 split)))
-  	 (name (string-join (cdr split) " ")))
-      (insert "* " (format-time-string "<%Y-%m-%d> " time) name)))
-#+end_src
-** Automatic migration
-*** Markdown indicator string
-I renamed all *.md documents to *.org for easier file searching and
-file name resolutions.
-
-To distinguish old markdown documents, I included fixed indicator
-strings to them.
-
-#+begin_src elisp
-(defconst sr/markdown-indicator-string "###MARKDOWN###"
-  "String that indicates the current file is a markdown document.")
-#+end_src
-*** DWIM migration
-#+begin_src elisp
-  (defun sr/migrate-dwim ()
-    "Migrate current file. DWIM."
-    (interactive)
-    (save-excursion
-      (goto-char (point-min))
-      (if (search-forward sr/markdown-indicator-string nil t)
-          (progn
-  	  (replace-match "" nil t)
-  	  (while (search-forward sr/markdown-indicator-string nil t)
-  	    (replace-match "" nil t))
-  	  (sr/migrate-markdown-to-org))
-        (sr/migrate-org-properties)
-        (sr/migrate-latex)
-        ;; (sr/org-remove-empty-lines-around-headings)
-        )
-      (message "DWIM migration finished.")))
-  (keymap-global-set "C-c m m" 'sr/migrate-dwim)
 #+end_src
 * Minibuffer
 #+begin_src elisp
