@@ -2490,3 +2490,10 @@ Major mode for browsing a list of items e.g. Docker mode.
      (window-height . 0.5)
   	 (post-command-select-window . t)))
 #+end_src
+* Avy
+#+begin_src elisp
+  (require 'avy)
+  (keymap-global-set "C-'" #'avy-goto-char)
+  (keymap-global-set "M-g t" #'avy-goto-char-2)
+  (keymap-global-set "M-g b" #'avy-goto-char-timer)
+#+end_src
