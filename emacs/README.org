@@ -627,6 +627,9 @@ I use default completion system with multiple frontends.
   (marginalia-mode)
 #+end_src
 ** Icomplete (UI)
+#+begin_src elisp
+  (require 'icomplete)
+#+end_src
 *** Vertical mode
 #+begin_src elisp
   (add-hook 'icomplete-mode-hook #'icomplete-vertical-mode)
@@ -700,8 +703,8 @@ control over my completions.
 
   (defun sr/completion-test-start (style)
     "Test a completion style STYLE.
-    This makes `'completing-read' to only use STYLE as completion style to
-    use. call `sr/completion-test-end' when finished."
+    This makes `'completing-read' to only use STYLE as the completion
+    style. call `sr/completion-test-end' when finished."
     (interactive (list (completing-read
                         "Completion style: "
                         (mapcar (lambda (x) (car x)) completion-styles-alist))))
@@ -1174,7 +1177,7 @@ EWW, I overrode it.
 
   (keymap-global-set "C-c d d" #'sr/eng-browse-dictionary-at-point)
 #+end_src
-* Zettelkasten
+* COMMENT Zettelkasten
 I implemented my Zettelkasten in pure Org mode. I tried org-roam
 before, but it felt like an overkill for me.
 ** Constants
@@ -1465,6 +1468,7 @@ utility named =utmctl=, so I can use it to work with UTM in Emacs.
   (keymap-global-set "M-g g" #'consult-goto-line)
 
   (keymap-global-set "M-s M-l" #'consult-line)
+  (keymap-global-set "M-s g" #'consult-ripgrep)
 #+end_src
 ** Xref
 #+begin_src elisp
@@ -1914,9 +1918,6 @@ No need for carry overs.
   		          '((:discard (:tag "event"))
                   (:name "Goals"
                          :tag ("#weekly" "#monthly" "okr"))
-  		            (:name "Fleeting notes"
-  			                 :and (:tag "fleeting" :not (:todo ("DONE")))
-  			                 :order 1)
   		            (:name "School"
   			                 :tag ("schoolwork" "내신"))
                   (:name "Work"
@@ -1932,12 +1933,11 @@ No need for carry overs.
   		            (:name "Journals"
   			                 :tag "journal"
   			                 :order 2)
-  		            (:name "Captures"
-  			                 :and (:time-grid t :category "capture")
-  			                 :order 2)
+  		            (:name "Second brain"
+                         :category ("capture" "aor" "project" "archive")
+                         :order 2)
                   (:name "Today"
-  			                 :time-grid t
-  			                 :order 2))))))))
+  			                 :time-grid t))))))))
 #+end_src
 ** Project agenda
 #+begin_src elisp
@@ -2463,13 +2463,6 @@ Man specific configs.
   	       (side . right)
   	       (slot . 0)
   	       (window-width . 0.4)))
-#+end_src
-** Elfeed
-#+begin_src elisp
-  (add-to-list 'display-buffer-alist
-  	     `("\\*elfeed-"
-  	       (display-buffer-in-tab)
-  	       (tab-name . "Elfeed")))
 #+end_src
 ** Tabulated list mode
 Major mode for browsing a list of items e.g. Docker mode.
