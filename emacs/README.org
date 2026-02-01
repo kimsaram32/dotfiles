@@ -76,7 +76,6 @@ Small enhancement packages are not loaded here
   (require 'org-super-agenda)
   (require 'rainbow-mode)
   (require 'rfc-mode)
-  (require 'rg)
   (require 'vertico)
   (require 'vterm)
 #+end_src
@@ -2172,12 +2171,6 @@ exclusively with it.
   (keymap-set magit-section-mode-map "C-c C-p" 'magit-section-backward)
   (keymap-set magit-section-mode-map "C-c C-f" 'magit-section-forward-sibling)
   (keymap-set magit-section-mode-map "C-c C-b" 'magit-section-backward-sibling)
-#+end_src
-* Rg
-#+begin_src elisp
-  (keymap-set rg-mode-map "C-n" 'rg-next-file)
-  (keymap-set rg-mode-map "C-p" 'rg-prev-file)
-  (rg-enable-default-bindings)
 #+end_src
 * Elfeed
 ** Key bindings
