@@ -2,19 +2,24 @@ import * as K from "karabiner.ts";
 
 const App = {
   emacs: "org.gnu.Emacs",
+  wezterm: "com.github.wez.wezterm",
 };
 
 function modifiers() {
-  const ifEmacs = K.ifApp({ bundle_identifiers: [App.emacs] });
+  const ifRemapCapsToControl = K.ifApp({
+    bundle_identifiers: [App.emacs, App.wezterm],
+  });
 
   return K.rule("Modifiers").manipulators([
     K.map("left_command", "", "any").to("left_option"),
     K.map("fn", "", "any").to("left_command"),
-    K.map("caps_lock", "", "any").to("left_control").condition(ifEmacs),
+    K.map("caps_lock", "", "any")
+      .to("left_control")
+      .condition(ifRemapCapsToControl),
 
     K.map("caps_lock", "", "any")
       .to("left_command")
-      .condition(ifEmacs.unless()),
+      .condition(ifRemapCapsToControl.unless()),
   ]);
 }
 
