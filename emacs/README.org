@@ -7,38 +7,38 @@
 * Constants
 ** Directories
 #+begin_src elisp
-  (defconst sr/dotfiles-directory (expand-file-name "~/me/dotfiles")
+  (defconst sr/dotfiles-directory (expand-file-name "~/me/dotfiles/")
     "Root directory for dotfiles.")
 
   (defconst sr/emacs-load-directory
-    (file-name-concat sr/dotfiles-directory "emacs/lisp")
+    (file-name-concat sr/dotfiles-directory "emacs/lisp/")
     "Directory for personal lisp libraries.")
 
   (defconst sr/note-root-directory (expand-file-name "~/me/myself/")
     "Root directory for notes.")
 
   (defconst sr/note-periodic-directory
-    (file-name-concat sr/note-root-directory "life/")
+    (expand-file-name "life/" sr/note-root-directory)
     "Directory for periodic notes.")
 
   (defconst sr/note-project-directory
-    (file-name-concat sr/note-root-directory "projects/")
+    (expand-file-name "projects/" sr/note-root-directory)
     "Directory for project notes.")
 
   (defconst sr/note-second-brain-directory
-    (file-name-concat sr/note-root-directory "second-brain/")
+    (expand-file-name "second-brain/" sr/note-root-directory)
     "Directory for second bran.")
 
   (defconst sr/note-zk-directory
-    (file-name-concat sr/note-root-directory "zk/")
+    (expand-file-name "zettelkasten/" sr/note-root-directory)
     "Directory for Zettelkasten.")
 
   (defconst sr/note-media-directory
-    (file-name-concat sr/note-root-directory "media/")
+    (expand-file-name "media/" sr/note-root-directory)
     "Directory for media (e.g. images)")
 
   (defconst sr/dev-project-directory
-    "~/me/ws/projects/"
+    (expand-file-name "~/me/ws/projects/")
     "Directory for software projects")
 #+end_src
 ** Files
@@ -300,7 +300,7 @@ Key binding for =M-x append-to-register=.
 
 ")
 #+end_src
-** Short for switching previous/next buffer
+** Keymap for switching previous/next buffer
 #+begin_src elisp
 (keymap-global-set "C-c b l" 'previous-buffer)
 (keymap-global-set "C-c b r" 'next-buffer)
@@ -443,90 +443,7 @@ nil."
 
   (keymap-global-set "C-c m h" 'sr/org-remove-empty-lines-around-headings)
 #+end_src
-** Migration from Obsidian documents
-#+begin_src elisp
-  (defun sr/migrate-insert-capture-heading ()
-    "Insert heading from current buffer's name."
-    (interactive)
-    (let* ((split (string-split (file-name-base (buffer-name))))
-  	 (time (date-to-time (nth 0 split)))
-  	 (name (string-join (cdr split) " ")))
-      (insert "* " (format-time-string "<%Y-%m-%d> " time) name)))
-#+end_src
-** Automatic migration
-*** Markdown indicator string
-I renamed all *.md documents to *.org for easier file searching and
-file name resolutions.
-
-To distinguish old markdown documents, I included fixed indicator
-strings to them.
-
-#+begin_src elisp
-(defconst sr/markdown-indicator-string "###MARKDOWN###"
-  "String that indicates the current file is a markdown document.")
-#+end_src
-*** DWIM migration
-#+begin_src elisp
-  (defun sr/migrate-dwim ()
-    "Migrate current file. DWIM."
-    (interactive)
-    (save-excursion
-      (goto-char (point-min))
-      (if (search-forward sr/markdown-indicator-string nil t)
-          (progn
-  	  (replace-match "" nil t)
-  	  (while (search-forward sr/markdown-indicator-string nil t)
-  	    (replace-match "" nil t))
-  	  (sr/migrate-markdown-to-org))
-        (sr/migrate-org-properties)
-        (sr/migrate-latex)
-        ;; (sr/org-remove-empty-lines-around-headings)
-        )
-      (message "DWIM migration finished.")))
-  (keymap-global-set "C-c m m" 'sr/migrate-dwim)
-#+end_src
-** COMMENT Migrate inline latex
-#+begin_src elisp
-(defun sr/migrate-latex ()
-  (interactive)
-  (save-excursion
-    (goto-char (point-min))
-    (while (re-search-forward "\\$\\(.+?\\)\\$" nil t)
-      (replace-match "\\\\(\\1\\\\)"))))
-(keymap-global-set "C-c m l" 'sr/migrate-latex)
-#+end_src
-** COMMENT Migrate old Org mode documents
-#+begin_src elisp
-(defun sr/migrate-org-properties ()
-  "Migrate current old Org document to follow the new format. Specifically:
-- move incorrect buffer options (created and updated) into properties.
-- if ZK, call `sr/set-zettel-id-property'.
-- Move filetags into entry tags."
-  (interactive)
-  (save-excursion
-    (goto-char (point-min))
-    (let ((created-at (and (re-search-forward "^#\\+created: \\(.+\\)$" nil t)
-			   (let ((val (match-string 1)))
-			     (beginning-of-line)
-			     (delete-line)
-			     val)))
-	  (updated-at (and (re-search-forward "^#\\+updated: \\(.+\\)$" nil t)
-			   (let ((val (match-string 1)))
-			     (beginning-of-line)
-			     (delete-line)
-			     val)))
-	  (filetags (and (re-search-forward "^#\\+filetags: \\(.+\\)$" nil t)
-			   (let ((val (match-string 1)))
-			     (beginning-of-line)
-			     (delete-line)
-			     val))))
-      (org-next-visible-heading 1)
-      (when created-at (org-set-property "created" created-at))
-      (when updated-at (org-set-property "updated" updated-at))
-      (when filetags (org-set-tags (string-replace "-" "_" filetags))))
-    (sr/set-zettel-id-property)))
-#+end_src
-** COMMENT Migration from markdown
+** Migration from markdown
 Previously, I used plain markdown documents for note taking.
 Now I have to migrate from it.
 
@@ -607,6 +524,89 @@ prefer to use code (~).
   (interactive)
   (replace-regexp "=" "~"))
 (keymap-global-set "C-c m c" 'sr/verbatim-to-code)
+#+end_src
+** Automatic migration
+*** Markdown indicator string
+I renamed all *.md documents to *.org for easier file searching and
+file name resolutions.
+
+To distinguish old markdown documents, I included fixed indicator
+strings to them.
+
+#+begin_src elisp
+(defconst sr/markdown-indicator-string "###MARKDOWN###"
+  "String that indicates the current file is a markdown document.")
+#+end_src
+*** DWIM migration
+#+begin_src elisp
+  (defun sr/migrate-dwim ()
+    "Migrate current file. DWIM."
+    (interactive)
+    (save-excursion
+      (goto-char (point-min))
+      (if (search-forward sr/markdown-indicator-string nil t)
+          (progn
+  	  (replace-match "" nil t)
+  	  (while (search-forward sr/markdown-indicator-string nil t)
+  	    (replace-match "" nil t))
+  	  (sr/migrate-markdown-to-org))
+        (sr/migrate-org-properties)
+        (sr/migrate-latex)
+        ;; (sr/org-remove-empty-lines-around-headings)
+        )
+      (message "DWIM migration finished.")))
+  (keymap-global-set "C-c m m" 'sr/migrate-dwim)
+#+end_src
+** COMMENT Migration from Obsidian documents
+#+begin_src elisp
+  (defun sr/migrate-insert-capture-heading ()
+    "Insert heading from current buffer's name."
+    (interactive)
+    (let* ((split (string-split (file-name-base (buffer-name))))
+  	 (time (date-to-time (nth 0 split)))
+  	 (name (string-join (cdr split) " ")))
+      (insert "* " (format-time-string "<%Y-%m-%d> " time) name)))
+#+end_src
+** COMMENT Migrate inline latex
+#+begin_src elisp
+(defun sr/migrate-latex ()
+  (interactive)
+  (save-excursion
+    (goto-char (point-min))
+    (while (re-search-forward "\\$\\(.+?\\)\\$" nil t)
+      (replace-match "\\\\(\\1\\\\)"))))
+(keymap-global-set "C-c m l" 'sr/migrate-latex)
+#+end_src
+** COMMENT Migrate old Org mode documents
+#+begin_src elisp
+(defun sr/migrate-org-properties ()
+  "Migrate current old Org document to follow the new format. Specifically:
+- move incorrect buffer options (created and updated) into properties.
+- if ZK, call `sr/set-zettel-id-property'.
+- Move filetags into entry tags."
+  (interactive)
+  (save-excursion
+    (goto-char (point-min))
+    (let ((created-at (and (re-search-forward "^#\\+created: \\(.+\\)$" nil t)
+			   (let ((val (match-string 1)))
+			     (beginning-of-line)
+			     (delete-line)
+			     val)))
+	  (updated-at (and (re-search-forward "^#\\+updated: \\(.+\\)$" nil t)
+			   (let ((val (match-string 1)))
+			     (beginning-of-line)
+			     (delete-line)
+			     val)))
+	  (filetags (and (re-search-forward "^#\\+filetags: \\(.+\\)$" nil t)
+			   (let ((val (match-string 1)))
+			     (beginning-of-line)
+			     (delete-line)
+			     val))))
+      (org-next-visible-heading 1)
+      (when created-at (org-set-property "created" created-at))
+      (when updated-at (org-set-property "updated" updated-at))
+      (when filetags (org-set-tags (string-replace "-" "_" filetags))))
+    (sr/set-zettel-id-property)))
 #+end_src
 * Minibuffer
 #+begin_src elisp
@@ -1467,6 +1467,276 @@ utility named =utmctl=, so I can use it to work with UTM in Emacs.
 
   (keymap-global-set "C-c v m" #'sr/man-change-program)
 #+end_src
+* Denote
+#+begin_src elisp
+  (require 'denote)
+  (require 'consult-denote)
+#+end_src
+
+#+begin_src elisp
+  (add-hook 'text-mode-hook #'denote-fontify-links-mode-maybe)
+  (add-hook 'dired-mode-hook #'denote-dired-mode)
+#+end_src
+** Key bindings
+#+begin_src elisp
+  (defvar-keymap sr/denote-map)
+
+  (keymap-global-set "C-c n" sr/denote-map)
+
+  (keymap-set sr/denote-map "n" #'sr/denote-create-note-zettelkasten)
+  (keymap-set sr/denote-map "s" #'sr/denote-create-note-second-brain)
+
+  (keymap-set sr/denote-map "r" #'denote-rename-file)
+  (keymap-set sr/denote-map "R" #'denote-rename-file-using-front-matter)
+  (keymap-set sr/denote-map "l l" #'denote-link)
+  (keymap-set sr/denote-map "l b" #'denote-backlinks)
+  (keymap-set sr/denote-map "d" #'denote-dired)
+#+end_src
+** Consult (consult-denote)
+#+begin_src elisp
+  (consult-denote-mode)
+#+end_src
+
+#+begin_src elisp
+  (keymap-set sr/denote-map "g" #'consult-denote-grep)
+  (keymap-set sr/denote-map "f" #'consult-denote-find)
+#+end_src
+
+#+begin_src elisp
+  (defun sr/consult-denote-buffer ()
+    (interactive)
+    (consult-buffer (list consult-denote-buffer-source)))
+
+  (keymap-set sr/denote-map "b" #'sr/consult-denote-buffer)
+#+end_src
+** Options
+#+begin_src elisp
+  (setq denote-directory sr/note-root-directory)
+  (setq denote-prompts '(title keywords))
+#+end_src
+
+Backlink buffers.
+#+begin_src elisp
+  (setq denote-backlinks-display-buffer-action
+        '((display-buffer-reuse-mode-window display-buffer-below-selected)
+          (mode . denote-query-mode)
+          (window-height . fit-window-to-buffer)
+          (post-command-select-window . t)))
+#+end_src
+** Buffer names
+#+begin_src elisp
+  (denote-rename-buffer-mode 1)
+  (setq denote-buffer-name-prefix "d: ")
+  (setq denote-rename-buffer-format "%i %t")
+#+end_src
+** Link extensions
+Insert link to the last buffer. This can be useful when creating
+"follow-up" notes (e.g. Forgezettel-style Zettels).
+
+#+begin_src elisp
+  (defun sr/denote-link-from-last-buffer (id-only)
+    "Create link to the last visited file buffer.
+  ID-ONLY is the same as `denote-link'."
+    (interactive "P")
+    (declare (interactive-only t))
+    (let ((prev-buffers (window-prev-buffers (selected-window))))
+      (while (not (buffer-file-name (car (car prev-buffers))))
+        (unless (setq prev-buffers (cdr prev-buffers))
+          (user-error "No file-visiting buffer found")))
+      (let* ((file (buffer-file-name (car (car prev-buffers))))
+             (file-type (denote-filetype-heuristics buffer-file-name))
+             (description (denote-get-link-description file)))
+        (denote-link file file-type description id-only))))
+
+  (keymap-set sr/denote-map "l f" #'sr/denote-link-from-last-buffer)
+#+end_src
+
+#+begin_src elisp
+  (defun sr/denote-save-link-to-kill-ring (id-only)
+    "Save the link pointing the current note to the kill ring.
+  It infers the link format using the file type of the current buffer, so
+  this will break across different file formats."
+    (interactive "P")
+    (declare (interactive-only t))
+    (if-let* ((file buffer-file-name)
+              (file-type (denote-filetype-heuristics file))
+              (description (denote-get-link-description file))
+              (link (denote-format-link file description file-type id-only)))
+        (progn
+          (kill-new link)
+          (message link))
+      (user-error "could not create link: check the buffer is visitng a file.")))
+
+  (keymap-set sr/denote-map "l s" #'sr/denote-save-link-to-kill-ring)
+#+end_src
+** Note creation
+#+begin_src elisp
+  (defun sr/denote-create-note-second-brain ()
+    "Create new note for the second brain."
+    (declare (interactive-only t))
+    (interactive)
+    (let ((denote-directory sr/note-second-brain-directory))
+      (call-interactively 'denote)))
+
+  (defun sr/denote-create-note-zettelkasten ()
+    "Create new note for zettelkasten."
+    (declare (interactive-only t))
+    (interactive)
+    (let ((denote-directory sr/note-zk-directory))
+      (call-interactively 'denote)))
+#+end_src
+** Create notes from Org entries
+Migration scripts for moving from a one-file-many-entries Org mode
+setup.
+
+#+begin_src elisp
+  ;; I want the created notes to be in my second brain.
+  (defvar sr/denote-signature-for-org-entry "sb"
+    "Signature to use for Denote notes from Org mode entries.")
+
+  (defvar sr/denote-directory-for-org-entry
+    sr/note-second-brain-directory
+    "Directory for Denote notes from Org mode entries.")
+
+  (defun sr/org-entry-content-start ()
+    "Return the position just after the heading of the current entry."
+    ;; this works based on the assumption that the heading is one line
+    ;; long.
+    (save-excursion
+      (let ((end (org-element-end (org-element-at-point))))
+        (while (progn
+                 (forward-line 1)
+                 ;; handle empty entries.
+                 (and (not (eobp))
+                      (<= (point) end)
+                      (looking-at "^$"))))
+        (min (point) end))))
+
+  (defconst sr/org-simple-link-regexp
+    "\\[\\[\\([^]\n]+\\)\\]\\(\\[\\([^]\n]+\\)\\]\\)?\\]"
+    "Simple regexp to match Org mode links.")
+
+  (defun sr/org-remove-links (str)
+    "Remove all Org links from STR.
+  Return a cons cell whose car is the resulting string and cdr is the
+  extracted links."
+    (let ((links '())
+          (pos 0))
+      (while (and (< pos (length str))
+                  (string-match sr/org-simple-link-regexp str pos))
+        (let* ((full (match-string 0 str))
+               (link (match-string 1 str))
+               (desc (or (match-string 3 str) link)))
+          (push full links)
+          (setq str (replace-match desc t t str))
+          (setq pos (1+ (match-end 0)))))
+      (cons str (nreverse links))))
+
+  (defun sr/denote-get-date-from-org-entry ()
+    "Extract the date to use in Denote notes from current Org entry.
+    Returned date is the string in the format of `org-timestamp-formats'.
+    Return nil if the date cannot be found."
+    (save-match-data
+      (save-excursion
+        (goto-char (org-entry-beginning-position))
+        (if (re-search-forward
+             (org-re-timestamp 'active)
+             ;; `org-entry-end-position' does not include subtrees,
+             ;; which is required here.
+             (org-entry-end-position)
+             t)
+            (match-string 1)
+          nil))))
+
+  (defun sr/denote-new-note-from-org-entry ()
+    "Create a new note from the Org entry at point."
+    (interactive "P")
+    (let* ((element (save-excursion
+                      (org-back-to-heading t)
+                      (org-element-at-point)))
+           (start (org-element-begin element))
+           (end (org-element-end element))
+
+           (content-start (sr/org-entry-content-start))
+           (content (buffer-substring content-start end))
+
+           (denote-use-directory sr/denote-directory-for-org-entry)
+           (denote-use-signature sr/denote-signature-for-org-entry)
+           denote-use-title
+           denote-use-keywords
+           denote-use-date
+           links)
+
+      ;; extract metadata from the entry.
+      (save-excursion
+        (goto-char start)
+        (let ((extracted (sr/org-remove-links (org-get-heading t t t t))))
+          (setq denote-use-title (car extracted))
+          (setq links (cdr extracted)))
+        (setq denote-use-keywords
+              (denote-sluggify-keywords-and-apply-rules (org-get-tags)))
+        (setq denote-use-date (sr/denote-get-date-from-org-entry)))
+
+      (message (format "title: %s" denote-use-title))
+
+      (save-current-buffer
+        (call-interactively 'denote)
+
+        ;; insert links.
+        (insert (string-join links "\n"))
+        (when links (insert "\n\n"))
+
+        (insert content)
+
+        ;; correct the heading levels.
+        (goto-char (point-min))
+        (save-excursion
+          (while (re-search-forward "^\\*\\*" nil t)
+            (replace-match "*"))))))
+
+  (defun sr/outline-try-forward-same-level-p (n)
+    "Try `outline-forward-same-level' and return t on success.
+    Return nil otherwise."
+    (condition-case nil
+        (progn
+          (outline-forward-same-level n)
+          t)
+      (error nil)))
+
+  (defun sr/denote-move-org-entries-in-buffer (preserve)
+    "Move all Org entries in the current buffer to new notes.
+    Delete the original entries unless PRESERVE is non-nil."
+    (interactive "P")
+    (save-excursion
+      (goto-char (point-min))
+      (unless (outline-on-heading-p t)
+        (outline-next-heading))
+      (while (progn
+               (sr/denote-new-note-from-org-entry)
+               (sr/outline-try-forward-same-level-p 1)))
+      (unless preserve
+        (delete-region (point-min) (point-max)))))
+
+  (defun sr/denote-move-org-entries-in-region (preserve)
+    "Move all Org entries in the region to new notes.
+    Delete the original entries unless PRESERVE is non-nil."
+    (interactive "P")
+    (unless (region-active-p)
+      (user-error "Region is not active"))
+    (with-restriction (region-beginning) (region-end)
+      (sr/denote-move-org-entries-in-buffer preserve)))
+
+  (defun sr/denote-move-org-entries-dwim (preserve)
+    "Move Org entries to new notes in the current context.
+    This is a simple wrapper around `sr/denote-move-org-entries-in-region' and `sr/denote-move-org-entries-in-buffer'."
+    (declare (interactive-only t))
+    (interactive "P")
+    (if (region-active-p)
+        (sr/denote-move-org-entries-in-region preserve)
+      (sr/denote-move-org-entries-in-buffer preserve)))
+
+  (keymap-set sr/denote-map "m" #'sr/denote-move-org-entries-dwim)
+#+end_src
 * Consult
 ** Key bindings
 #+begin_src elisp
@@ -1514,6 +1784,10 @@ temporarily resetting =display-buffer-alist=.
 #+end_src
 * Org mode
 ** Key bindings
+*** Unbind conflicting keys
+#+begin_src elisp
+  (keymap-unset org-mode-map "C-'")
+#+end_src
 *** Global bindings
 #+begin_src elisp
   (keymap-global-set "C-c l" 'org-store-link)
@@ -1592,7 +1866,7 @@ I often have many entries, so it's better to fold them on startup.
       (org-fold-hide-subtree)))
 
   (keymap-set org-mode-map "C-c C-x TAB" 'sr/org-toggle-subtree)
-  (keymap-set sr/zk-mode-map "TAB" 'sr/org-toggle-subtree)
+  ;; (keymap-set sr/zk-mode-map "TAB" 'sr/org-toggle-subtree)
 #+end_src
 ** Latex
 *** LuaLaTeX
@@ -1734,7 +2008,7 @@ Used to use timestamp here, but switched to use UUID (default).
 ZK links are inserted not by org-id but a custom function.
 Other entries should be inserted normal UUIDs to distinguish Zettels.
 #+begin_src elisp
-  (setq org-id-ts-format sr/zettel-id-format)
+  ;; (setq org-id-ts-format sr/zettel-id-format)
   (setq org-id-method 'uuid)
 #+end_src
 *** Global tracking
@@ -2393,7 +2667,7 @@ connect, causing Emacs to freeze on launch.
 #+begin_src elisp
   (setq display-buffer-alist nil)
 #+end_src
-** Org mode source code editing
+** COMMENT Org mode source code editing
 ~org-src-mode~ is a minor mode enabled when editing source code in Org mode.
 
 #+begin_src elisp
