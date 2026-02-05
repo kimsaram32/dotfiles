@@ -1570,18 +1570,34 @@ Insert link to the last buffer. This can be useful when creating
 #+end_src
 ** Note creation
 #+begin_src elisp
+  (defun sr/denote-get-initial-data-dwim ()
+    "Get appopriate DWIM initial data for new notes.
+  This returns a plist of two properties: TITLE and CONTENT."
+    (pcase major-mode
+      ('eww-mode
+       (let ((url (eww-current-url))
+             (title (or (plist-get eww-data :title) url)))
+         (list
+          :title title
+          :content (format "[[%s][%s]]" url title))))))
+
   (defun sr/denote-create-note-second-brain ()
     "Create new note for the second brain."
     (declare (interactive-only t))
     (interactive)
-    (let ((denote-directory sr/note-second-brain-directory))
-      (call-interactively 'denote)))
+    (let* ((initial-data (sr/denote-get-initial-data-dwim))
+           (denote-use-directory sr/note-second-brain-directory)
+           (denote-use-signature "sb")
+           (denote-use-title (plist-get initial-data :title)))
+      (call-interactively 'denote)
+      (when-let ((content (plist-get initial-data :content)))
+        (insert content))))
 
   (defun sr/denote-create-note-zettelkasten ()
     "Create new note for zettelkasten."
     (declare (interactive-only t))
     (interactive)
-    (let ((denote-directory sr/note-zk-directory))
+    (let ((denote-use-directory sr/note-zk-directory))
       (call-interactively 'denote)))
 #+end_src
 ** Create notes from Org entries
@@ -2067,22 +2083,33 @@ I need to add tags inside the capture buffer.
 #+end_src
 ** Insert image from clipboard
 #+begin_src elisp
-  (defun sr/insert-image-from-clipboard ()
-    "Prompt for image file name, and create the image in `sr/note-media-directory'.
-  Insert the image at point as an Org mode link.
+  (defvar sr/denote-signature-for-media "media"
+    "Signature to use for media files.")
 
-  With a prefix argument, do not insert the link and store it instead."
+  (defun sr/org-insert-image-from-clipboard ()
+    "Create an image file with clipboard data and insert a link to it.
+  Images are created in `sr/note-media-directory' with Denote file-naming
+  scheme.
+
+  pngpaste is used to retrieve the image from clipboard."
     (interactive)
-    (let ((temp-file-name (make-temp-file "tmp-"))
-          image-name)
+    (let ((temp-file-name (make-temp-file "image-tmp-")))
       (when (not (eq 0 (call-process-shell-command
-  		    (format "pngpaste %s" temp-file-name)
-  		    nil nil)))
+  		                  (format "pngpaste %s" temp-file-name)
+  		                  nil nil)))
         (user-error "Attempted to paste non-image content"))
-      (setq image-name (read-from-minibuffer "image name (with extensions): "))
-      (copy-file temp-file-name
-                 (expand-file-name image-name sr/note-media-directory))
-      (insert (format "[[media:%s]]" image-name))))
+      (let* ((id (funcall denote-get-identifier-function nil nil))
+             (title (denote-title-prompt nil "Image title"))
+             (keywords (denote-keywords-prompt "Image keywords"))
+             (extension (read-from-minibuffer "Image extension: " "."))
+             (width (read-from-minibuffer "Image width (witnout units): "))
+             (file-name (denote-format-file-name
+                         sr/note-media-directory
+                         id keywords title extension "media")))
+        (copy-file temp-file-name file-name)
+        (unless (string-empty-p width)
+          (insert (format "#+attr_html: :width %spx" width)))
+        (insert (format "[[media:%s]]" (car (last (file-name-split file-name))))))))
 
   (keymap-set org-mode-map "C-c i" #'sr/insert-image-from-clipboard)
 #+end_src
