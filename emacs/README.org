@@ -400,8 +400,6 @@ I finish each day by committing changes I made in personal files into the Git re
   	(apply 'call-process (append '("git" nil nil nil) args)))
         (message (format "Commited and pushed changes in %s." name))))
     (message "Done. Good night :)"))
-
-  (keymap-set sr/workflow-map "f" #'sr/finish-today)
 #+end_src
 * Migration
 Whenever I change my note-taking system, I need to migrate my existing
@@ -1489,6 +1487,7 @@ utility named =utmctl=, so I can use it to work with UTM in Emacs.
   (keymap-set sr/denote-map "r" #'denote-rename-file)
   (keymap-set sr/denote-map "R" #'denote-rename-file-using-front-matter)
   (keymap-set sr/denote-map "l l" #'denote-link)
+  (keymap-set sr/denote-map "l L" #'denote-link-after-creating)
   (keymap-set sr/denote-map "l b" #'denote-backlinks)
   (keymap-set sr/denote-map "d" #'denote-dired)
 #+end_src
@@ -1512,7 +1511,7 @@ utility named =utmctl=, so I can use it to work with UTM in Emacs.
 ** Options
 #+begin_src elisp
   (setq denote-directory sr/note-root-directory)
-  (setq denote-prompts '(title keywords))
+  (setq denote-prompts '(title keywords directory))
 #+end_src
 
 Backlink buffers.
