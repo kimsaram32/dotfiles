@@ -2789,7 +2789,17 @@ Major mode for browsing a list of items e.g. Docker mode.
 * Avy
 #+begin_src elisp
   (require 'avy)
-  (keymap-global-set "C-'" #'avy-goto-char)
+  (keymap-global-set "C-c o" #'avy-goto-char-timer)
   (keymap-global-set "M-g t" #'avy-goto-char-2)
-  (keymap-global-set "M-g b" #'avy-goto-char-timer)
+  (keymap-global-set "M-g b" #'avy-goto-char)
+#+end_src
+** Timeout seconds
+#+begin_src elisp
+  (setq avy-timeout-seconds 0.3)
+#+end_src
+** Customize keys
+I use Colemak layout, so the keys are adjusted accordingly.
+#+begin_src elisp
+  ;; the default is '(?a ?s ?d ?f ?g ?h ?j ?k ?l).
+  (setq avy-keys '(?a ?r ?s ?t ?d ?n ?e ?i ?o ?h))
 #+end_src
