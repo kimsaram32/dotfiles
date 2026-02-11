@@ -1513,7 +1513,7 @@ utility named =utmctl=, so I can use it to work with UTM in Emacs.
 ** Options
 #+begin_src elisp
   (setq denote-directory sr/note-root-directory)
-  (setq denote-prompts '(title keywords directory))
+  (setq denote-prompts '(title keywords subdirectory))
 #+end_src
 
 Backlink buffers.
@@ -1588,7 +1588,6 @@ Insert link to the last buffer. This can be useful when creating
     (declare (interactive-only t))
     (interactive)
     (let* ((initial-data (sr/denote-get-initial-data-dwim))
-           (denote-use-directory sr/note-second-brain-directory)
            (denote-use-signature "sb")
            (denote-use-title (plist-get initial-data :title)))
       (call-interactively 'denote)
