@@ -437,7 +437,9 @@ nil."
          (when (is-empty-line-p)
            (insert "##delete##")))
        nil (if (region-active-p) 'region nil))
-    (delete-matching-lines "##delete##"))
+    (save-excursion
+      (goto-char (point-min))
+      (delete-matching-lines "##delete##")))
 
   (keymap-global-set "C-c m h" 'sr/org-remove-empty-lines-around-headings)
 #+end_src
@@ -555,7 +557,7 @@ strings to them.
       (message "DWIM migration finished.")))
   (keymap-global-set "C-c m m" 'sr/migrate-dwim)
 #+end_src
-** COMMENT Migration from Obsidian documents
+** Migration from Obsidian documents
 #+begin_src elisp
   (defun sr/migrate-insert-capture-heading ()
     "Insert heading from current buffer's name."
@@ -565,7 +567,7 @@ strings to them.
   	 (name (string-join (cdr split) " ")))
       (insert "* " (format-time-string "<%Y-%m-%d> " time) name)))
 #+end_src
-** COMMENT Migrate inline latex
+** Migrate inline latex
 #+begin_src elisp
 (defun sr/migrate-latex ()
   (interactive)
@@ -575,7 +577,7 @@ strings to them.
       (replace-match "\\\\(\\1\\\\)"))))
 (keymap-global-set "C-c m l" 'sr/migrate-latex)
 #+end_src
-** COMMENT Migrate old Org mode documents
+** Migrate old Org mode documents
 #+begin_src elisp
 (defun sr/migrate-org-properties ()
   "Migrate current old Org document to follow the new format. Specifically:
@@ -1185,7 +1187,7 @@ EWW, I overrode it.
 
   (keymap-global-set "C-c d d" #'sr/eng-browse-dictionary-at-point)
 #+end_src
-* COMMENT Zettelkasten
+* Zettelkasten
 I implemented my Zettelkasten in pure Org mode. I tried org-roam
 before, but it felt like an overkill for me.
 ** Constants
