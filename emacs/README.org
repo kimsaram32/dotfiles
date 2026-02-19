@@ -628,6 +628,8 @@ I use default completion system with multiple frontends.
   (keymap-set vertico-map "M-n" #'vertico-next)
   (keymap-set vertico-map "M-p" #'vertico-previous)
   (keymap-set vertico-map "M-TAB" #'vertico-insert)
+  (keymap-set vertico-map "RET" #'vertico-exit-input)
+  (keymap-set vertico-map "M-RET" #'vertico-exit)
 
   (keymap-set vertico-map "C-n" #'next-history-element)
   (keymap-set vertico-map "C-p" #'previous-history-element)
@@ -1489,7 +1491,6 @@ utility named =utmctl=, so I can use it to work with UTM in Emacs.
   (keymap-set sr/denote-map "r" #'denote-rename-file)
   (keymap-set sr/denote-map "R" #'denote-rename-file-using-front-matter)
   (keymap-set sr/denote-map "l l" #'denote-link)
-  (keymap-set sr/denote-map "l L" #'denote-link-after-creating)
   (keymap-set sr/denote-map "l b" #'denote-backlinks)
   (keymap-set sr/denote-map "d" #'denote-dired)
 #+end_src
@@ -1866,9 +1867,8 @@ Use indented headings.
   (setq org-startup-indented t)
 #+end_src
 
-I often have many entries, so it's better to fold them on startup.
 #+begin_src elisp
-  (setq-default org-startup-folded 'fold)
+  (setq-default org-startup-folded 'showeverything)
 #+end_src
 ** Toggle subtree
 #+begin_src elisp
@@ -1940,6 +1940,10 @@ Dvisvgm configuration is patched for my environment...
   	      ("media" . ,sr/note-media-directory)))
 #+end_src
 ** Lists
+#+begin_src elisp
+  (setq org-list-allow-alphabetical t)
+#+end_src
+
 #+begin_src elisp
   (keymap-set org-mode-map "C-c C-8" #'org-list-make-subtree)
 #+end_src
