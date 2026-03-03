@@ -1,6 +1,5 @@
 # -*- lexical-binding:t; -*-
 #+startup: fold
-#+startup: hideblocks
 #+property: header-args:elisp :results silent :lexical t
 
 * Emacs configuration
@@ -711,6 +710,10 @@ Non-exhaustive.
 - eglot-capf: =eglot-completion-at-point=
 - org-heading: [[*Jump to heading][Jump to heading]] and =consult-org-heading=
 - info-menu
+** Completion options
+#+begin_src elisp
+  (setq completion-ignore-case t)
+#+end_src
 ** Completion styles
 [[help:completion-styles-alist]]
 
@@ -1839,11 +1842,12 @@ setup.
 ** Key bindings
 #+begin_src elisp
   (keymap-global-set "C-x b" #'consult-buffer)
+  (keymap-global-set "C-x 4 b" #'consult-buffer-other-window)
+  (keymap-set tab-prefix-map "b" #'consult-buffer-other-tab)
+  (keymap-global-set "C-x 5 b" #'consult-buffer-other-frame)
 
   (keymap-global-set "M-g i" #'consult-imenu)
-  (keymap-global-set "M-g M-i" #'consult-imenu)
   (keymap-global-set "M-g M-g" #'consult-goto-line)
-  (keymap-global-set "M-g g" #'consult-goto-line)
 
   (keymap-global-set "M-s M-l" #'consult-line)
   (keymap-global-set "M-s g" #'consult-ripgrep)
@@ -2547,6 +2551,10 @@ Groups
 #+begin_src elisp
   (setq delete-by-moving-to-trash t)
 #+end_src
+** Enable Lin mode
+#+begin_src elisp
+  (add-hook 'dired-mode-hook 'lin-mode)
+#+end_src
 * Info
 ** Toggle Linux docs (VMs)
 This assumes that the =Info-additional-directory-list= is used
@@ -2568,7 +2576,11 @@ exclusively with it.
 * Shr / EWW
 ** Set max width for readability
 #+begin_src elisp
-(setq shr-max-width 80)
+  (setq shr-max-width 80)
+#+end_src
+** Disable colors
+#+begin_src elisp
+  (setq shr-use-colors nil)
 #+end_src
 * Magit
 ** Org Mode bindings for section
@@ -2702,6 +2714,11 @@ In show mode:
 #+begin_src elisp
   (require-theme 'modus-themes)
 #+end_src
+** Ef-themes
+#+begin_src elisp
+  (require-theme 'ef-themes)
+  (ef-themes-take-over-modus-themes-mode 1)
+#+end_src
 ** Key bindings
 #+begin_src elisp
   (keymap-global-set "<f5>" 'modus-themes-rotate)
@@ -2740,6 +2757,23 @@ Override the completion table function =man= command uses.
 #+begin_src elisp
   (defun Man-completion-table (str pred flag)
   	'())
+#+end_src
+* Avy
+#+begin_src elisp
+  (require 'avy)
+  (keymap-global-set "C-c o" #'avy-goto-char-timer)
+  (keymap-global-set "M-g t" #'avy-goto-char-2)
+  (keymap-global-set "M-g b" #'avy-goto-char)
+#+end_src
+** Timeout seconds
+#+begin_src elisp
+  (setq avy-timeout-seconds 0.3)
+#+end_src
+** Customize keys
+I use Colemak layout, so the keys are adjusted accordingly.
+#+begin_src elisp
+  ;; the default is '(?a ?s ?d ?f ?g ?h ?j ?k ?l).
+  (setq avy-keys '(?a ?r ?s ?t ?d ?n ?e ?i ?o ?h))
 #+end_src
 * Eglot-booster
 #+begin_src elisp
@@ -2982,7 +3016,7 @@ Man specific configs.
   (add-hook 'Man-mode-hook (lambda ()
   			  (set-window-dedicated-p (selected-window) nil)))
 #+end_src
-** Zettelkasten
+** COMMENT Zettelkasten
 #+begin_src elisp
   (defun sr/in-tab-p (name)
     "Return t if the current tab bar name is NAME."
@@ -3015,21 +3049,4 @@ Major mode for browsing a list of items e.g. Docker mode.
   	 (side . bottom)
      (window-height . 0.5)
   	 (post-command-select-window . t)))
-#+end_src
-* Avy
-#+begin_src elisp
-  (require 'avy)
-  (keymap-global-set "C-c o" #'avy-goto-char-timer)
-  (keymap-global-set "M-g t" #'avy-goto-char-2)
-  (keymap-global-set "M-g b" #'avy-goto-char)
-#+end_src
-** Timeout seconds
-#+begin_src elisp
-  (setq avy-timeout-seconds 0.3)
-#+end_src
-** Customize keys
-I use Colemak layout, so the keys are adjusted accordingly.
-#+begin_src elisp
-  ;; the default is '(?a ?s ?d ?f ?g ?h ?j ?k ?l).
-  (setq avy-keys '(?a ?r ?s ?t ?d ?n ?e ?i ?o ?h))
 #+end_src
