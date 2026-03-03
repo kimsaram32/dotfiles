@@ -2194,10 +2194,21 @@ I need to add tags inside the capture buffer.
                          id keywords title extension "media")))
         (copy-file temp-file-name file-name)
         (unless (string-empty-p width)
-          (insert (format "#+attr_html: :width %spx" width)))
+          (insert (format "#+attr_html: :width %spx\\n" width)))
         (insert (format "[[media:%s]]" (car (last (file-name-split file-name))))))))
 
-  (keymap-set org-mode-map "C-c i" #'sr/insert-image-from-clipboard)
+  (keymap-set org-mode-map "C-c i" #'sr/org-insert-image-from-clipboard)
+#+end_src
+** Alignment for ZK structure notes
+#+begin_src elisp
+  (defun sr/add-zk-toc-align-rule ()
+    (add-to-list
+     'align-mode-rules-list
+     '(zk-toc
+       (regexp . "^[^;]+?;\\(\\s-+\\)\\[\\[\\S-+\\]\\]\\(\\s-+\\S-+\\)$")
+       (modes . '(org-mode)))))
+
+  (add-hook 'org-mode-hook #'sr/add-zk-toc-align-rule)
 #+end_src
 ** todo
 #+begin_src elisp
