@@ -232,6 +232,21 @@ Key binding for =M-x append-to-register=.
   (insert-pair arg ?\" ?\"))
 (keymap-global-set "M-\"" 'sr/insert-quotes)
 #+end_src
+** Toggle between let and let*
+[[https://www.reddit.com/r/emacs/comments/1qyp1rk/toggle_between_let_and_let/][Source]]
+
+#+begin_src elisp
+  (defun sr/toggle-let* ()
+    "Make the closest enclosing let or let* form a let* or let form, respectively,
+  then reindent that form's bindings. "
+    (interactive)
+    (save-excursion
+      (while (progn
+               (condition-case nil (backward-up-list nil t) (scan-error (error "Not within a let form")))
+               (not (search-forward-regexp (rx point "(" (* space) "let" (? "*") symbol-end) nil t))))
+      (if (= ?* (char-before)) (backward-delete-char 1) (insert "*"))
+      (indent-region (point) (progn (forward-sexp) (point)))))
+#+end_src
 ** Clear empty lines
 #+begin_src elisp
   (defun sr/clear-empty-lines ()
@@ -250,6 +265,18 @@ Key binding for =M-x append-to-register=.
 #+begin_src elisp
 (setq delete-pair-blink-delay 0)
 (keymap-global-set "C-M-z" 'delete-pair)
+#+end_src
+** Macros
+#+begin_src elisp
+  (defalias 'sr/macro-introduction-to-logic
+    (kmacro "M-m \\ { C-s SPC <return> C-b \\ } C-f & SPC ( C-M-f ) SPC <backspace> C-f \\ ( C-s & <return> C-b C-b \\ ) C-e SPC \\ \\ C-n M-m"))
+
+  (defun sr/run-macro-introduction-to-logic ()
+    (interactive)
+    (let ((electric-pair-mode nil))
+      (call-interactively #'sr/macro-introduction-to-logic)))
+
+  (keymap-global-set "C-c 0" #'sr/run-macro-introduction-to-logic)
 #+end_src
 * Windows
 [[https://karthinks.com/software/emacs-window-management-almanac][The Emacs Window Management Almanac]] is a good reference
@@ -2693,6 +2720,139 @@ connect, causing Emacs to freeze on launch.
 ** Kubedoc
 #+begin_src elisp
   (require 'kubedoc)
+#+end_src
+* LaTeX editing
+** AUCTeX
+#+begin_src elisp
+  (require 'tex)
+#+end_src
+
+[[info:auctex#Quick Start][auctex#Quick Start]]
+
+#+begin_src elisp
+  (setq TeX-auto-save t)
+  (setq TeX-parse-self t)
+#+end_src
+
+#+begin_src elisp
+  (setq-default TeX-master t)
+#+end_src
+
+[[info:auctex#Starting Viewers][auctex#Starting Viewers]]
+
+I wrote my own viewer program, since the one with pdf-tools
+integration doesn't work for me.
+
+#+begin_src elisp
+  (defun sr/TeX-open-pdf-as-buffer ()
+    "Open the pdf output as a buffer.
+  Used in `TeX-view-program-list'."
+    (unless TeX-PDF-mode
+      (error "PDF Tools only work with PDF output"))
+    (let* ((pdf (TeX-active-master (TeX-output-extension)))
+           (buffer (or (find-buffer-visiting pdf)
+                       (find-file-noselect pdf))))
+      (display-buffer buffer)))
+
+  (add-to-list
+   'TeX-view-program-list
+   '("PDF Buffer" sr/TeX-open-pdf-as-buffer))
+
+  (add-to-list
+   'TeX-view-program-selection
+   '(output-pdf "PDF Buffer"))
+#+end_src
+
+Do not ask before saving.
+
+#+begin_src elisp
+  (setq TeX-save-query nil)
+#+end_src
+** Assist mode
+Insert symbols using shortcuts. This is almost identical to cdlatex. I
+tried cdlatex but setting it up for my own workflow was kind of a
+pain. So I ended up building my own solution.
+
+#+begin_src elisp
+  (defvar-keymap sr/latex-assist-mode-map)
+
+  (defvar sr/latex-assist-symbol-prefix nil)
+
+  (defvar-keymap sr/latex-assist-symbol-1-map)
+  (defvar-keymap sr/latex-assist-symbol-2-map)
+  (defvar-keymap sr/latex-assist-symbol-3-map)
+
+  (defun sr/latex-assist-set-symbol-keys (defs)
+    (pcase-dolist (`(,key ,ex1 ,ex2 ,ex3) defs)
+      (when (not (key-valid-p key))
+        (user-error "Not a valid key"))
+      (when (string= key sr/latex-assist-symbol-prefix)
+        (user-error "Cannot use the prefix key"))
+
+      (when ex1
+        (keymap-set sr/latex-assist-symbol-1-map key (lambda ()
+                                                       (interactive)
+                                                       (insert ex1))))
+      (when ex2
+        (keymap-set sr/latex-assist-symbol-2-map key (lambda ()
+                                                       (interactive)
+                                                       (insert ex2))))
+      (when ex3
+        (keymap-set sr/latex-assist-symbol-3-map key (lambda ()
+                                                       (interactive)
+                                                       (insert ex3))))))
+
+  (defun sr/latex-assist-set-symbol-prefix (prefix)
+    (when (not (key-valid-p prefix))
+      (user-error "Not a valid key"))
+
+    (when sr/latex-assist-symbol-prefix
+      (keymap-unset sr/latex-assist-mode-map sr/latex-assist-symbol-prefix)
+      (keymap-unset sr/latex-assist-symbol-1-map sr/latex-assist-symbol-prefix)
+      (keymap-unset sr/latex-assist-symbol-2-map sr/latex-assist-symbol-prefix))
+
+    (keymap-set sr/latex-assist-mode-map prefix sr/latex-assist-symbol-1-map)
+    (keymap-set sr/latex-assist-symbol-1-map prefix sr/latex-assist-symbol-2-map)
+    (keymap-set sr/latex-assist-symbol-2-map prefix sr/latex-assist-symbol-3-map)
+
+    (setq sr/latex-assist-symbol-prefix prefix))
+
+  (define-minor-mode sr/latex-assist-mode
+    "Minor mode for quicker LaTeX editings."
+    :lighter "Latex Assist"
+    :init-value nil)
+
+  (sr/latex-assist-set-symbol-prefix "'")
+
+  (sr/latex-assist-set-symbol-keys
+   '(("a" "\\alpha" "\\land")
+     ("A" "\\forall" "\\aleph")
+     ("b" "\\beta")
+     ("e" "\\exists")
+     ("v" "\\lor")
+     ("-" "\\neg{")
+     ("." "\\cdot")
+     ("p" "^\\prime")))
+#+end_src
+* Abbrev
+#+begin_src elisp
+  (defun sr/define-abbrev-table (name &rest args)
+    (if (boundp name)
+        (clear-abbrev-table (symbol-value name)))
+    (apply #'define-abbrev-table name args))
+
+  (sr/define-abbrev-table
+   'sr/latex-abbrev-table
+   '(("to" "\\to")
+     ("iff" "\\leftrightarrow")
+     ("la" "\\land")
+     ("lo" "\\lor")))
+
+  (sr/define-abbrev-table
+   'org-mode-abbrev-table
+   nil
+   nil
+   :parents (list sr/latex-abbrev-table))
 #+end_src
 * Window setup
 #+begin_src elisp
