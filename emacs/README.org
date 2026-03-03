@@ -1580,6 +1580,25 @@ Insert link to the last buffer. This can be useful when creating
   (keymap-set sr/denote-map "l f" #'sr/denote-link-from-last-buffer)
 #+end_src
 
+Insert link to the buffer in the other window.
+
+#+begin_src elisp
+  (defun sr/denote-link-from-other-window (id-only)
+    "Create link to the file buffer in the other window.
+  ID-ONLY is the same as `denote-link'."
+    (interactive "P")
+    (declare (interactive-only t))
+    (if-let* ((window (next-window))
+              (buffer (window-buffer window))
+              (file (buffer-file-name buffer))
+              (file-type (denote-filetype-heuristics buffer-file-name))
+              (description (denote-get-link-description file)))
+        (denote-link file file-type description id-only)
+      (user-error "No file-visiting buffer found")))
+
+  (keymap-set sr/denote-map "l 4" #'sr/denote-link-from-other-window)
+#+end_src
+
 #+begin_src elisp
   (defun sr/denote-save-link-to-kill-ring (id-only)
     "Save the link pointing the current note to the kill ring.
@@ -1612,7 +1631,7 @@ Insert link to the last buffer. This can be useful when creating
           :content (format "[[%s][%s]]" url title))))))
 
   (defun sr/denote-create-note-second-brain ()
-    "Create new note for the second brain."
+    "Create a new note for the second brain."
     (declare (interactive-only t))
     (interactive)
     (let* ((initial-data (sr/denote-get-initial-data-dwim))
@@ -1622,12 +1641,47 @@ Insert link to the last buffer. This can be useful when creating
       (when-let ((content (plist-get initial-data :content)))
         (insert content))))
 
+  (defun sr/denote-create-note-problem ()
+    "Create a new problem note."
+    (declare (interactive-only t))
+    (interactive)
+    (let* ((section (read-from-minibuffer "Section number (e.g. 1-5): "))
+           (page (read-number "Page number: "))
+           (problem-num (read-number "Problem number: "))
+           (denote-use-signature "sb")
+           (denote-use-title (format "Problem (s)%s %dp - %d" section page problem-num)))
+      (call-interactively 'denote)))
+
   (defun sr/denote-create-note-zettelkasten ()
-    "Create new note for zettelkasten."
+    "Create a new note for zettelkasten."
     (declare (interactive-only t))
     (interactive)
     (let ((denote-use-directory sr/note-zk-directory))
       (call-interactively 'denote)))
+#+end_src
+** Dired integration
+When a file is renamed via Dired, update its front matter.
+Useful for bulk-editing with WDired.
+#+begin_src elisp
+  (defun sr/dired-rename-update-denote-front-matter (file new-name ok-if-already-exists)
+    "After renaming files in Dired, update Denote front matter if appropriate."
+    (let* ((file-type (denote-filetype-heuristics file))
+           (title (denote-retrieve-title-or-filename new-name file-type))
+           (keywords (denote-keywords-sort
+                      (denote-retrieve-filename-keywords-as-list new-name)))
+           (signature (denote-retrieve-filename-signature new-name))
+           (date (denote-valid-date-p (denote-retrieve-filename-identifier new-name)))
+           (identifier (denote-retrieve-filename-identifier new-name)))
+      (when (and (denote-file-has-denoted-filename-p new-name)
+                 denote-rename-rewrite-front-matter
+                 (denote-file-has-supported-extension-p file)
+                 (denote-file-is-writable-and-supported-p new-name))
+        (if (denote--file-has-front-matter-p new-name file-type)
+            (denote-rewrite-front-matter new-name title keywords signature date identifier file-type)
+          (when (denote-add-front-matter-prompt new-name)
+            (denote-prepend-front-matter new-name title keywords signature date identifier file-type))))))
+
+  (advice-add 'dired-rename-file :after #'sr/dired-rename-update-denote-front-matter)
 #+end_src
 ** Create notes from Org entries
 Migration scripts for moving from a one-file-many-entries Org mode
