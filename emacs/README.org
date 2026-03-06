@@ -2953,6 +2953,44 @@ pain. So I ended up building my own solution.
    nil
    :parents (list sr/latex-abbrev-table))
 #+end_src
+* Vterm
+#+begin_src elisp
+  (require 'vterm)
+  (require 'vterm-toggle)
+#+end_src
+** Key bindings
+#+begin_src elisp
+  (keymap-set vterm-mode-map "C-c C-t" #'vterm-copy-mode)
+  (keymap-set vterm-mode-map "C-c C-l" #'vterm-clear)
+
+  (keymap-set vterm-mode-map "C-c C-n" #'vterm-toggle-forward)
+  (keymap-set vterm-mode-map "C-c C-p" #'vterm-toggle-backward)
+#+end_src
+** Buffer switching
+#+begin_src elisp
+  (defvar sr/vterm-switch-function #'vterm-other-window
+    "Function for switching to a vterm buffer.
+  It should accept the same arguments as `vterm'.")
+
+  (defun sr/make-cd-command (directory)
+    "Return the cd command for DIRECTORY as a string."
+    (concat
+     "cd "
+     (shell-quote-argument (expand-file-name directory))))
+
+  (defun sr/vterm-switch-and-send-cd (arg)
+    "Switch to a vterm buffer and send cd command for current directory.
+  ARG has the same meaning as `vterm'."
+    (interactive "P")
+    (let ((command (sr/make-cd-command default-directory)))
+      (with-current-buffer (funcall sr/vterm-switch-function arg)
+        (vterm-send-string command))))
+
+  (keymap-global-set "C-c e t" #'sr/vterm-switch-and-send-cd)
+
+  (defvar sr/vterm-task-history nil
+    "Minibuffer history of `sr/vterm-switch-for-task'.")
+#+end_src
 * Window setup
 #+begin_src elisp
   (setq display-buffer-alist nil)
