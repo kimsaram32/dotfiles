@@ -1186,7 +1186,7 @@ Do not complete on =RET=.
 #+end_src
 *** Popup info
 #+begin_src elisp
-  (setq corfu-popupinfo-direction 'vertical)
+  (setq corfu-popupinfo-direction '(right left vertical))
   (setq corfu-popupinfo-delay '(nil . 0))
   (setq corfu-popupinfo-max-height 20)
 #+end_src
@@ -2847,6 +2847,7 @@ connect, causing Emacs to freeze on launch.
 ** AUCTeX
 #+begin_src elisp
   (require 'tex)
+  (require 'latex)
 #+end_src
 
 [[info:auctex#Quick Start][auctex#Quick Start]]
@@ -2950,10 +2951,11 @@ pain. So I ended up building my own solution.
    '(("a" "\\alpha" "\\land")
      ("A" "\\forall" "\\aleph")
      ("b" "\\beta")
-     ("e" "\\exists")
+     ("e" "\\exists ")
      ("v" "\\lor")
      ("-" "\\neg{")
      ("." "\\cdot")
+     ("," "\\circ ")
      ("p" "^\\prime")))
 #+end_src
 ** Math-delimiters
