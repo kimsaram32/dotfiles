@@ -1622,6 +1622,15 @@ Insert link to the buffer in the other window.
 
   (keymap-set sr/denote-map "l s" #'sr/denote-save-link-to-kill-ring)
 #+end_src
+
+#+begin_src elisp
+  (defun sr/denote-print-title-after-link (file file-type description &optional id-only)
+    "Print the title of the linked note.
+  This function is intended to be used as advice for `denote-link'."
+    (message (format "Linked: \"%s\"" (denote-retrieve-title-or-filename file file-type))))
+
+  (advice-add 'denote-link :after #'sr/denote-print-title-after-link)
+#+end_src
 ** Note creation
 #+begin_src elisp
   (defun sr/denote-get-initial-data-dwim ()
@@ -1653,8 +1662,19 @@ Insert link to the buffer in the other window.
     (let* ((section (read-from-minibuffer "Section number (e.g. 1-5): "))
            (page (read-number "Page number: "))
            (problem-num (read-number "Problem number: "))
+           (comment (read-from-minibuffer "Comment (optional): "))
+
            (denote-use-signature "sb")
-           (denote-use-title (format "Problem (s)%s %dp - %d" section page problem-num)))
+           (denote-use-title
+            (format
+             "Problem (s)%s %dp - %d%s"
+             section page problem-num
+             (when (not (string-empty-p comment))
+               (format " (%s)" comment))))
+           (denote-use-keywords
+            (append
+             (denote-keywords-prompt)
+             '("problem"))))
       (call-interactively 'denote)))
 
   (defun sr/denote-create-note-zettelkasten ()
@@ -2200,7 +2220,7 @@ I need to add tags inside the capture buffer.
                          id keywords title extension "media")))
         (copy-file temp-file-name file-name)
         (unless (string-empty-p width)
-          (insert (format "#+attr_html: :width %spx\\n" width)))
+          (insert (format "#+attr_html: :width %spx\n" width)))
         (insert (format "[[media:%s]]" (car (last (file-name-split file-name))))))))
 
   (keymap-set org-mode-map "C-c i" #'sr/org-insert-image-from-clipboard)
