@@ -5,14 +5,23 @@ set -Eeuo pipefail
 DOTFILES_DIR="$HOME/me/dotfiles"
 
 declare -A links=(
-  ["wezterm"]="${HOME}/.config/wezterm"
+  ["wezterm/"]="${HOME}/.config/wezterm"
+
   ["out/.tmux.conf"]="${HOME}/.tmux.conf"
+
   ["out/.zshrc"]="${HOME}/.zshrc"
   ["out/.zprofile"]="${HOME}/.zprofile"
   [".zsh_plugins.txt"]="${HOME}/.zsh_plugins.txt"
+
   ["mise.toml"]="${HOME}/.config/mise/config.toml"
+
   ["emacs/README.org"]="${HOME}/.emacs.d/README.org"
   ["emacs/init.el"]="${HOME}/.emacs.d/init.el"
+
+  ["notmuch/.notmuch-config"]="${HOME}/.notmuch-config"
+  ["notmuch/hooks/"]="${HOME}/mail/.notmuch/hooks"
+
+  ["mbsync/.mbsyncrc"]="${HOME}/.mbsyncrc"
 )
 
 relink() {

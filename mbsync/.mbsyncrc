@@ -1,0 +1,26 @@
+IMAPAccount fastmail
+Host imap.fastmail.com
+Port 993
+AuthMechs LOGIN
+User kimsaram32@fastmail.com
+PassCmd "gpg -q --for-your-eyes-only -d ~/.authinfo.gpg | awk -F ' ' '/kimsaram32@fastmail.com/ { print $(NF-2); exit; }'"
+TLSType IMAPS
+
+IMAPStore fastmail-remote
+Account fastmail
+
+MaildirStore fastmail-local
+Path ~/mail/
+Inbox ~/mail/INBOX
+Trash ~/mail/Trash
+SubFolders Verbatim
+
+Channel fastmail
+Far :fastmail-remote:
+Near :fastmail-local:
+Patterns *
+Expunge None
+CopyArrivalDate yes
+Sync All
+Create Near
+SyncState *

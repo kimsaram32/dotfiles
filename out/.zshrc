@@ -113,3 +113,6 @@ else
     fi
 fi
 unset __conda_setup
+
+# https://github.com/keybase/keybase-issues/issues/2798
+export GPG_TTY=$(tty)

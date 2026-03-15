@@ -1,0 +1,26 @@
+# .notmuch-config - Configuration file for the notmuch mail system
+#
+# For more information about notmuch, see https://notmuchmail.org
+# Database configuration
+#
+# (man "notmuch-config")
+
+[database]
+mail_root=mail
+path=mail
+backup_dir=mail/.notmuch/backups
+hook_dir=mail/.notmuch/hooks
+
+[user]
+name=Saram Kim
+primary_email=kimsaram32@fastmail.com
+
+[new]
+tags=unread;inbox
+ignore=.uidvalidity;.mbsyncstate
+
+[search]
+exclude_tags=deleted
+
+[maildir]
+synchronize_flags=true

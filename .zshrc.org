@@ -173,6 +173,11 @@ else
 fi
 unset __conda_setup
 #+end_src
+** gpg
+#+begin_src zsh
+  # https://github.com/keybase/keybase-issues/issues/2798
+  export GPG_TTY=$(tty)
+#+end_src
 * End profiling
 #+begin_src zsh :tangle no
   zprof
