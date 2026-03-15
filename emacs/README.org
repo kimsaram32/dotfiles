@@ -1213,6 +1213,43 @@ indent offset.
 #+begin_src elisp
   (setq python-indent-offset 2)
 #+end_src
+*** PlantUML
+#+begin_src elisp
+    (require 'plantuml-mode)
+
+    (setq image-use-external-converter t)
+
+    (setq plantuml-default-exec-mode 'executable)
+    (setq plantuml-executable-path "/opt/homebrew/bin/plantuml")
+    (setq plantuml-svg-background "#ffffff")
+    (setq plantuml-output-type "svg")
+
+    (setq plantuml-indent-level 2)
+
+    (add-to-list
+     'org-src-lang-modes '("plantuml" . plantuml))
+
+    (add-hook 'plantuml-mode-hook #'abbrev-mode)
+
+    (sr/define-abbrev-table
+     'plantuml-mode-abbrev-table
+     '(("oto" "||--||")
+       ("mto" "}o--||")
+       ("otm" "||--o{")
+       ("mtm" "}o--o{")
+       ("pk" "<<PK>>")
+       ("fk" "<<FK>>")
+       ("uq" "<<UNIQUE>>")))
+#+end_src
+*** Restclient
+#+begin_src elisp
+  (require 'restclient)
+  (require 'ob-restclient)
+
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((restclient . t)))
+#+end_src
 *** Yaml
 #+begin_src elisp
   (require 'yaml-ts-mode)
