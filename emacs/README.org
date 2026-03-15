@@ -120,32 +120,6 @@ These are ad-hoc configurations for my local environment.
 #+begin_src elisp
 (put 'scroll-left 'disabled nil)
 #+end_src
-* Repeated key bindings
-From [[https://karthinks.com/software/persistent-prefix-keymaps-in-emacs/][Persistent prefifx keymaps in Emacs]]
-#+begin_src elisp
-  (defun sr/repeated-prefix-help-command ()
-    (interactive)
-    (when-let* ((keys (this-command-keys-vector))
-                (prefix (seq-take keys (1- (length keys))))
-                (orig-keymap (key-binding prefix t))
-                (keymap (copy-keymap orig-keymap)))
-      (setq sr/transient-map--exit-func (set-transient-map keymap t nil "Repeating"))
-      (define-key keymap [remap keyboard-quit]
-        		  (lambda ()
-        		    (interactive)
-        		    (funcall sr/transient-map--exit-func)))
-      (keymap-set keymap "C-h"
-  		(lambda ()
-  		  (interactive)
-  		  (funcall sr/transient-map--exit-func)
-  		  (describe-bindings prefix)))))
-
-  (setq prefix-help-command #'sr/repeated-prefix-help-command)
-#+end_src
-* Use short answers
-#+begin_src elisp
-  (setq use-short-answers t)
-#+end_src
 * UI and Display
 ** Remove bars
 #+begin_src elisp
@@ -163,24 +137,22 @@ From [[https://karthinks.com/software/persistent-prefix-keymaps-in-emacs/][Persi
   (setq-default frame-title-format "")
 #+end_src
 ** Font faces
-*** Enable fixed windows
 Before customizing fonts, temporarily enable fixed windows
 to prevent resizing windows when changing fonts.
 #+begin_src elisp
-(setq-default window-size-fixed t)
-#+end_src
-*** Font faces
-#+begin_src elisp
-  (set-face-attribute 'default nil
-  		    :height 150
-  		    :family "JetBrains Mono")
-  (set-face-attribute 'variable-pitch nil
-  		    :height 160
-  		    :family "Pretendard Variable")
-#+end_src
-*** Disable fixed windows
-#+begin_src elisp
-(setq-default window-size-fixed nil)
+  (setq-default window-size-fixed t)
+
+  (set-face-attribute
+   'default nil
+   :height 150
+   :family "JetBrains Mono")
+
+  (set-face-attribute
+   'variable-pitch nil
+   :height 160
+   :family "Pretendard Variable")
+
+  (setq-default window-size-fixed nil)
 #+end_src
 ** Line height
 #+begin_src elisp
@@ -319,24 +291,24 @@ Key binding for =M-x append-to-register=.
   (keymap-set sr/window-map "<right>" #'winner-redo)
 #+end_src
 * Buffers
+** Key bindings
+#+begin_src elisp
+  (keymap-global-set "C-x C-b" #'ibuffer)
+  (keymap-global-set "<f12>" #'scratch-buffer)
+#+end_src
 ** Default scratch buffer message
 #+begin_src elisp
-(setq initial-scratch-message "\
-;; Hi this is a scratch buffer
+  (setq initial-scratch-message "\
+  ;; Hi this is a scratch buffer
 
-")
+  ")
 #+end_src
-** Keymap for switching previous/next buffer
+** Delete the file of the current buffer
 #+begin_src elisp
-(keymap-global-set "C-c b l" 'previous-buffer)
-(keymap-global-set "C-c b r" 'next-buffer)
-#+end_src
-** Helper function: delete current buffer's file
-#+begin_src elisp
-(defun sr/delete-current-file ()
-  "Delete current buffer's file."
-  (interactive)
-  (delete-file (buffer-file-name)))
+  (defun sr/delete-current-file ()
+    "Delete current buffer's file."
+    (interactive)
+    (delete-file (buffer-file-name)))
 #+end_src
 * Workflow
 ** Starting hour of a day
@@ -396,8 +368,6 @@ todo: move the point to today's entry, if needed.
     (recenter 0)
     (save-excursion
       (insert "\n** Logs")))
-
-  (keymap-set sr/workflow-map "s" #'sr/start-today)
 #+end_src
 ** Finish today
 I finish each day by committing changes I made in personal files into the Git repository.
@@ -638,6 +608,8 @@ strings to them.
 #+begin_src elisp
   (keymap-set minibuffer-mode-map "C-p" #'previous-history-element)
   (keymap-set minibuffer-mode-map "C-n" #'next-history-element)
+
+  (setq use-short-answers t)
 #+end_src
 * Completion
 I use default completion system with multiple frontends.
@@ -783,6 +755,26 @@ control over my completions.
               'category)))
 
   (keymap-set minibuffer-local-map "C-c C-k" #'sr/show-completion-category)
+#+end_src
+* Abbrev
+#+begin_src elisp
+  (defun sr/define-abbrev-table (name &rest args)
+    (if (boundp name)
+        (clear-abbrev-table (symbol-value name)))
+    (apply #'define-abbrev-table name args))
+
+  (sr/define-abbrev-table
+   'sr/latex-abbrev-table
+   '(("to" "\\to")
+     ("iff" "\\leftrightarrow")
+     ("la" "\\land")
+     ("lo" "\\lor")))
+
+  (sr/define-abbrev-table
+   'org-mode-abbrev-table
+   nil
+   nil
+   :parents (list sr/latex-abbrev-table))
 #+end_src
 * Software dev
 ** Current stack
@@ -1114,7 +1106,10 @@ I don't like them
 #+end_src
 **** Use emmet
 #+begin_src elisp
+  (require 'emmet-mode)
   (add-hook 'html-ts-mode-hook #'emmet-mode)
+  (keymap-unset emmet-mode-keymap "C-j")
+  (keymap-set emmet-mode-keymap "C-c C-j" #'emmet-expand-line)
 #+end_src
 *** Python
 indent offset.
@@ -1669,8 +1664,9 @@ Insert link to the buffer in the other window.
             (format
              "Problem (s)%s %dp - %d%s"
              section page problem-num
-             (when (not (string-empty-p comment))
-               (format " (%s)" comment))))
+             (if (not (string-empty-p comment))
+                 (format " (%s)" comment)
+               "")))
            (denote-use-keywords
             (append
              (denote-keywords-prompt)
@@ -1935,15 +1931,6 @@ e.g. =M-<right>= is remapped to =C-c C-==.
   (keymap-set org-mode-map "C-c C-;" #'org-metaleft)
   (keymap-set org-mode-map "C-c C-'" #'org-metaright)
 #+end_src
-*** Integrate with key repetitions
-Those work well with repetitions.
-
-#+begin_src elisp
-  (keymap-set org-mode-map "C-c TAB" 'org-cycle)
-
-  (keymap-set org-mode-map "C-c C-x &" 'org-mark-ring-goto)
-  (keymap-set org-mode-map "C-c C-x C-o" 'org-open-at-point)
-#+end_src
 *** Swap footnotes and emphasize mappings
 I use footnotes more frequently, and =C-c C-x f= is more harder to
 type than =C-c C-x C-f=.
@@ -2110,25 +2097,6 @@ Exprimenting with tag inheritance.
    '((isearch . lineage)
      (default . tree)))
 #+end_src
-** Refiling
-- To use =completing-read=, I should set
-  =org-outline-path-complete-in-steps= to =nil=.
-- Set =org-refile-use-outline-path= to ='file= to use the path of the
-  file as a refile target.
-
-#+begin_src elisp
-  (setq org-refile-use-outline-path 'file)
-  (setq org-outline-path-complete-in-steps nil)
-  (setq
-   org-refile-targets
-   `(((,(expand-file-name "second-brain/projects.org" sr/note-root-directory)
-       ,(expand-file-name "second-brain/aor.org" sr/note-root-directory)
-       ,(expand-file-name "second-brain/resources.org" sr/note-root-directory)
-       ,(expand-file-name "second-brain/archive.org" sr/note-root-directory))
-      :maxlevel 1)
-     (,(expand-file-name "writings.org" sr/note-root-directory)
-      :level 0)))
-#+end_src
 ** Org-id
 *** ID format
 Used to use timestamp here, but switched to use UUID (default).
@@ -2240,16 +2208,6 @@ I need to add tags inside the capture buffer.
 #+begin_src elisp
   (setf (cdr (assoc 'file org-link-frame-setup)) 'find-file)
 #+end_src
-* Org QL
-#+begin_src elisp
-  (defvar sr/org-ql-search-agenda-history nil)
-
-  (defun sr/org-ql-search-agenda (query)
-    (interactive (list (read-from-minibuffer
-                        "Query: "
-                        nil nil nil 'sr/org-ql-search-agenda-history)))
-    (org-ql-search (org-agenda-files) query))
-#+end_src
 * Org-babel
 ** Key bindings
 #+begin_src elisp
@@ -2271,46 +2229,6 @@ I know what I'm doing
 ** Make the result keyword lowercased
 #+begin_src elisp
 (setq org-babel-results-keyword "results")
-#+end_src
-* Org-journal
-:PROPERTIES:
-:header-args:elisp: :tangle no
-:END:
-Currently migrating to manual setup, because I like the DIY approach better.
-** Key bindings
-Custom lambda functions for opening today's journal file,
-since creation of new entries is handled by org-capture.
-
-#+begin_src elisp
-  (setq org-journal-prefix-key "C-c j ")
-  (keymap-global-set "C-c j j" (lambda ()
-  			       (interactive)
-  			       (org-journal-new-entry t)))
-#+end_src
-** Directory and files
-#+begin_src elisp
-(setq org-journal-dir sr/note-periodic-directory)
-(setq org-journal-file-format "%Y/%m/%Y-%m-%d.org")
-#+end_src
-** Date format
-#+begin_src elisp
-(setq org-journal-date-format "%Y-%m-%d")
-#+end_src
-** Time entry format
-#+begin_src elisp
-(setq org-journal-time-prefix "*** ")
-(setq org-journal-time-format "<%R>")
-#+end_src
-** Opening entries
-Use find-file to open journals in current window.
-#+begin_src elisp
-(setq org-journal-find-file-fn 'find-file)
-#+end_src
-** Disable carry over
-Long-term todo items are already handled by my agenda workflow.
-No need for carry overs.
-#+begin_src elisp
-(setq org-journal-carryover-items "")
 #+end_src
 * Org-super-agenda
 #+begin_src elisp
@@ -2562,20 +2480,13 @@ Groups
   (keymap-set help-map "o" #'helpful-symbol)
 #+end_src
 * Dired
-** Set ls command
 #+begin_src elisp
   (setq dired-listing-switches "-hal")
-#+end_src
-** Omit mode
-#+begin_src elisp
-  (add-hook 'dired-mode-hook 'dired-omit-mode)
-#+end_src
-** Delete by moving to trash
-#+begin_src elisp
+  (setq dired-auto-revert-buffer t)
+
   (setq delete-by-moving-to-trash t)
-#+end_src
-** Enable Lin mode
-#+begin_src elisp
+
+  (add-hook 'dired-mode-hook 'dired-omit-mode)
   (add-hook 'dired-mode-hook 'lin-mode)
 #+end_src
 * Info
@@ -2963,26 +2874,6 @@ pain. So I ended up building my own solution.
   (require 'math-delimiters)
   (keymap-set org-mode-map "$" #'math-delimiters-insert)
   (keymap-set LaTeX-mode-map "$" #'math-delimiters-insert)
-#+end_src
-* Abbrev
-#+begin_src elisp
-  (defun sr/define-abbrev-table (name &rest args)
-    (if (boundp name)
-        (clear-abbrev-table (symbol-value name)))
-    (apply #'define-abbrev-table name args))
-
-  (sr/define-abbrev-table
-   'sr/latex-abbrev-table
-   '(("to" "\\to")
-     ("iff" "\\leftrightarrow")
-     ("la" "\\land")
-     ("lo" "\\lor")))
-
-  (sr/define-abbrev-table
-   'org-mode-abbrev-table
-   nil
-   nil
-   :parents (list sr/latex-abbrev-table))
 #+end_src
 * Vterm
 #+begin_src elisp
