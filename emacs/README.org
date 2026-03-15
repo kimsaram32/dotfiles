@@ -3036,7 +3036,9 @@ pain. So I ended up building my own solution.
 #+end_src
 ** Key bindings
 #+begin_src elisp
-  (keymap-set vterm-mode-map "C-c C-t" #'vterm-copy-mode)
+  (keymap-set vterm-mode-map "C-M-;" #'vterm-copy-mode)
+  (keymap-set vterm-copy-mode-map "C-M-;" #'vterm-copy-mode)
+
   (keymap-set vterm-mode-map "C-c C-l" #'vterm-clear)
 
   (keymap-set vterm-mode-map "C-c C-n" #'vterm-toggle-forward)
@@ -3048,21 +3050,21 @@ pain. So I ended up building my own solution.
     "Function for switching to a vterm buffer.
   It should accept the same arguments as `vterm'.")
 
-  (defun sr/make-cd-command (directory)
-    "Return the cd command for DIRECTORY as a string."
-    (concat
-     "cd "
-     (shell-quote-argument (expand-file-name directory))))
-
-  (defun sr/vterm-switch-and-send-cd (arg)
-    "Switch to a vterm buffer and send cd command for current directory.
+  (defun sr/vterm-switch-and-cd (arg)
+    "Switch to a vterm buffer and cd to current directory.
   ARG has the same meaning as `vterm'."
     (interactive "P")
-    (let ((command (sr/make-cd-command default-directory)))
+    (let* ((directory (expand-file-name default-directory))
+           (command (concat
+                     "cd "
+                     (shell-quote-argument directory))))
       (with-current-buffer (funcall sr/vterm-switch-function arg)
-        (vterm-send-string command))))
+        (vterm-send-string "\C-u") ; clear the current line
+        (vterm-send-string command)
+        (vterm-send-string "\C-m") ; CR
+        (cd directory))))
 
-  (keymap-global-set "C-c e t" #'sr/vterm-switch-and-send-cd)
+  (keymap-global-set "C-c e t" #'sr/vterm-switch-and-cd)
 
   (defvar sr/vterm-task-history nil
     "Minibuffer history of `sr/vterm-switch-for-task'.")
