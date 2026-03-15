@@ -785,6 +785,7 @@ control over my completions.
 - Jump to definition: Xref (frontend) and dumb-jump (backend)
 - Symbol renaming: Eglot features
 - Projects: Projectile
+- Documentation: Eldoc
 - Tree-sitter
   - Experimenting with Combobulate for structured editing
 ** Custom mode for shared configurations
@@ -847,9 +848,11 @@ performance issues.
 #+begin_src elisp
   (setq projectile-auto-discover t)
 #+end_src
-** Line numbers
+** Display line numbers mode
 #+begin_src elisp
   (add-hook 'sr/prog-setup-mode-hook #'display-line-numbers-mode)
+
+  (setq-default display-line-numbers-width 4)
   (setq display-line-numbers-type 'relative)
 #+end_src
 ** Electric pair mode
@@ -868,10 +871,29 @@ Disable tabs by default.
   (setq-default indent-tabs-mode nil)
 #+end_src
 ** LSP: Eglot
-*** Key bindings
+*** Renaming
 #+begin_src elisp
-  (keymap-set sr/prog-setup-mode-map "C-c C-r" #'eglot-rename)
-  (keymap-set sr/prog-setup-mode-map "C-c C-a" #'eglot-code-actions)
+  (defun sr/eglot-rename (newname)
+    "Modified `eglot-rename' - set the old name as a default value for minibuffer."
+    (interactive
+     (let ((tap (thing-at-point 'symbol t)))
+       (list (read-from-minibuffer
+              (format "Rename `%s' to: " (or tap "unknown symbol"))
+              tap nil nil nil tap))))
+    (eglot-server-capable-or-lose :renameProvider)
+    (eglot--apply-workspace-edit
+     (eglot--request (eglot--current-server-or-lose)
+                     :textDocument/rename `(,@(eglot--TextDocumentPositionParams)
+                                            :newName ,newname))
+     this-command))
+
+  (keymap-set sr/prog-setup-mode-map "C-c g r" #'sr/eglot-rename)
+#+end_src
+*** Code actions
+#+begin_src elisp
+  (keymap-set sr/prog-setup-mode-map "C-c g a" #'eglot-code-actions)
+  (keymap-set sr/prog-setup-mode-map "C-c g s" #'eglot-code-action-source)
+  (keymap-set sr/prog-setup-mode-map "C-c g f" #'eglot-code-action-quickfix)
 #+end_src
 *** Enabled languages
 #+begin_src elisp
@@ -886,11 +908,65 @@ Disable tabs by default.
   (dolist (hook sr/eglot-ensure-hooks)
     (add-hook hook #'eglot-ensure))
 #+end_src
+*** Configuration
+#+begin_src elisp
+  ;; Fix shifting line height
+  ;; https://www.reddit.com/r/emacs/comments/1lbo5jy/eldoc_undesirably_shifting_my_line_height/
+  (setq eglot-code-action-indications '(eldoc-hint))
+#+end_src
 ** diagnostics: Flymake
-*** Next and previous error
+*** Key bindings
 #+begin_src elisp
   (keymap-set flymake-mode-map "M-n" 'flymake-goto-next-error)
   (keymap-set flymake-mode-map "M-p" 'flymake-goto-prev-error)
+#+end_src
+*** Eslint
+#+begin_src elisp
+  ;;; eslint
+  ;;; https://www.rahuljuliato.com/posts/eslint-on-emacs
+
+  (require 'flymake-eslint)
+
+  (setq flymake-eslint-prefer-json-diagnostics t)
+
+  (defun sr/flymake-eslint-enable-with-local-binary ()
+    "Run `flymake-eslint-enable' but with local binary support.
+  Set project's `node_modules' binary eslint as first priority, if any."
+    (interactive)
+    (let* ((root (locate-dominating-file (buffer-file-name) "node_modules"))
+           (local-eslint (and root
+                        (expand-file-name "node_modules/.bin/eslint"
+                                          root))))
+      (if (and local-eslint (file-executable-p local-eslint))
+          (progn
+            (setq-local flymake-eslint-executable-name local-eslint)
+            (message (format "Using local Eslint: %s" local-eslint)))
+        (message "Local Eslint not found, using the global binary: %s" flymake-eslint-executable-name))
+      (flymake-eslint-enable)))
+
+  (defvar sr/flymake-eslint-enabled-modes
+    '(tsx-ts-mode typescript-ts-mode js-ts-mode))
+
+  (defun sr/flymake-eslint-enable-on-required-modes ()
+  	(when (memq major-mode sr/flymake-eslint-enabled-modes)
+      (sr/flymake-eslint-with-local-binary)))
+
+  (add-hook 'eglot-managed-mode-hook #'sr/flymake-eslint-enable-on-required-modes)
+#+end_src
+** Eldoc
+#+begin_src elisp
+  (setq eldoc-echo-area-use-multiline-p nil)
+  (setq eldoc-idle-delay 0.5)
+
+  (add-to-list
+   'display-buffer-alist
+   `("^\\*eldoc"
+     (display-buffer-in-side-window)
+     (side . bottom)
+     (window-height . 20)
+     (post-command-select-window . t)))
+
+  (require 'eldoc-box)
 #+end_src
 ** Whitespace-mode
 #+begin_src elisp
@@ -938,7 +1014,6 @@ Disable tabs by default.
           ))
 #+end_src
 ** Dumb-jump
-*** Xref backend
 #+begin_src elisp
   (add-hook 'xref-backend-functions #'dumb-jump-xref-activate)
 #+end_src
@@ -1189,7 +1264,11 @@ Do not complete on =RET=.
 #+begin_src elisp
   (setq corfu-auto t)
   (setq corfu-auto-delay 0.1)
-  (setq corfu-auto-trigger ".-/")
+
+  ;; complete on camelCase
+  ;; (setq corfu-auto-trigger ".-/")
+  (setq corfu-auto-trigger
+        (concat ".-/" (apply #'string (number-sequence ?A ?Z))))
 #+end_src
 * English learning
 ** Open dictionary for word at point
@@ -2711,6 +2790,12 @@ I use Colemak layout, so the keys are adjusted accordingly.
 #+end_src
 * Eglot-booster
 #+begin_src elisp
+  (require 'eglot-booster)
+
+  ;; Disable bytecode mode for eglot-booster to preserve proper UTF-8 encoding
+  ;; https://github.com/blahgeek/emacs-lsp-booster/issues/43
+  (setq eglot-booster-io-only t)
+
   (eglot-booster-mode)
 #+end_src
 * Tools
