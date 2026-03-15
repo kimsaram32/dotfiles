@@ -459,7 +459,7 @@ nil."
       (goto-char (point-min))
       (delete-matching-lines "##delete##")))
 
-  (keymap-global-set "C-c m h" 'sr/org-remove-empty-lines-around-headings)
+  (keymap-global-set "C-c q h" 'sr/org-remove-empty-lines-around-headings)
 #+end_src
 ** Migration from markdown
 Previously, I used plain markdown documents for note taking.
@@ -534,15 +534,6 @@ The path to the lua filter is hardcoded. This could be improved.
   	  (replace-regexp "\\[\\[\\(.+?\\)\\]\\]" "\\1")))))
     (message "Done"))
 #+end_src
-*** Change verbatim to code
-Pandoc produces verbatim (=) in place of markdown code (`), but I
-prefer to use code (~).
-#+begin_src elisp
-(defun sr/verbatim-to-code ()
-  (interactive)
-  (replace-regexp "=" "~"))
-(keymap-global-set "C-c m c" 'sr/verbatim-to-code)
-#+end_src
 ** Automatic migration
 *** Markdown indicator string
 I renamed all *.md documents to *.org for easier file searching and
@@ -573,7 +564,7 @@ strings to them.
         ;; (sr/org-remove-empty-lines-around-headings)
         )
       (message "DWIM migration finished.")))
-  (keymap-global-set "C-c m m" 'sr/migrate-dwim)
+  (keymap-global-set "C-c q m" 'sr/migrate-dwim)
 #+end_src
 ** Migration from Obsidian documents
 #+begin_src elisp
@@ -593,7 +584,7 @@ strings to them.
     (goto-char (point-min))
     (while (re-search-forward "\\$\\(.+?\\)\\$" nil t)
       (replace-match "\\\\(\\1\\\\)"))))
-(keymap-global-set "C-c m l" 'sr/migrate-latex)
+(keymap-global-set "C-c q l" 'sr/migrate-latex)
 #+end_src
 ** Migrate old Org mode documents
 #+begin_src elisp
