@@ -797,7 +797,7 @@ control over my completions.
 - Diagnostics: Flymake
 - Jump to definition: Xref (frontend) and dumb-jump (backend)
 - Symbol renaming: Eglot features
-- Projects: Projectile
+- Projects: Project (built-in)
 - Documentation: Eldoc
 - Tree-sitter
   - Experimenting with Combobulate for structured editing
@@ -826,41 +826,6 @@ configurations and attaching it to all major modes.
   (add-hook 'html-ts-mode-hook #'sr/prog-setup-mode)
   (add-hook 'yaml-ts-mode-hook #'sr/prog-setup-mode)
 #+end_src
-** Projectile
-[[https://docs.projectile.mx/projectile/index.html][Docs]]
-
-#+begin_src elisp
-  (require 'projectile)
-  (projectile-mode)
-#+end_src
-
-Key bindings
-#+begin_src elisp
-  (keymap-set projectile-mode-map "C-c p" 'projectile-command-map)
-#+end_src
-*** Project discovery
-[[https://docs.projectile.mx/projectile/usage.html#automated-project-discovery][Docs]]
-
-I recently moved all of my projects into a single directory. I think
-this works well when there's no clear boundary between personal and
-"work" projects.
-
-~projectile-project-search-path~ is used by the
-~projectile-discover-projects-in-directory~ command.
-~projectile-auto-discover~ automates calls to the command when using
-other Projectile commnads.
-
-#+begin_src elisp
-  (setq projectile-project-search-path
-        (list sr/dev-project-directory))
-#+end_src
-
-Enable automatic discovery on startup. Disable this if you're having
-performance issues.
-
-#+begin_src elisp
-  (setq projectile-auto-discover t)
-#+end_src
 ** Display line numbers mode
 #+begin_src elisp
   (add-hook 'sr/prog-setup-mode-hook #'display-line-numbers-mode)
@@ -882,6 +847,11 @@ Set tab width.
 Disable tabs by default.
 #+begin_src elisp
   (setq-default indent-tabs-mode nil)
+#+end_src
+** Projects
+#+begin_src elisp
+  (setq project-vc-include-untracked t)
+  (setq project-mode-line t)
 #+end_src
 ** LSP: Eglot
 *** Renaming
