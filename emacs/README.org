@@ -1574,6 +1574,15 @@ Store current zettel to register, overriding default binding
    sr/consult-org-heading-zettelkasten
    :group nil)
 #+end_src
+* Mail
+#+begin_src elisp
+  (require 'sr-email)
+#+end_src
+* Authentication
+#+begin_src elisp
+  (setq auth-sources '("~/.authinfo.gpg"))
+  (setq epg-pinentry-mode 'loopback)
+#+end_src
 * VMs
 I manage my virtual machines in Mac via UTM. UTM has its command-line
 utility named =utmctl=, so I can use it to work with UTM in Emacs.

@@ -16,7 +16,7 @@ name=Saram Kim
 primary_email=kimsaram32@fastmail.com
 
 [new]
-tags=unread;inbox
+tags=unread;new
 ignore=.uidvalidity;.mbsyncstate
 
 [search]
