@@ -136,12 +136,14 @@ These are ad-hoc configurations for my local environment.
 #+begin_src elisp
   (setq-default frame-title-format "")
 #+end_src
+** Frame options
+#+begin_src elisp
+  (setq frame-inhibit-implied-resize t)
+#+end_src
 ** Font faces
 Before customizing fonts, temporarily enable fixed windows
 to prevent resizing windows when changing fonts.
 #+begin_src elisp
-  (setq-default window-size-fixed t)
-
   (set-face-attribute
    'default nil
    :height 150
@@ -151,8 +153,6 @@ to prevent resizing windows when changing fonts.
    'variable-pitch nil
    :height 160
    :family "Pretendard Variable")
-
-  (setq-default window-size-fixed nil)
 #+end_src
 ** Line height
 #+begin_src elisp
@@ -237,9 +237,11 @@ Key binding for =M-x append-to-register=.
   ;; do not let automatic scrolling recenter point.
   (setq scroll-conservatively 101)
 
+  (setq scroll-margin 4)
+
   ;; adjust the point to keep the cursor at the same screen position
   ;; whenever a scroll command moves it off-window.
-  (setq scroll-preserve-screen-position t)
+  (setq scroll-preserve-screen-position nil)
 #+end_src
 ** Delete pair
 #+begin_src elisp
@@ -270,6 +272,10 @@ Key binding for =M-x append-to-register=.
 ** Which key mode
 #+begin_src elisp
   (which-key-mode)
+#+end_src
+** Filling
+#+begin_src elisp
+  (setq-default fill-column 80)
 #+end_src
 * Windows
 [[https://karthinks.com/software/emacs-window-management-almanac][The Emacs Window Management Almanac]] is a good reference
@@ -875,7 +881,6 @@ Disable tabs by default.
 *** Code actions
 #+begin_src elisp
   (keymap-set sr/prog-setup-mode-map "C-c g a" #'eglot-code-actions)
-  (keymap-set sr/prog-setup-mode-map "C-c g s" #'eglot-code-action-source)
   (keymap-set sr/prog-setup-mode-map "C-c g f" #'eglot-code-action-quickfix)
 #+end_src
 *** Enabled languages
@@ -932,24 +937,14 @@ Disable tabs by default.
 
   (defun sr/flymake-eslint-enable-on-required-modes ()
   	(when (memq major-mode sr/flymake-eslint-enabled-modes)
-      (sr/flymake-eslint-with-local-binary)))
+      (sr/flymake-eslint-enable-with-local-binary)))
 
-  (add-hook 'eglot-managed-mode-hook #'sr/flymake-eslint-enable-on-required-modes)
+  ;; (add-hook 'eglot-managed-mode-hook #'sr/flymake-eslint-enable-on-required-modes)
 #+end_src
 ** Eldoc
 #+begin_src elisp
   (setq eldoc-echo-area-use-multiline-p nil)
   (setq eldoc-idle-delay 0.5)
-
-  (add-to-list
-   'display-buffer-alist
-   `("^\\*eldoc"
-     (display-buffer-in-side-window)
-     (side . bottom)
-     (window-height . 20)
-     (post-command-select-window . t)))
-
-  (require 'eldoc-box)
 #+end_src
 ** Whitespace-mode
 #+begin_src elisp
@@ -1168,6 +1163,34 @@ I don't like them
   (add-hook 'html-ts-mode-hook #'emmet-mode)
   (keymap-unset emmet-mode-keymap "C-j")
   (keymap-set emmet-mode-keymap "C-c C-j" #'emmet-expand-line)
+#+end_src
+*** Markdown
+#+begin_src elisp
+  (autoload 'markdown-mode "markdown-mode"
+    "Major mode for editing Markdown files" t)
+
+  (add-to-list
+   'auto-mode-alist
+   '("\\.\\(?:md\\|markdown\\|mkd\\|mdown\\|mkdn\\|mdwn\\)\\'" . markdown-mode))
+
+  (autoload 'gfm-mode "markdown-mode"
+    "Major mode for editing GitHub Flavored Markdown files" t)
+
+  (add-to-list 'auto-mode-alist '("README\\.md\\'" . gfm-mode))
+#+end_src
+**** Preview styles
+#+begin_src elisp
+  (setq
+   markdown-css-paths
+   (list (expand-file-name "~/me/ws/projects/github-markdown-css/github-markdown.css")))
+
+  (setq
+   markdown-xhtml-body-preamble
+   "<main class=\"markdown-body\">")
+
+  (setq
+   markdown-xhtml-body-epilogue
+   "</main>")
 #+end_src
 *** Python
 indent offset.
@@ -1552,6 +1575,16 @@ Store current zettel to register, overriding default binding
 #+begin_src elisp
   (setq auth-sources '("~/.authinfo.gpg"))
   (setq epg-pinentry-mode 'loopback)
+#+end_src
+* LLMs
+** Agent-shell
+#+begin_src elisp
+  (require 'acp)
+  (require 'agent-shell)
+  (setq agent-shell-anthropic-authentication
+        (agent-shell-anthropic-make-authentication :login t))
+
+  (add-hook 'agent-shell-mode-hook #'corfu-mode)
 #+end_src
 * VMs
 I manage my virtual machines in Mac via UTM. UTM has its command-line
@@ -2634,8 +2667,9 @@ exclusively with it.
 #+begin_src elisp
   (setq shr-use-colors nil)
 #+end_src
-* Magit
-** Org Mode bindings for section
+* Version control and diffing
+** Magit
+*** Org Mode bindings for section
 #+begin_src elisp
   (keymap-set magit-section-mode-map "C-c C-u" 'magit-section-up)
   (keymap-set magit-section-mode-map "C-c C-n" 'magit-section-forward)
@@ -2787,18 +2821,6 @@ In show mode:
 * YaSnippet
 #+begin_src elisp
 (use-package yasnippet :ensure t)
-#+end_src
-* Markdown-mode
-#+begin_src elisp
-  (autoload 'markdown-mode "markdown-mode"
-     "Major mode for editing Markdown files" t)
-  (add-to-list
-   'auto-mode-alist
-   '("\\.\\(?:md\\|markdown\\|mkd\\|mdown\\|mkdn\\|mdwn\\)\\'" . markdown-mode))
-
-  (autoload 'gfm-mode "markdown-mode"
-     "Major mode for editing GitHub Flavored Markdown files" t)
-  (add-to-list 'auto-mode-alist '("README\\.md\\'" . gfm-mode))
 #+end_src
 * Man
 #+begin_src elisp
@@ -3135,4 +3157,14 @@ Major mode for browsing a list of items e.g. Docker mode.
   	 (side . bottom)
      (window-height . 0.5)
   	 (post-command-select-window . t)))
+#+end_src
+** Eldoc
+#+begin_src elisp
+  (add-to-list
+   'display-buffer-alist
+   `("^\\*eldoc"
+     (display-buffer-in-side-window)
+     (side . bottom)
+     (window-height . 20)
+     (post-command-select-window . t)))
 #+end_src
