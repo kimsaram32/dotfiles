@@ -861,6 +861,16 @@ Disable tabs by default.
   (setq project-vc-include-untracked t)
   (setq project-mode-line t)
 #+end_src
+
+#+begin_src elisp
+  (defun sr/project-other-find-file (dir)
+    "Prompt for a project, and run `project-find-file' in that project."
+    (interactive (list (funcall project-prompter)))
+    (let ((project-current-directory-override dir))
+          (call-interactively #'project-find-file)))
+
+  (keymap-set project-prefix-map "F" #'sr/project-other-find-file)
+#+end_src
 ** LSP: Eglot
 *** Renaming
 #+begin_src elisp
