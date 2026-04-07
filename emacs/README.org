@@ -902,6 +902,16 @@ Disable tabs by default.
   ;; https://www.reddit.com/r/emacs/comments/1lbo5jy/eldoc_undesirably_shifting_my_line_height/
   (setq eglot-code-action-indications '(eldoc-hint))
 #+end_src
+*** Eglot-booster
+#+begin_src elisp
+  (require 'eglot-booster)
+
+  ;; Disable bytecode mode for eglot-booster to preserve proper UTF-8 encoding
+  ;; https://github.com/blahgeek/emacs-lsp-booster/issues/43
+  (setq eglot-booster-io-only t)
+
+  (eglot-booster-mode)
+#+end_src
 ** diagnostics: Flymake
 *** Key bindings
 #+begin_src elisp
@@ -2254,7 +2264,6 @@ Used to use timestamp here, but switched to use UUID (default).
 ZK links are inserted not by org-id but a custom function.
 Other entries should be inserted normal UUIDs to distinguish Zettels.
 #+begin_src elisp
-  ;; (setq org-id-ts-format sr/zettel-id-format)
   (setq org-id-method 'uuid)
 #+end_src
 *** Global tracking
@@ -2462,96 +2471,16 @@ I know what I'm doing
 
 Groups
 #+begin_src elisp
-  (add-to-list 'org-capture-templates '("v" "Capture"))
-  (add-to-list 'org-capture-templates '("t" "Todo"))
   (add-to-list 'org-capture-templates '("p" "Problem"))
 #+end_src
 
-** Random thoughts (journaling)
-#+begin_src elisp
-  (defun sr/org-capture-daily-file ()
-    "Return the location to a file for daily capturing."
-    (sr/file-name-today))
-
-  (add-to-list
-   'org-capture-templates
-   `("c" "Random thought"
-  	 plain (file sr/org-capture-daily-file)
-  	 "*** %T %?"))
-#+end_src
-** Zettelkasten entry
+** Todo
 #+begin_src elisp
   (add-to-list 'org-capture-templates
-  	     `("z" "Zettel"
-  	       entry (file ,(expand-file-name "zk-current.org" sr/note-zk-directory))
-  	       "* %?"
-  	       :jump-to-captured t))
-
-  (defun sr/org-capture-setup-zettel ()
-    "Finish zettel captures."
-    (when (equal (plist-get org-capture-current-plist :description) "Zettel")
-      (if-let ((id (org-entry-get (point) "ID"))
-               (buf (plist-get org-capture-current-plist :buffer)))
-        (org-id-add-location id (buffer-file-name buf)))))
-
-  (add-hook 'org-capture-before-finalize-hook #'sr/org-capture-setup-zettel)
-#+end_src
-** Event
-#+begin_src elisp
-  (add-to-list 'org-capture-templates
-  	     `("e" "Event"
-  	       entry (file ,(expand-file-name "captures.org" sr/note-root-directory))
-  	       "* %^{title} :event:
-  %^{date}t
-  %?"
-  	       :prepend t
-  	       :empty-lines-after 1))
-#+end_src
-** Todo (Trivial)
-#+begin_src elisp
-  (add-to-list 'org-capture-templates
-  	     `("tt" "Todo (Trivial)"
+  	     `("t" "Todo"
   	       entry (file ,(expand-file-name "todo.org" sr/note-root-directory))
   	       "* TODO %?"
   	       :prepend t))
-#+end_src
-** Todo (In a project)
-#+begin_src elisp
-  (defun sr/todo-project-find-location ()
-    (let ((project-file-name
-  	 (read-file-name "Project file nasr/ " sr/note-project-directory "" t nil
-  			 (lambda (name)
-  			   (not (or (backup-file-name-p name)
-  				    (auto-save-file-name-p name)))))))
-      (unless (string-empty-p project-file-name)
-        (find-file
-         (expand-file-name project-file-name sr/note-project-directory))
-        (goto-char (point-min))
-        (unless (search-forward-regexp "^\\* Todo" nil t)
-  	(goto-char (point-max))
-  	(insert "* Todo")))))
-
-  (add-to-list 'org-capture-templates
-  	     `("tp" "Todo (in a project)"
-  	       plain (function sr/todo-project-find-location)
-  	       "** TODO %?"))
-#+end_src
-** Project
-#+begin_src elisp
-  (add-to-list
-   'org-capture-templates
-   `("x" "Project"
-  	 entry (file
-            ,(expand-file-name
-              "second-brain/projects.org"
-              sr/note-root-directory))
-  	 (file
-      ,(expand-file-name
-        "templates/capture-project.org"
-        sr/note-root-directory))
-  	 :prepend t
-     :immediate-finish t
-     :jump-to-captured t))
 #+end_src
 ** Problem (Baekjoon)
 #+begin_src elisp
@@ -2574,26 +2503,6 @@ Groups
   ,** Ideas
   %?"
   	      :jump-to-captured t))
-#+end_src
-** Capture
-#+begin_src elisp
-  (add-to-list 'org-capture-templates
-  	     `("vv" "Capture"
-  	       entry (file ,(expand-file-name "captures.org" sr/note-root-directory))
-  	       "* %^{title}
-  %T
-  %?"
-  	       :prepend t))
-#+end_src
-** Capture (elfeed)
-#+begin_src elisp
-  (add-to-list 'org-capture-templates
-    	         `("ve" "Capture (elfeed)"
-    	           entry (file ,(expand-file-name "captures.org" sr/note-root-directory))
-    	           "* %^{title}
-  [[%:external-link][%:title]]
-  %?"
-    	           :prepend t))
 #+end_src
 * Documentation
 ** Help enhancements
@@ -2830,20 +2739,6 @@ In show mode:
 #+begin_src elisp
   (keymap-global-set "<f6>" #'spray-mode)
 #+end_src
-* YaSnippet
-#+begin_src elisp
-(use-package yasnippet :ensure t)
-#+end_src
-* Man
-#+begin_src elisp
-  (require 'man)
-#+end_src
-** Disable autocompletion
-Override the completion table function =man= command uses.
-#+begin_src elisp
-  (defun Man-completion-table (str pred flag)
-  	'())
-#+end_src
 * Avy
 #+begin_src elisp
   (require 'avy)
@@ -2860,16 +2755,6 @@ I use Colemak layout, so the keys are adjusted accordingly.
 #+begin_src elisp
   ;; the default is '(?a ?s ?d ?f ?g ?h ?j ?k ?l).
   (setq avy-keys '(?a ?r ?s ?t ?d ?n ?e ?i ?o ?h))
-#+end_src
-* Eglot-booster
-#+begin_src elisp
-  (require 'eglot-booster)
-
-  ;; Disable bytecode mode for eglot-booster to preserve proper UTF-8 encoding
-  ;; https://github.com/blahgeek/emacs-lsp-booster/issues/43
-  (setq eglot-booster-io-only t)
-
-  (eglot-booster-mode)
 #+end_src
 * Tools
 #+begin_src elisp
@@ -3135,28 +3020,6 @@ Man specific configs.
 
   (add-hook 'Man-mode-hook (lambda ()
   			  (set-window-dedicated-p (selected-window) nil)))
-#+end_src
-** COMMENT Zettelkasten
-#+begin_src elisp
-  (defun sr/in-tab-p (name)
-    "Return t if the current tab bar name is NAME."
-    (string-equal name
-        (if tab-bar-mode
-  	  (cdr (assq 'name (tab-bar--current-tab))) "")))
-
-  (add-to-list 'display-buffer-alist
-  	     `((derived-mode sr/zk-mode)
-  	       (display-buffer-reuse-mode-window display-buffer-in-tab)
-  	       (tab-name . "ZK")))
-
-  (add-to-list 'display-buffer-alist
-  	     `((and (lambda (&rest args)
-  		      (sr/in-tab-p "ZK"))
-  		    (mode org-agenda-mode))
-  	       (display-buffer-in-side-window)
-  	       (side . right)
-  	       (slot . 0)
-  	       (window-width . 0.4)))
 #+end_src
 ** Tabulated list mode
 Major mode for browsing a list of items e.g. Docker mode.
