@@ -2636,6 +2636,22 @@ Override the completion table function =man= command uses.
 #+begin_src elisp
   (setq shr-use-colors nil)
 #+end_src
+** Browse-url
+My customization for browsing functions:
+1. Use EWW by default while providing an option to use external browsers.
+2. Use external browsers for URLs known to require JavaScript.
+#+begin_src elisp
+  (setq browse-url-browser-function #'eww-browse-url)
+  (setq browse-url-secondary-browser-function #'browse-url-default-browser)
+  (setq browse-url-handlers
+        '(("https://github.com" . browse-url-default-browser)))
+#+end_src
+** Goto address mode
+#+begin_src elisp
+  (global-goto-address-mode)
+
+  (keymap-set goto-address-highlight-keymap "C-c C-o" #'goto-address-at-point)
+#+end_src
 * Version control and diffing
 ** Magit
 *** Org Mode bindings for section
