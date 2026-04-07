@@ -2595,20 +2595,21 @@ Groups
   %?"
     	           :prepend t))
 #+end_src
-* Help enhancements
-** Elisp-demos
+* Documentation
+** Help enhancements
+*** Elisp-demos
 #+begin_src elisp
   (require 'elisp-demos)
 #+end_src
-*** Help
+**** Help
 #+begin_src elisp
   (advice-add 'describe-function-1 :after #'elisp-demos-advice-describe-function-1)
 #+end_src
-*** Helpful
+**** Helpful
 #+begin_src elisp
   (advice-add 'helpful-update :after #'elisp-demos-advice-helpful-update)
 #+end_src
-** Apropos key bindings
+*** Apropos key bindings
 #+begin_src elisp
   (unbind-key "a" help-map)
 
@@ -2618,11 +2619,11 @@ Groups
   (keymap-set help-map "a u" 'apropos-user-option)
   (keymap-set help-map "a l" 'apropos-library)
 #+end_src
-** Helpful
+*** Helpful
 #+begin_src elisp
   (require 'helpful)
 #+end_src
-*** Replace keybindings
+**** Replace keybindings
 #+begin_src elisp
   (keymap-set help-map "f" #'helpful-function)
   (keymap-set help-map "v" #'helpful-variable)
@@ -2630,18 +2631,8 @@ Groups
   (keymap-set help-map "x" #'helpful-command)
   (keymap-set help-map "o" #'helpful-symbol)
 #+end_src
-* Dired
-#+begin_src elisp
-  (setq dired-listing-switches "-hal")
-  (setq dired-auto-revert-buffer t)
-
-  (setq delete-by-moving-to-trash t)
-
-  (add-hook 'dired-mode-hook 'dired-omit-mode)
-  (add-hook 'dired-mode-hook 'lin-mode)
-#+end_src
-* Info
-** Toggle Linux docs (VMs)
+** Info
+*** Toggle Linux docs (VMs)
 This assumes that the =Info-additional-directory-list= is used
 exclusively with it.
 #+begin_src elisp
@@ -2658,12 +2649,33 @@ exclusively with it.
       (setq Info-additional-directory-list sr/info-vm-directory-list)
       (message "Added VM directories to the list")))
 #+end_src
-* Shr / EWW
-** Set max width for readability
+** Man
+#+begin_src elisp
+  (require 'man)
+#+end_src
+*** Disable autocompletion
+Override the completion table function =man= command uses.
+#+begin_src elisp
+  (defun Man-completion-table (str pred flag)
+  	'())
+#+end_src
+* Dired
+#+begin_src elisp
+  (setq dired-listing-switches "-hal")
+  (setq dired-auto-revert-buffer t)
+
+  (setq delete-by-moving-to-trash t)
+
+  (add-hook 'dired-mode-hook 'dired-omit-mode)
+  (add-hook 'dired-mode-hook 'lin-mode)
+#+end_src
+* Web
+** Shr
+*** Set max width for readability
 #+begin_src elisp
   (setq shr-max-width 80)
 #+end_src
-** Disable colors
+*** Disable colors
 #+begin_src elisp
   (setq shr-use-colors nil)
 #+end_src
