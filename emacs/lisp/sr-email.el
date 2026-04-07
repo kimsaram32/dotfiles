@@ -51,7 +51,7 @@
         ("s" ("+spam" "-new" "-inbox") "Mark as spam")
         ("d" ("+deleted" "-new" "-inbox") "Delete")))
 
-(setq notmuch-searches
+(setq notmuch-saved-searches
       '((:name "new" :query "tag:new" :key "n")
         (:name "inbox" :query "tag:inbox" :key "i")
         (:name "mailing list" :query "tag:list tag:unread -tag:archived" :key "l")
@@ -97,8 +97,6 @@
 (defun sr/notmuch-show-trash-message ()
   (notmuch-show-tag "+deleted"))
 
-(keymap-set )
-
 ;;; Synchronization
 
 (defvar sr/email-sync-process-name "mail-sync")
@@ -122,7 +120,7 @@
     (let ((proc (start-process-shell-command
                  sr/email-sync-process-name
                  "*mail sync*"
-                 sr/mail-sync-command)))
+                 sr/email-sync-command)))
       (message "Synchronizing email...")
       (set-process-sentinel proc #'sr/email-sync-sentinel))))
 
