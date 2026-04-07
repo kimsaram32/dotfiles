@@ -1156,6 +1156,52 @@ But in Go, gofmt is the standard way for doing the job.
 #+begin_src elisp
   (setq js-indent-level 2)
 #+end_src
+*** TypeScript
+Eglot integration
+
+#+begin_src elisp
+  (defun sr/eglot-ts-handle-file-rename (server file new-name)
+    "Send the TS LSP command to SERVER handling the rename of FILE to NEW-NAME."
+    (eglot--request
+     server
+     :workspace/executeCommand
+     (list
+      :command "_typescript.applyRenameFile"
+      :arguments `[(
+                    :sourceUri ,(eglot-path-to-uri file)
+                    :targetUri ,(eglot-path-to-uri new-name))])))
+
+  (defun sr/eglot-ts-rename (new-name)
+    "Rename the visited file of the current TypeScript buffer to a new name."
+    (interactive (list (read-file-name "Set visited file name: "
+                                       default-directory
+                                       (expand-file-name
+                                        (file-name-nondirectory (buffer-name))
+                                        default-directory))))
+    (when-let* ((server (eglot--current-server-or-lose))
+                (old-file-name (buffer-file-name)))
+      (sr/eglot-ts-handle-file-rename server old-file-name new-name)
+      (rename-visited-file new-name)))
+
+  ;;; Work in progress
+
+  (defun sr/eglot-ts-server-p (server)
+    "Return t if SERVER can manage TS buffers."
+    (prin1 (eglot--language-ids server)))
+
+  ;; FIXME: Refactor w/ project-wise cache
+  (defun sr/eglot-ts-server-for-file (file)
+    "Return the current Eglot TS server for FILE, if one exists."
+    (if-let* ((project (project-current nil (file-name-directory file)))
+              (servers (gethash project eglot--servers-by-project)))
+        (-first #'sr/eglot-ts-server-p servers)))
+
+  (defun sr/eglot-ts-handle-dired-rename (file new-name ok-if-already-exists)
+    (if-let* ((server (sr/eglot-ts-server-for-file file)))
+        (sr/eglot-ts-handle-file-rename server file new-name)))
+
+  ;; (advice-add 'dired-rename-file :after #'sr/eglot-ts-handle-dired-rename)
+#+end_src
 *** HTML (TS)
 #+begin_src elisp
   (require 'html-ts-mode)
