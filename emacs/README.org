@@ -279,6 +279,12 @@ Key binding for =M-x append-to-register=.
 #+end_src
 * Windows
 [[https://karthinks.com/software/emacs-window-management-almanac][The Emacs Window Management Almanac]] is a good reference
+** Key bindings
+#+begin_src elisp
+  (keymap-global-set "C-M-c" #'scroll-other-window-down)
+  (keymap-global-unset "C-x o")
+  (keymap-global-set "M-o" #'other-window)
+#+end_src
 ** Display-buffer
 #+begin_src elisp
   (setq switch-to-buffer-obey-display-actions t)
@@ -303,10 +309,6 @@ Key binding for =M-x append-to-register=.
   (keymap-set sr/window-map "C-h" #'windmove-swap-states-left)
   (keymap-set sr/window-map "C-k" #'windmove-swap-states-up)
   (keymap-set sr/window-map "C-j" #'windmove-swap-states-down)
-#+end_src
-** Scroll other window
-#+begin_src elisp
-  (keymap-global-set "C-M-c" #'scroll-other-window-down)
 #+end_src
 ** Winner mode
 #+begin_src elisp
