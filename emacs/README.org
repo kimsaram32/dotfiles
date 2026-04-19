@@ -2780,7 +2780,9 @@ only the entries in the reading list after I come back.
     (kill-new (string-join
   	     (mapcar
   	      (lambda (entry) (elfeed-entry-link entry))
-  	      elfeed-search-entries)
+  	      (if (region-active-p)
+              (elfeed-search-selected)
+            elfeed-search-entries))
   	     "\n"))
     (message "Pushed current entries to the mark ring."))
 
