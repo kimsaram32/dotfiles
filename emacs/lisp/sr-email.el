@@ -77,10 +77,6 @@
 
 ;;; Notmuch show mode customizations
 
-(setq-mode-local
- notmuch-show-mode
- scroll-margin 0)
-
 (defun sr/notmuch-show-get-message-depth ()
   (plist-get (notmuch-show-get-message-properties) :depth))
 
