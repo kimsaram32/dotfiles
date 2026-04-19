@@ -1167,8 +1167,7 @@ But in Go, gofmt is the standard way for doing the job.
   (setq js-indent-level 2)
 #+end_src
 *** TypeScript
-Eglot integration
-
+**** Eglot integration
 #+begin_src elisp
   (defun sr/eglot-ts-handle-file-rename (server file new-name)
     "Send the TS LSP command to SERVER handling the rename of FILE to NEW-NAME."
@@ -1211,6 +1210,13 @@ Eglot integration
         (sr/eglot-ts-handle-file-rename server file new-name)))
 
   ;; (advice-add 'dired-rename-file :after #'sr/eglot-ts-handle-dired-rename)
+#+end_src
+**** Compilation mode integration
+#+begin_src elisp
+  (defun sr/tsc ()
+    "Run `tsc' with `compile.'"
+    (interactive)
+    (compile "tsc --noEmit --pretty false"))
 #+end_src
 *** HTML (TS)
 #+begin_src elisp
