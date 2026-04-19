@@ -129,7 +129,7 @@
 ;;; Notify new messages for notmuch
 
 (defun sr/email-notify-new-notmuch-messages ()
-  "Notify new notmuch messages, if any."
+  "Notify notmuch messages tagged with \"new\", if any."
   (let ((count (string-to-number
                 (car (notmuch--process-lines
                       notmuch-command "count"
@@ -143,7 +143,8 @@
   "Run \"notmuch new\", then notify new messages if any."
   (message "Importing messages to notmuch...")
   (notmuch-poll)
-  (sr/email-notify-new-notmuch-messages))
+  (sr/email-notify-new-notmuch-messages)
+  (notmuch-tag "tag:new" '("-new" "+inbox")))
 
 (add-hook 'sr/email-after-sync-hook #'sr/email-refresh-notmuch)
 
