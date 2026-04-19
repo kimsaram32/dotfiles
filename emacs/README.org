@@ -513,54 +513,34 @@ The path to the lua filter is hardcoded. This could be improved.
   Open the converted document in current buffer.
   Perform the following transformations:
   - move frontmatters (created and updated) into properties.
-  - if ZK, transform links and add custom_id property.
   - if non-ZK, remove links as they are broken."
     (interactive)
     (message "Converting markdown to Org...")
     (save-excursion
       (goto-char (point-min))
       (let* ((input-buffer (current-buffer))
-  	   (input-file-name (buffer-file-name))
-  	   (created-at (when (re-search-forward "^created: \\(.+\\)$" nil t)
-  			 (match-string 1)))
-  	   (updated-at (when (re-search-forward "^updated: \\(.+\\)$" nil t)
-  			 (match-string 1)))
-  	   (is-zk (sr/is-zettel-name-p input-file-name)))
+  	         (input-file-name (buffer-file-name))
+  	         (created-at (when (re-search-forward "^created: \\(.+\\)$" nil t)
+  			                   (match-string 1)))
+  	         (updated-at (when (re-search-forward "^updated: \\(.+\\)$" nil t)
+  			                   (match-string 1))))
         (save-buffer)
 
         (with-temp-buffer
-  	(call-process-shell-command sr/pandoc-migration-command input-file-name t)
-  	(let ((temp-buffer (current-buffer)))
-  	  (with-current-buffer input-buffer
-  	    (replace-buffer-contents temp-buffer))))
+  	      (call-process-shell-command sr/pandoc-migration-command input-file-name t)
+  	      (let ((temp-buffer (current-buffer)))
+  	        (with-current-buffer input-buffer
+  	          (replace-buffer-contents temp-buffer))))
         (goto-char (point-min))
-        (when is-zk
-  	(let ((tags))
-  	  (while (re-search-forward "#\\([A-z0-9가-힣\\-]+\\)" nil t)
-  	    (push (string-replace "-" "_" (match-string 1)) tags)
-  	    (let ((start (match-beginning 0))
-  		  (end (match-end 0)))
-  	      (delete-region start end)
-  	      (goto-char start)
-  	      (beginning-of-line)
-  	      (when (looking-at "^[[:space:]]*$")
-  		(delete-line))))
-  	  (org-next-visible-heading 1)
-  	  (org-set-tags tags)))
         (goto-char (point-min))
         (org-next-visible-heading 1)
         (when created-at
-  	(org-set-property "created" created-at))
+  	      (org-set-property "created" created-at))
         (when updated-at
-  	(org-set-property "updated" updated-at))
+  	      (org-set-property "updated" updated-at))
 
-        (if is-zk
-  	  (progn
-  	    (sr/set-zettel-id-property)
-  	    (save-excursion
-  	      (replace-regexp "\\[\\[\\([0-9]+\\)]]" "[[id:\\1][\\1]]")))
-  	(save-excursion
-  	  (replace-regexp "\\[\\[\\(.+?\\)\\]\\]" "\\1")))))
+        (save-excursion
+          (replace-regexp "\\[\\[\\(.+?\\)\\]\\]" "\\1"))))
     (message "Done"))
 #+end_src
 ** Automatic migration
@@ -1453,239 +1433,6 @@ EWW, I overrode it.
 
   (keymap-global-set "C-c d d" #'sr/eng-browse-dictionary-at-point)
 #+end_src
-* Zettelkasten
-I implemented my Zettelkasten in pure Org mode. I tried org-roam
-before, but it felt like an overkill for me.
-** Constants
-#+begin_src elisp
-  (defconst sr/zettel-id-format
-    "%Y%m%d%H%M"
-    "The format for zettel IDs.")
-
-  (defconst sr/zk-backlinks-buffer-name
-    "*ZK Backlinks*"
-    "Buffer name for displaying ZK backlinks.")
-#+end_src
-** Zettel file name regex
-#+begin_src elisp
-  (defconst sr/zettel-file-name-regex
-    "zk-.+?\\.org$"
-    "Regex for matching zettel file names.")
-#+end_src
-** ZK Major mode
-#+begin_src elisp
-  (define-derived-mode sr/zk-mode
-    org-mode "Zettelkasten"
-    "Major mode for Zettels.")
-
-  (add-to-list 'auto-mode-alist `(,sr/zettel-file-name-regex . sr/zk-mode))
-#+end_src
-** helper: Goto top level heading
-#+begin_src elisp
-(defun sr/org-goto-top-level-heading ()
-  "Goto upmost heading."
-  (interactive)
-  (while (org-up-heading-safe) nil))
-#+end_src
-** Predicate for zettel file names
-#+begin_src elisp
-  (defun sr/is-zettel-name-p (name)
-    "Return t if NAME is a file name to a zettel. else return nill."
-    (string-match-p sr/zettel-file-name-regex name))
-#+end_src
-** Get zettel timestamp
-#+begin_src elisp
-(defun sr/get-zettel-timestamp ()
-  "Get zettel timestamp for current time."
-  (format-time-string sr/zettel-id-format))
-#+end_src
-** Get zettel id for current entry
-#+begin_src elisp
-  (defun sr/entry-zettel-id ()
-    "Return the zettel ID of current entry."
-    (save-excursion
-      (sr/org-goto-top-level-heading)
-      (let ((properties (org-entry-properties (point))))
-        (cdr (or (assoc "id" properties)
-  	       (assoc "ID" properties))))))
-
-  (defun sr/entry-zettel-id-as-link ()
-    "Return the zettel ID of current entry as Org link format."
-    (interactive)
-    (let ((id (sr/entry-zettel-id)))
-      (message id)
-      (format "[[id:%s][%s]]" id id)))
-
-  (keymap-set sr/zk-mode-map "C-c z l" (lambda ()
-    				       (interactive)
-    				       (kill-new (sr/entry-zettel-id-as-link))))
-#+end_src
-
-Integrate with Org agenda mode.
-
-#+begin_src elisp
-  (defun sr/copy-zettel-link-in-agenda ()
-    "Add the zettel link to the kill ring from org-agenda-mode."
-    (interactive)
-    (let* ((marker (or (org-get-at-bol 'org-marker)
-  		                 (org-agenda-error)))
-  	       (buffer (marker-buffer marker))
-  	       (pos (marker-position marker)))
-      (with-current-buffer buffer
-        (widen)
-        (goto-char pos)
-        (kill-new (sr/entry-zettel-id-as-link)))))
-
-  (keymap-set org-agenda-mode-map "C-c z l" 'sr/copy-zettel-link-in-agenda)
-#+end_src
-** Managing properties
-*** Set the ID property
-#+begin_src elisp
-  (defun sr/set-zettel-id-property ()
-    "Set zettel ID of the current entry, if it's not set."
-    (interactive)
-    (save-excursion
-      (sr/org-goto-top-level-heading)
-      (unless (org-entry-get (point) "id")
-        (org-entry-put (point) "ID" (sr/get-zettel-timestamp)))))
-#+end_src
-*** Set date properties
-#+begin_src elisp
-  (defun sr/set-date-properties ()
-    "Update the 'updated' property of current buffer as current date.
-  Also update the 'created' property if one does not exist."
-    (interactive)
-    (let ((date-string (format-time-string "%Y-%m-%d" (sr/note-current-date))))
-      (save-excursion
-        (sr/org-goto-top-level-heading)
-        (unless (org-entry-get (point) "created")
-  	(org-set-property "created" date-string))
-        (org-set-property "updated" (concat "<" date-string ">"))))
-    (message "Set date properties"))
-#+end_src
-*** Set all zettel properties
-#+begin_src elisp
-(defun sr/set-zettel-properties ()
-  "Call `sr/set-date-properties' and `sr/set-zettel-id-property'."
-  (interactive)
-  (sr/set-date-properties)
-  (sr/set-zettel-id-property))
-(keymap-global-set "C-c z u" 'sr/set-zettel-properties)
-#+end_src
-** Backlinks
-#+begin_src elisp
-  (defun sr/zettel-search-backlinks ()
-    "Search for ZK backlinks for current entry."
-    (interactive)
-    (org-ql-search (org-agenda-files)
-      `(regexp ,(sr/entry-zettel-id))
-      :title "Backlinks"
-      :buffer "*ZK Backlinks*"))
-
-  (keymap-global-set "C-c z b" 'sr/zettel-search-backlinks)
-#+end_src
-** Registers
-Create a custom register type.
-#+begin_src elisp
-  (cl-defstruct zk-zettel-register
-    id)
-
-  (cl-defmethod register--type ((_regval zk-zettel-register)) 'zettel)
-
-  (cl-defmethod register-val-jump-to ((val zk-zettel-register) _arg)
-    (org-id-goto (zk-zettel-register-id val)))
-
-  (cl-defmethod register-val-describe ((val zk-zettel-register) _verbose)
-    (let* ((id (zk-zettel-register-id val))
-           (marker (org-id-find id 'marker))
-           (heading (if marker
-                        (with-current-buffer (marker-buffer marker)
-                          (save-excursion
-                            (goto-char marker)
-                            (org-get-heading t t t t)))
-                      "Entry not found")))
-      (princ (format "a zettel: %s (%s)" heading id))))
-
-  (cl-defmethod register-val-insert ((val zk-zettel-register))
-    (let ((id (zk-zettel-register-id val)))
-      (insert (format "[[id:%s][%s]]" id id))))
-#+end_src
-
-Override register command info data. Need to find a better approach
-#+begin_src elisp
-  (cl-defmethod register-command-info ((_command (eql insert-register)))
-    (make-register-preview-info
-     :types '(string number zettel)
-     :msg "Insert register `%s'"
-     :act 'insert
-     :smatch t
-     :noconfirm (memq register-use-preview '(nil never))))
-
-  (cl-defmethod register-command-info ((_command (eql jump-to-register)))
-    (make-register-preview-info
-     :types  '(window frame marker kmacro
-               file buffer file-query zettel)
-     :msg "Jump to register `%s'"
-     :act 'jump
-     :smatch t
-     :noconfirm (memq register-use-preview '(nil never))))
-#+end_src
-
-Store current zettel to register, overriding default binding
-#+begin_src elisp
-  (defun zk-zettel-to-register (register)
-    "Store current zettel at point in REGISTER.
-  Interactively, prompt for REGISTER using `register-read-with-preview'."
-    (interactive (list (register-read-with-preview
-                        "Store zettel in register: ")))
-    (add-hook 'kill-buffer-hook 'register-swap-out nil t)
-    (set-register register (make-zk-zettel-register :id (sr/entry-zettel-id))))
-
-  (keymap-set sr/zk-mode-map "C-x r SPC" #'zk-zettel-to-register)
-#+end_src
-** Jump to structure note
-#+begin_src elisp
-  (defun sr/zk-show-structure-note (tag)
-    "Show structure note for TAG."
-    (interactive (list
-  		            (completing-read
-  		             "Tag: "
-  		             (org-global-tags-completion-table))))
-    (when-let* ((result (org-ql-select
-  			                  org-agenda-files
-  			                  `(tags ,(concat "@" tag))
-  			                  :action 'element-with-markers))
-  	            (m (plist-get (nth 1 (car result)) :org-marker)))
-      (pop-to-buffer-same-window (marker-buffer m))
-      (goto-char m)
-      (org-fold-show-context 'mark-goto)
-      (org-fold-show-subtree)
-      (recenter 0)))
-
-  (keymap-global-set "C-c z s" #'sr/zk-show-structure-note)
-#+end_src
-** Search zettels (Consult)
-#+begin_src elisp
-  (defun sr/consult-org-heading-zettelkasten ()
-    (interactive)
-    (consult-org-heading
-     nil
-     (seq-filter #'sr/is-zettel-name-p (org-agenda-files))))
-
-  (keymap-global-set "C-c j z" #'sr/consult-org-heading-zettelkasten)
-
-  (add-to-list
-   'vertico-multiform-commands
-   '(sr/consult-org-heading-zettelkasten buffer))
-
-  (consult-customize
-   sr/consult-org-heading-zettelkasten
-   :group nil)
-#+end_src
-* Mail
-#+begin_src elisp
-  (require 'sr-email)
-#+end_src
 * Authentication
 #+begin_src elisp
   (setq auth-sources '("~/.authinfo.gpg"))
@@ -1700,57 +1447,6 @@ Store current zettel to register, overriding default binding
         (agent-shell-anthropic-make-authentication :login t))
 
   (add-hook 'agent-shell-mode-hook #'corfu-mode)
-#+end_src
-* VMs
-I manage my virtual machines in Mac via UTM. UTM has its command-line
-utility named =utmctl=, so I can use it to work with UTM in Emacs.
-
-#+begin_src elisp
-  (require 'sr-vm)
-#+end_src
-
-** VM list
-#+begin_src elisp
-  (setq sr/vm-list
-        '((
-           :name "arm64 Ubuntu"
-           :ssh-hostname "vm-ubuntu"
-           :utm-name "arm64-ubuntu"
-           :poweroff-command "sudo poweroff"
-           :sudo-password-file "/Users/kimsaram32/me/secrets/vm-ubuntu-password.txt")
-          (
-           :name "x64 Debian"
-           :ssh-hostname "vm-x64"
-           :utm-name "x64-debian"
-           :poweroff-command "sudo poweroff"
-           :sudo-password-file "/Users/kimsaram32/me/secrets/vm-x64-password.txt")))
-#+end_src
-** Manual program
-#+begin_src elisp
-  (defun sr/man-change-program ()
-    "Change the program to use in man."
-    (interactive)
-    (let* ((names (mapcar (lambda (vm) (plist-get vm :name)) sr/vm-list))
-           (program-or-name (completing-read "Manual program: " names))
-           (is-program (or
-                        (string-prefix-p "ssh" program-or-name)
-                        (string-prefix-p "man" program-or-name)))
-           (command (if is-program
-                        program-or-name
-                      (format "ssh %s man"
-                              (plist-get (seq-find
-                                          (lambda (vm)
-                                            (equal program-or-name
-                                                   (plist-get vm :name)))
-                                          sr/vm-list)
-                                         :ssh-hostname)))))
-      (setq-default manual-program command)
-      (message (format (if is-program
-                           "Manual program is now `%s'"
-                         "Using %s to get manual program")
-                       program-or-name))))
-
-  (keymap-global-set "C-c v m" #'sr/man-change-program)
 #+end_src
 * Denote
 #+begin_src elisp
