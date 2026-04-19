@@ -158,6 +158,12 @@ to prevent resizing windows when changing fonts.
 #+begin_src elisp
 (setq-default line-spacing 3)
 #+end_src
+* Custom
+#+begin_src elisp
+  (setq custom-unlispify-tag-names nil)
+  (setq custom-unlispify-menu-entries nil)
+  (setq custom-unlispify-remove-prefixes nil)
+#+end_src
 * Editing
 ** Tab bar mode
 #+begin_src elisp
@@ -185,6 +191,11 @@ to prevent resizing windows when changing fonts.
 ** Mark ring
 #+begin_src elisp
 (setq set-mark-command-repeat-pop t)
+#+end_src
+** Killing
+#+begin_src elisp
+  (setq save-interprogram-paste-before-kill t)
+  (setq kill-do-not-save-duplicates t)
 #+end_src
 ** Registers
 #+begin_src elisp
@@ -273,12 +284,22 @@ Key binding for =M-x append-to-register=.
 #+begin_src elisp
   (which-key-mode)
 #+end_src
+** Outline minor mode
+#+begin_src elisp
+  (keymap-global-set "<f10>" #'outline-minor-mode)
+  (setq outline-minor-mode-cycle t)
+  (setq outline-minor-mode-prefix "\C-c")
+#+end_src
 ** Filling
 #+begin_src elisp
   (setq-default fill-column 80)
 #+end_src
 * Windows
 [[https://karthinks.com/software/emacs-window-management-almanac][The Emacs Window Management Almanac]] is a good reference
+** Configuration
+#+begin_src elisp
+  (setq window-combination-resize t)
+#+end_src
 ** Key bindings
 #+begin_src elisp
   (keymap-global-set "C-M-c" #'scroll-other-window-down)
@@ -777,7 +798,12 @@ control over my completions.
 
   (keymap-set minibuffer-local-map "C-c C-k" #'sr/show-completion-category)
 #+end_src
+* Savehist mode
+#+begin_src elisp
+  (savehist-mode)
+#+end_src
 * Abbrev
+** Abbrev tables
 #+begin_src elisp
   (defun sr/define-abbrev-table (name &rest args)
     (if (boundp name)
@@ -796,6 +822,21 @@ control over my completions.
    nil
    nil
    :parents (list sr/latex-abbrev-table))
+#+end_src
+** Dabbrev
+#+begin_src elisp
+  (setq dabbrev-check-all-buffers nil)
+
+  (defun sr/dabbrev-is-friend-buffer (other-buffer)
+    "Custom function for `dabbrev-friend-buffer-function'.
+  Select buffers that has the same major mode or currently attached to a
+  window."
+    (or (dabbrev--same-major-mode-p other-buffer)
+        (get-buffer-window other-buffer)))
+
+  (setq dabbrev-friend-buffer-function #'sr/dabbrev-is-friend-buffer)
+
+  (setq dabbrev-abbrev-char-regexp "\\sw\\|[_<>-]")
 #+end_src
 * Software dev
 ** Current stack
