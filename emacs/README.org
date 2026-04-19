@@ -51,37 +51,15 @@
   (add-to-list 'load-path sr/emacs-load-directory)
 #+end_src
 
-Small enhancement packages are not loaded here
 #+begin_src elisp
-  (require 'auctex)
-  (require 'cc-mode)
-  (require 'cdlatex)
-  (require 'corfu)
   (require 'consult)
-  (require 'eglot-booster)
-  (require 'elfeed)
-  (require 'flymake)
-  (require 'format-all)
-  (require 'magit)
-  (require 'markdown-mode)
-  (require 'modus-themes)
   (require 'org)
-  (require 'org-agenda)
-  (require 'org-bookmark-heading)
-  (require 'org-capture)
-  (require 'org-journal)
-  (require 'org-ql)
-  (require 'org-social)
-  (require 'org-super-agenda)
-  (require 'rainbow-mode)
-  (require 'rfc-mode)
-  (require 'vertico)
-  (require 'vterm)
 #+end_src
 
 Personal libraries
 #+begin_src elisp
   (require 'sr-startup)
+  (require 'sr-email)
 #+end_src
 * Package management
 ** Use Melpa
@@ -313,12 +291,13 @@ Key binding for =M-x append-to-register=.
 ** Keymap
 #+begin_src elisp
   (defvar-keymap sr/window-map
-  	:doc "Keymap for window-related functionalities.")
+    :doc "Keymap for window-related functionalities.")
 
   (keymap-set ctl-x-map "C-w" sr/window-map)
 
-  ; Remove colliding maps
-  (keymap-unset org-agenda-mode-map "C-x C-w")
+  ;; Remove colliding maps
+  (with-eval-after-load 'org-agenda
+    (keymap-unset org-agenda-mode-map "C-x C-w"))
 #+end_src
 ** Swap states (windmove)
 #+begin_src elisp
@@ -637,10 +616,8 @@ strings to them.
 I use default completion system with multiple frontends.
 ** Vertico (UI, default)
 #+begin_src elisp
+  (require 'vertico)
   (vertico-mode)
-#+end_src
-*** Multiform
-#+begin_src elisp
   (vertico-multiform-mode)
 #+end_src
 *** Key bindings
@@ -946,6 +923,9 @@ Disable tabs by default.
   (eglot-booster-mode)
 #+end_src
 ** diagnostics: Flymake
+#+begin_src elisp
+  (require 'flymake)
+#+end_src
 *** Key bindings
 #+begin_src elisp
   (keymap-set flymake-mode-map "M-n" 'flymake-goto-next-error)
@@ -1036,6 +1016,7 @@ Disable tabs by default.
 #+end_src
 ** Dumb-jump
 #+begin_src elisp
+  (require 'dumb-jump)
   (add-hook 'xref-backend-functions #'dumb-jump-xref-activate)
 #+end_src
 ** Tree-sitter
@@ -1103,6 +1084,9 @@ If you encounter any problems, use the version from the [[https://github.com/mic
          org-src-lang-modes))
 #+end_src
 ** formatting: Format-all
+#+begin_src elisp
+  (require 'format-all)
+#+end_src
 *** Formatters
 #+begin_src elisp
   (setq-default format-all-formatters
@@ -1129,6 +1113,7 @@ their own functionality. In that case, I use =C-c f= instead.
 #+end_src
 **** Rainbow mode
 #+begin_src elisp
+  (require 'rainbow-mode)
   (add-hook 'css-ts-mode-hook #'rainbow-mode)
 #+end_src
 *** C (TS)
@@ -1261,6 +1246,8 @@ I don't like them
 #+end_src
 *** Markdown
 #+begin_src elisp
+  (require 'markdown-mode)
+
   (autoload 'markdown-mode "markdown-mode"
     "Major mode for editing Markdown files" t)
 
@@ -1359,10 +1346,6 @@ indent offset.
     (interactive)
     (combobulate-display-draw-node-tree (combobulate-node-at-point)))
 #+end_src
-** movement: Move by indentation
-#+begin_src elisp
-  (require 'sr-indentation)
-#+end_src
 * In-buffer completion
 ** Stack
 I use the default =completion-at-point= with corfu.
@@ -1371,40 +1354,32 @@ I use the default =completion-at-point= with corfu.
   (keymap-set sr/prog-setup-mode-map "M-TAB" #'completion-at-point)
 #+end_src
 ** Corfu
-*** Enable
 #+begin_src elisp
+  (require 'corfu)
+
+  ;; Enable on these modes
   (add-hook 'sr/prog-setup-mode-hook #'corfu-mode)
   (add-hook 'minibuffer-setup-hook #'corfu-mode)
   (add-hook 'eshell-mode-hook #'corfu-mode)
-  (corfu-popupinfo-mode)
-#+end_src
-*** Display options
-#+begin_src elisp
+
+  (keymap-set corfu-map "M-TAB" #'corfu-insert)
+  ;; Do not complete on RET.
+  (keymap-unset corfu-map "RET")
+
   (setq corfu-cycle t)
   (setq corfu-preview-current nil)
-#+end_src
-*** Key bindings
-#+begin_src elisp
-  (keymap-set corfu-map "M-TAB" #'corfu-insert)
-#+end_src
 
-Do not complete on =RET=.
-#+begin_src elisp
-  (keymap-unset corfu-map "RET")
-#+end_src
-*** Popup info
-#+begin_src elisp
+  ;; Popupinfo mode
+  (corfu-popupinfo-mode)
   (setq corfu-popupinfo-direction '(right left vertical))
   (setq corfu-popupinfo-delay '(nil . 0))
   (setq corfu-popupinfo-max-height 20)
-#+end_src
-*** Autocompletion
-#+begin_src elisp
+
   (setq corfu-auto t)
   (setq corfu-auto-delay 0.1)
 
-  ;; complete on camelCase
   ;; (setq corfu-auto-trigger ".-/")
+  ;; Complete on camelCase.
   (setq corfu-auto-trigger
         (concat ".-/" (apply #'string (number-sequence ?A ?Z))))
 #+end_src
@@ -1809,6 +1784,9 @@ setup.
   (keymap-set sr/denote-map "m" #'sr/denote-move-org-entries-dwim)
 #+end_src
 * Consult
+#+begin_src elisp
+  (require 'consult)
+#+end_src
 ** Key bindings
 #+begin_src elisp
   (keymap-global-set "C-x b" #'consult-buffer)
@@ -1855,274 +1833,62 @@ temporarily resetting =display-buffer-alist=.
 #+begin_src elisp
   (keymap-global-set "C-c j s" #'consult-org-agenda)
 #+end_src
-* Org mode
-** Key bindings
-*** Unbind conflicting keys
+* Org
+** Global key bindings
 #+begin_src elisp
-  (keymap-unset org-mode-map "C-'")
-#+end_src
-*** Global bindings
-#+begin_src elisp
+  ;; global keybindings.
   (keymap-global-set "C-c l" 'org-store-link)
   (keymap-global-set "C-c a" 'org-agenda)
   (keymap-global-set "C-c c" 'org-capture)
 #+end_src
-*** Move between paragraphs
+** General
 #+begin_src elisp
+  (setq org-directory sr/note-root-directory)
+  (setq org-archive-location (expand-file-name
+                              "archives/%s.archive::"
+                              sr/note-root-directory))
+
+  (add-to-list 'org-file-apps '("\\.md\\'" . emacs))
+
+  (setq org-extend-today-until sr/note-day-start-hour)
+#+end_src
+** Editing
+*** Configuration
+#+begin_src elisp
+  (setq org-startup-indented t)
+  (setq org-startup-with-inline-images t)
+  (setq-default org-startup-folded 'showeverything)
+
+  (setq org-blank-before-new-entry '((heading . auto) (plain-list-item auto)))
+
+  (setq org-image-actual-width nil)
+  (setq org-image-max-width 400)
+
+  (setq org-footnote-section nil)
+
+  (setq org-list-allow-alphabetical t)
+  #+end_src
+*** Key bindings
+#+begin_src elisp
+  ;; unbind conflicting keys.
+  (keymap-unset org-mode-map "C-'")
+
   (keymap-set org-mode-map "M-{" 'org-backward-element)
   (keymap-set org-mode-map "M-}" 'org-forward-element)
-#+end_src
-*** Avoid arrow keys
-I don't use a separate keyboard, so arrow keys are hard to press.
-Remap arrow key commands to something else.
 
-e.g. =M-<right>= is remapped to =C-c C-==.
-
-#+begin_src elisp
+  ;; alternative keybindings for arrow key related commands.
   (keymap-set org-mode-map "C-c C--" #'org-metaup)
   (keymap-set org-mode-map "C-c C-=" #'org-metadown)
   (keymap-set org-mode-map "C-c C-;" #'org-metaleft)
   (keymap-set org-mode-map "C-c C-'" #'org-metaright)
-#+end_src
-*** Swap footnotes and emphasize mappings
-I use footnotes more frequently, and =C-c C-x f= is more harder to
-type than =C-c C-x C-f=.
-#+begin_src elisp
+
+  ;; swap these two bindings, since I use the footnotes feature more.
   (keymap-set org-mode-map "C-c C-x C-f" #'org-footnote-action)
   (keymap-set org-mode-map "C-c C-x f" #'org-emphasize)
-#+end_src
-** Directories
-#+begin_src elisp
-  (setq org-directory sr/note-root-directory)
-  (setq org-archive-location (expand-file-name
-  			                      "archives/%s.archive::"
-  			                      sr/note-root-directory))
-#+end_src
-** File apps
-#+begin_src elisp
-(add-to-list 'org-file-apps '("\\.md\\'" . emacs))
-#+end_src
-** Starting hour of a day
-- Sync with the core note taking system.
-- Also used in org-journal.
-#+begin_src elisp
-(setq org-extend-today-until sr/note-day-start-hour)
-#+end_src
-** Startup settings
-Use indented headings.
-#+begin_src elisp
-  (setq org-startup-indented t)
-#+end_src
 
-#+begin_src elisp
-  (setq-default org-startup-folded 'showeverything)
-#+end_src
-** Editing commands
-#+begin_src elisp
-  (defun sr/org-open-at-point-other-window (&optional arg)
-    (interactive)
-    (other-window-prefix)
-    (org-open-at-point arg))
-
-  (keymap-set org-mode-map "C-c C-h" #'sr/org-open-at-point-other-window)
-#+end_src
-
-#+begin_src elisp
-  (defun sr/org-toggle-subtree ()
-    "Toggle all children of current heading."
-    (interactive)
-    (if (save-excursion
-          (beginning-of-line)
-          (outline-invisible-p (line-end-position)))
-        (org-fold-show-subtree)
-      (org-fold-hide-subtree)))
-
-  (keymap-set org-mode-map "C-c C-x TAB" 'sr/org-toggle-subtree)
-  ;; (keymap-set sr/zk-mode-map "TAB" 'sr/org-toggle-subtree)
-#+end_src
-** Latex
-*** LuaLaTeX
-#+begin_src elisp
-(setq luamagick '(luamagick :programs ("lualatex" "convert")
-       :description "pdf > png"
-       :message "you need to install lualatex and imagemagick."
-       :use-xcolor t
-       :image-input-type "pdf"
-       :image-output-type "png"
-       :image-size-adjust (1.0 . 1.0)
-       :latex-compiler ("lualatex -interaction nonstopmode -output-directory %o %f")
-       :image-converter ("convert -density %D -trim -antialias %f -quality 100 %O")))
-(add-to-list 'org-preview-latex-process-alist luamagick)
-#+end_src
-*** dvisvgm
-Dvisvgm configuration is patched for my environment...
-#+begin_src elisp
-  (add-to-list 'org-preview-latex-process-alist
-  	     '(dvisvgm :programs ("latex" "dvisvgm") :description "dvi > svg"
-  		       :message
-  		       "you need to install the programs: latex and dvisvgm."
-  		       :image-input-type "dvi" :image-output-type "svg"
-  		       :image-size-adjust (1.2 . 1.5) :latex-compiler
-  		       ("latex -interaction nonstopmode -output-directory %o %f")
-  		       :image-converter
-  		       ("TEXMFCNF=\"/usr/local/texlive/2025:$TEXMFCNF\" dvisvgm --no-fonts --exact-bbox --scale=%S --output=%O --keep %f")))
-#+end_src
-*** Use dvisvgm for inline preview
-#+begin_src elisp
-(setq org-preview-latex-default-process 'dvisvgm)
-#+end_src
-*** Preview scaling
-#+begin_src elisp
-(plist-put org-format-latex-options :scale 2)
-#+end_src
-*** Image location
-#+begin_src elisp
-  (setq org-preview-latex-image-directory (expand-file-name "ltximg/" sr/note-root-directory))
-#+end_src
-** New entry blanks
-#+begin_src elisp
-(setq org-blank-before-new-entry '((heading . auto) (plain-list-item auto)))
-#+end_src
-** Images
-#+begin_src elisp
-(setq org-startup-with-inline-images t)
-(setq org-image-actual-width nil)
-(setq org-image-max-width 400)
-#+end_src
-** Link abbrevations
-#+begin_src elisp
-  (setq org-link-abbrev-alist
-        `(("zk" . ,(expand-file-name "id:%s" sr/note-root-directory))
-  	      ("media" . ,sr/note-media-directory)))
-#+end_src
-** Lists
-#+begin_src elisp
-  (setq org-list-allow-alphabetical t)
-#+end_src
-
-#+begin_src elisp
   (keymap-set org-mode-map "C-c C-8" #'org-list-make-subtree)
 #+end_src
-** Footnotes
-Currently, I use footnotes only inside my Zettelkasten. Because the
-zettels are created as entries, footnotes for an entry should go
-directly below it, not a special heading in the file (which is the
-default behavior).
-#+begin_src elisp
-  (setq org-footnote-section nil)
-#+end_src
-** Tags
-By default, the tag list only includes the tags in the current buffer.
-This can be customized to show all tags in agenda files instead.
-[[info:org#Setting Tags][org#Setting Tags]]
-#+begin_src elisp
-  (setq org-complete-tags-always-offer-all-agenda-tags t)
-#+end_src
-
-Exprimenting with tag inheritance.
-#+begin_src elisp
-  (setq org-use-tag-inheritance nil)
-#+end_src
-** Todo
-*** Todo keywords
-#+begin_src elisp
-  (setq org-todo-keywords
-        '((sequence "TODO" "WORKING" "|" "DONE" "FAILED")))
-  (setq org-todo-keyword-faces
-        '(("TODO" . "gold")
-  	      ("IDEA" . "coral")
-  	      ("WORKING" . "CadetBlue2")
-  	      ("FAILED" . "brown1")))
-#+end_src
-*** Deadine
-#+begin_src elisp
-(setq org-deadline-warning-days 21)
-#+end_src
-*** Priority
-#+begin_src elisp
-(setq org-priority-lowest 68
-	org-priority-highest 65
-	org-priority-default 68)
-#+end_src
-*** Enable habits
-#+begin_src elisp
-  (add-to-list 'org-modules 'habit)
-#+end_src
-** Editing source code
-#+begin_src elisp
-(setq org-edit-src-content-indentation 2)
-#+end_src
-** Revealing
-#+begin_src elisp
-  (setq
-   org-fold-show-context-detail
-   '((isearch . lineage)
-     (default . tree)))
-#+end_src
-** Org-id
-*** ID format
-Used to use timestamp here, but switched to use UUID (default).
-ZK links are inserted not by org-id but a custom function.
-Other entries should be inserted normal UUIDs to distinguish Zettels.
-#+begin_src elisp
-  (setq org-id-method 'uuid)
-#+end_src
-*** Global tracking
-#+begin_src elisp
-(setq org-id-track-globally t)
-#+end_src
-*** Do not track archives
-#+begin_src elisp
-  (setq org-id-search-archives nil)
-#+end_src
-** Org-agenda
-*** Agenda files
-#+begin_src elisp
-  (setq
-   org-agenda-files
-   (list sr/note-root-directory
-         sr/note-second-brain-directory
-  			 (expand-file-name "projects/" sr/note-root-directory)
-  			 sr/note-zk-directory))
-#+end_src
-*** Window setup
-#+begin_src elisp
-  (setq org-agenda-restore-windows-after-quit t)
-#+end_src
-*** Display options
-Deadline and schedules.
-#+begin_src elisp
-  (setq org-agenda-todo-ignore-deadlines -1)
-  (setq org-agenda-skip-deadline-prewarning-if-scheduled t)
-  (setq org-agenda-skip-timestamp-if-deadline-is-shown t)
-#+end_src
-
-Sorting strategy.
-#+begin_src elisp
-  (setq org-agenda-sorting-strategy
-        '((agenda habit-up priority-down deadline-up category-keep)
-  	(todo urgency-down category-keep)
-  	(tags urgency-down category-keep)
-  	(search category-keep)))
-#+end_src
-*** Mode-specific display options
-Periodic display options.
-#+begin_src elisp
-  (setq org-agenda-span 14)
-#+end_src
-
-Tag matching display options.
-#+begin_src elisp
-  (setq org-tags-match-list-sublevels t)
-#+end_src
-** Org-capture
-*** Change finalize shortcut
-I need to add tags inside the capture buffer.
-#+begin_src elisp
-  (keymap-unset org-capture-mode-map "C-c C-c")
-  (keymap-set org-capture-mode-map "C-c C-f" 'org-capture-finalize)
-#+end_src
-** Insert image from clipboard
+*** Insert image from clipboard (Denote integration)
 #+begin_src elisp
   (defvar sr/denote-signature-for-media "media"
     "Signature to use for media files.")
@@ -2154,7 +1920,7 @@ I need to add tags inside the capture buffer.
 
   (keymap-set org-mode-map "C-c i" #'sr/org-insert-image-from-clipboard)
 #+end_src
-** Alignment for ZK structure notes
+*** Alignment for ZK structure notes
 #+begin_src elisp
   (defun sr/add-zk-toc-align-rule ()
     (add-to-list
@@ -2165,47 +1931,135 @@ I need to add tags inside the capture buffer.
 
   (add-hook 'org-mode-hook #'sr/add-zk-toc-align-rule)
 #+end_src
-** todo
+** Managing todo items
 #+begin_src elisp
+  (setq org-todo-keywords
+        '((sequence "TODO" "WORKING" "|" "DONE" "FAILED")))
+  (setq org-todo-keyword-faces
+        '(("TODO" . "gold")
+    	    ("IDEA" . "coral")
+    	    ("WORKING" . "CadetBlue2")
+    	    ("FAILED" . "brown1")))
+
+  (setq org-deadline-warning-days 21)
+
+  (setq org-priority-lowest 68
+  	    org-priority-highest 65
+  	    org-priority-default 68)
+
+  (add-to-list 'org-modules 'habit)
+#+end_src
+** Latex
+*** LuaLaTeX
+#+begin_src elisp
+  (setq luamagick '(luamagick :programs ("lualatex" "convert")
+                              :description "pdf > png"
+                              :message "you need to install lualatex and imagemagick."
+                              :use-xcolor t
+                              :image-input-type "pdf"
+                              :image-output-type "png"
+                              :image-size-adjust (1.0 . 1.0)
+                              :latex-compiler ("lualatex -interaction nonstopmode -output-directory %o %f")
+                              :image-converter ("convert -density %D -trim -antialias %f -quality 100 %O")))
+  (add-to-list 'org-preview-latex-process-alist luamagick)
+#+end_src
+*** dvisvgm
+Dvisvgm configuration is patched for my environment...
+#+begin_src elisp
+  (add-to-list 'org-preview-latex-process-alist
+  	           '(dvisvgm :programs ("latex" "dvisvgm") :description "dvi > svg"
+  		                   :message
+  		                   "you need to install the programs: latex and dvisvgm."
+  		                   :image-input-type "dvi" :image-output-type "svg"
+  		                   :image-size-adjust (1.2 . 1.5) :latex-compiler
+  		                   ("latex -interaction nonstopmode -output-directory %o %f")
+  		                   :image-converter
+  		                   ("TEXMFCNF=\"/usr/local/texlive/2025:$TEXMFCNF\" dvisvgm --no-fonts --exact-bbox --scale=%S --output=%O --keep %f")))
+#+end_src
+*** Use dvisvgm for inline preview
+#+begin_src elisp
+  (setq org-preview-latex-default-process 'dvisvgm)
+#+end_src
+*** Preview scaling
+#+begin_src elisp
+  (plist-put org-format-latex-options :scale 2)
+#+end_src
+*** Image location
+#+begin_src elisp
+  (setq org-preview-latex-image-directory (expand-file-name "ltximg/" sr/note-root-directory))
+#+end_src
+** Tags
+#+begin_src elisp
+  (setq org-complete-tags-always-offer-all-agenda-tags t)
+  (setq org-use-tag-inheritance nil)
+  (setq org-tags-match-list-sublevels t)
+#+end_src
+** Links
+#+begin_src elisp
+  (setq org-link-abbrev-alist
+        `(("zk" . ,(expand-file-name "id:%s" sr/note-root-directory))
+  	      ("media" . ,sr/note-media-directory)))
   (setf (cdr (assoc 'file org-link-frame-setup)) 'find-file)
 #+end_src
-* Org-babel
-** Key bindings
+** Source code editing and evaluation
 #+begin_src elisp
   (keymap-set org-babel-map "C-k" #'org-babel-remove-result-one-or-many)
-#+end_src
-** Load languages
-#+begin_src elisp
+
   (org-babel-do-load-languages
    'org-babel-load-languages
    '((python . t)
      (shell . t)
      (js . t)))
+
+  (setq org-confirm-babel-evaluate nil)
+  (setq org-babel-results-keyword "results")
+
+  (setq org-edit-src-content-indentation 2)
 #+end_src
-** Disable confirmation
-I know what I'm doing
+** Folding
 #+begin_src elisp
-(setq org-confirm-babel-evaluate nil)
+  (setq
+   org-fold-show-context-detail
+   '((isearch . lineage)
+     (default . tree)))
 #+end_src
-** Make the result keyword lowercased
+** Identifiers
 #+begin_src elisp
-(setq org-babel-results-keyword "results")
+  (setq org-id-method 'uuid)
+  (setq org-id-track-globally t)
+  (setq org-id-search-archives nil)
 #+end_src
-* Org-super-agenda
+** Agenda (org-agenda)
 #+begin_src elisp
-  (org-super-agenda-mode)
+  (require 'org-agenda)
 #+end_src
-* Org-social
+*** Configuration
 #+begin_src elisp
-  (setq org-social-file (expand-file-name "org_social_vfile" user-emacs-directory))
-  (setq org-social-relay "https://relay.org-social.org/")
-  (setq org-social-my-public-url "https://host.org-social.org/saram/social.org")
+  (setq
+   org-agenda-files
+   (list sr/note-root-directory
+         sr/note-second-brain-directory
+  			 (expand-file-name "projects/" sr/note-root-directory)
+  			 sr/note-zk-directory))
+
+  (setq org-agenda-restore-windows-after-quit t)
+
+  (setq org-agenda-todo-ignore-deadlines -1)
+  (setq org-agenda-skip-deadline-prewarning-if-scheduled t)
+  (setq org-agenda-skip-timestamp-if-deadline-is-shown t)
+  (setq org-agenda-sorting-strategy
+        '((agenda habit-up priority-down deadline-up category-keep)
+  	      (todo urgency-down category-keep)
+  	      (tags urgency-down category-keep)
+  	      (search category-keep)))
+
+  (setq org-agenda-span 14)
 #+end_src
-* Custom agendas
+*** Custom agendas
 #+begin_src elisp
   (setq org-agenda-custom-commands nil)
 #+end_src
-** Daily agenda
+**** Daily agenda
 #+begin_src elisp
   (add-to-list
    'org-agenda-custom-commands
@@ -2252,7 +2106,7 @@ I know what I'm doing
                   (:name "Today"
   			                 :time-grid t))))))))
 #+end_src
-** Project agenda
+**** Project agenda
 #+begin_src elisp
   (add-to-list 'org-agenda-custom-commands
   	     '("p" "Projects"
@@ -2265,58 +2119,63 @@ I know what I'm doing
   		       (org-agenda-overriding-header "All projects")
   		       (org-agenda-remove-tags t))))))
 #+end_src
-* Capture templates
+*** Org-super-agenda
 #+begin_src elisp
-  (setq org-capture-templates nil)
+  (require 'org-super-agenda)
+  (org-super-agenda-mode)
 #+end_src
+** Capturing (org-capture)
+#+begin_src elisp
+  (require 'org-capture)
 
-Groups
-#+begin_src elisp
-  (add-to-list 'org-capture-templates '("p" "Problem"))
-#+end_src
+  (keymap-unset org-capture-mode-map "C-c C-c")
+  (keymap-set org-capture-mode-map "C-c C-f" 'org-capture-finalize)
 
-** Todo
-#+begin_src elisp
-  (add-to-list 'org-capture-templates
-  	     `("t" "Todo"
-  	       entry (file ,(expand-file-name "todo.org" sr/note-root-directory))
-  	       "* TODO %?"
-  	       :prepend t))
-#+end_src
-** Problem (Baekjoon)
-#+begin_src elisp
-  (add-to-list 'org-capture-templates
-  	     `("pb" "Baekjoon problem"
-  	      entry (file ,(expand-file-name "problems/baekjoon.org" sr/note-root-directory))
-  	      "* %t %^{id}. %^{title}
+  (setq
+   org-capture-templates
+
+   `(
+     ;; todo files
+     ("t" "Todo"
+      entry (file ,(expand-file-name "todo.org" sr/note-root-directory))
+      "* TODO %?"
+      :prepend t)
+
+     ;; coding interview preparation
+     ("p" "Problem")
+     ("pb" "Baekjoon problem"
+      entry (file ,(expand-file-name "problems/baekjoon.org" sr/note-root-directory))
+      "* %t %^{id}. %^{title}
   [[https://www.acmicpc.net/problem/%\\1][Baekjoon]]
   ,** Ideas
   %?"
-  	      :jump-to-captured t))
-#+end_src
-** Problem (Programmers)
-#+begin_src elisp
-  (add-to-list 'org-capture-templates
-  	     `("pp" "Programmers problem"
-  	      entry (file ,(expand-file-name "problems/programmers.org" sr/note-root-directory))
-  	      "* %t %^{id}. %^{title}
+      :jump-to-captured t)
+     ("pp" "Programmers problem"
+      entry (file ,(expand-file-name "problems/programmers.org" sr/note-root-directory))
+      "* %t %^{id}. %^{title}
   [[%^{url}][Programmers]]
   ,** Ideas
   %?"
-  	      :jump-to-captured t))
+      :jump-to-captured t))
+#+end_src
+** Bookmark support (org-bookmark-heading)
+#+begin_src elisp
+  (require 'org-bookmark-heading)
+#+end_src
+** COMMENT Social (org-social)
+#+begin_src elisp
+  (require 'org-social)
+  (setq org-social-file (expand-file-name "org_social_vfile" user-emacs-directory))
+  (setq org-social-relay "https://relay.org-social.org/")
+  (setq org-social-my-public-url "https://host.org-social.org/saram/social.org")
 #+end_src
 * Documentation
 ** Help enhancements
 *** Elisp-demos
 #+begin_src elisp
   (require 'elisp-demos)
-#+end_src
-**** Help
-#+begin_src elisp
+
   (advice-add 'describe-function-1 :after #'elisp-demos-advice-describe-function-1)
-#+end_src
-**** Helpful
-#+begin_src elisp
   (advice-add 'helpful-update :after #'elisp-demos-advice-helpful-update)
 #+end_src
 *** Apropos key bindings
@@ -2332,42 +2191,25 @@ Groups
 *** Helpful
 #+begin_src elisp
   (require 'helpful)
-#+end_src
-**** Replace keybindings
-#+begin_src elisp
+
   (keymap-set help-map "f" #'helpful-function)
   (keymap-set help-map "v" #'helpful-variable)
   (keymap-set help-map "k" #'helpful-key)
   (keymap-set help-map "x" #'helpful-command)
   (keymap-set help-map "o" #'helpful-symbol)
 #+end_src
-** Info
-*** Toggle Linux docs (VMs)
-This assumes that the =Info-additional-directory-list= is used
-exclusively with it.
-#+begin_src elisp
-  (defconst sr/info-vm-directory-list
-    '("/ssh:vm-ubuntu:/usr/share/info")
-    "Additional info directories in VMs.")
-
-  (defun sr/info-toggle-vm-directory ()
-    (interactive)
-    (if Info-additional-directory-list
-        (progn
-          (setq Info-additional-directory-list nil)
-          (message "Removed VM directories from the list"))
-      (setq Info-additional-directory-list sr/info-vm-directory-list)
-      (message "Added VM directories to the list")))
-#+end_src
 ** Man
 #+begin_src elisp
   (require 'man)
-#+end_src
-*** Disable autocompletion
-Override the completion table function =man= command uses.
-#+begin_src elisp
+
+  ;; disable autocompletion by overriding the completion table function that the
+  ;; `man' command uses. It's slow for me, and I don't need this feature.
   (defun Man-completion-table (str pred flag)
   	'())
+#+end_src
+** RFC
+#+begin_src elisp
+  (require 'rfc-mode)
 #+end_src
 * Dired
 #+begin_src elisp
@@ -2419,13 +2261,8 @@ My customization for browsing functions:
 #+end_src
 * Version control and diffing
 ** Magit
-*** Org Mode bindings for section
 #+begin_src elisp
-  (keymap-set magit-section-mode-map "C-c C-u" 'magit-section-up)
-  (keymap-set magit-section-mode-map "C-c C-n" 'magit-section-forward)
-  (keymap-set magit-section-mode-map "C-c C-p" 'magit-section-backward)
-  (keymap-set magit-section-mode-map "C-c C-f" 'magit-section-forward-sibling)
-  (keymap-set magit-section-mode-map "C-c C-b" 'magit-section-backward-sibling)
+  (require 'magit)
 #+end_src
 *** Forge
 #+begin_src elisp
@@ -2441,6 +2278,9 @@ My customization for browsing functions:
   (keymap-set magit-mode-map "C-c C-l" #'sr/forge-copy-browse-url-as-link)
 #+end_src
 * Elfeed
+#+begin_src elisp
+  (require 'elfeed)
+#+end_src
 ** Key bindings
 #+begin_src elisp
   (keymap-global-set "C-c w" 'elfeed)
@@ -2561,23 +2401,17 @@ In show mode:
 
   (sr/elfeed-load-entries)
 #+end_src
-* Modus-themes
+* Themes
 #+begin_src elisp
+  ;; Modus themes
   (require-theme 'modus-themes)
-#+end_src
-** Ef-themes
-#+begin_src elisp
-  (require-theme 'ef-themes)
-  (ef-themes-take-over-modus-themes-mode 1)
-#+end_src
-** Key bindings
-#+begin_src elisp
   (keymap-global-set "<f5>" 'modus-themes-rotate)
-#+end_src
-** Theme
-#+begin_src elisp
   (setq modus-themes-common-palette-overrides modus-themes-preset-overrides-faint)
   (modus-themes-load-theme 'modus-vivendi-tinted)
+
+  ;; Ef themes
+  (require-theme 'ef-themes)
+  (ef-themes-take-over-modus-themes-mode 1)
 #+end_src
 * Spray
 #+begin_src elisp
@@ -2644,6 +2478,7 @@ connect, causing Emacs to freeze on launch.
 * LaTeX editing
 ** AUCTeX
 #+begin_src elisp
+  (require 'auctex)
   (require 'tex)
   (require 'latex)
 #+end_src
