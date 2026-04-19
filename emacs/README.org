@@ -2659,14 +2659,26 @@ My customization for browsing functions:
 #+begin_src elisp
   (setq browse-url-browser-function #'eww-browse-url)
   (setq browse-url-secondary-browser-function #'browse-url-default-browser)
+
   (setq browse-url-handlers
-        '(("https://github.com" . browse-url-default-browser)))
+        '(("github\\.com.+\\.diff$" . eww-browse-url)
+          ("github\\.com" . browse-url-default-browser)
+          ("reddit\\.com" . browse-url-default-browser)
+          ("localhost" . browse-url-default-browser)))
 #+end_src
 ** Goto address mode
 #+begin_src elisp
   (global-goto-address-mode)
 
   (keymap-set goto-address-highlight-keymap "C-c C-o" #'goto-address-at-point)
+#+end_src
+** EWW
+#+begin_src elisp
+  (defun sr/eww-enable-diff-mode-github-diff ()
+    (when (string-match-p "github\\.com.+\\.diff$" (eww-current-url))
+      (diff-mode)))
+
+  (add-hook 'eww-after-render-hook #'sr/eww-enable-diff-mode-github-diff)
 #+end_src
 * Version control and diffing
 ** Magit
@@ -2677,6 +2689,19 @@ My customization for browsing functions:
   (keymap-set magit-section-mode-map "C-c C-p" 'magit-section-backward)
   (keymap-set magit-section-mode-map "C-c C-f" 'magit-section-forward-sibling)
   (keymap-set magit-section-mode-map "C-c C-b" 'magit-section-backward-sibling)
+#+end_src
+*** Forge
+#+begin_src elisp
+  (require 'forge)
+
+  (defun sr/forge-copy-browse-url-as-link ()
+    (interactive)
+    (when-let* ((target (forge--browse-target))
+              (url (if (stringp target) target (forge-get-url target))))
+      (kill-new (format "[[%s]]" url))
+      (message url)))
+
+  (keymap-set magit-mode-map "C-c C-l" #'sr/forge-copy-browse-url-as-link)
 #+end_src
 * Elfeed
 ** Key bindings
