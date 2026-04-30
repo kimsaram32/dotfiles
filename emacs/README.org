@@ -46,21 +46,6 @@
     (expand-file-name "emacs/README.org" sr/dotfiles-directory)
     "File name for README.org configuration file.")
 #+end_src
-* Load
-#+begin_src elisp
-  (add-to-list 'load-path sr/emacs-load-directory)
-#+end_src
-
-#+begin_src elisp
-  (require 'consult)
-  (require 'org)
-#+end_src
-
-Personal libraries
-#+begin_src elisp
-  (require 'sr-startup)
-  (require 'sr-email)
-#+end_src
 * Package management
 ** Use Melpa
 #+begin_src elisp
@@ -68,8 +53,8 @@ Personal libraries
 #+end_src
 ** Setup Custom
 #+begin_src elisp
-(setq custom-file (expand-file-name "custom.el" user-emacs-directory))
-(load custom-file)
+  (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
+  (load custom-file)
 #+end_src
 * Environment
 These are ad-hoc configurations for my local environment.
@@ -96,7 +81,45 @@ These are ad-hoc configurations for my local environment.
 #+end_src
 * Enable disabled commands
 #+begin_src elisp
-(put 'scroll-left 'disabled nil)
+  (put 'scroll-left 'disabled nil)
+  (put 'downcase-region 'disabled nil)
+#+end_src
+* Load
+#+begin_src elisp
+  (add-to-list 'load-path sr/emacs-load-directory)
+#+end_src
+
+#+begin_src elisp
+  (require 'consult)
+  (require 'org)
+#+end_src
+
+Load personal packages. I'm slowly switching to per-file module setup.
+#+begin_src elisp
+  ;; From Prot's dotfiles
+  (defmacro sr/load-configuration (name &rest body)
+    "Evaluate BODY and catch any errors."
+    (declare (indent 0))
+    `(condition-case err
+         (progn ,@body)
+       ((error user-error quit)
+        (message "Failed to load configuration '%s': `%S'" ,name (cdr err)))))
+
+  (sr/load-configuration
+    "Startup"
+    (require 'sr-startup))
+
+  (sr/load-configuration
+    "Email"
+    (require 'sr-email))
+
+  (sr/load-configuration
+    "Programming"
+    (require 'sr-programming))
+
+  (sr/load-configuration
+    "Denote"
+    (require 'sr-denote))
 #+end_src
 * UI and Display
 ** Remove bars
@@ -186,11 +209,11 @@ Key binding for =M-x append-to-register=.
 #+end_src
 ** Insert quotes more easily
 #+begin_src elisp
-(defun sr/insert-quotes (&optional arg)
-  "Like `insert-parentheses`, but for quotes."
-  (interactive "P")
-  (insert-pair arg ?\" ?\"))
-(keymap-global-set "M-\"" 'sr/insert-quotes)
+  (defun sr/insert-quotes (&optional arg)
+    "Like `insert-parentheses`, but for quotes."
+    (interactive "P")
+    (insert-pair arg ?\" ?\"))
+  (keymap-global-set "M-\"" 'sr/insert-quotes)
 #+end_src
 ** Toggle between let and let*
 [[https://www.reddit.com/r/emacs/comments/1qyp1rk/toggle_between_let_and_let/][Source]]
@@ -301,10 +324,8 @@ Key binding for =M-x append-to-register=.
 #+end_src
 ** Swap states (windmove)
 #+begin_src elisp
-  (require 'windmove)
-#+end_src
+  ;; windmove
 
-#+begin_src elisp
   (keymap-set sr/window-map "C-l" #'windmove-swap-states-right)
   (keymap-set sr/window-map "C-h" #'windmove-swap-states-left)
   (keymap-set sr/window-map "C-k" #'windmove-swap-states-up)
@@ -314,9 +335,7 @@ Key binding for =M-x append-to-register=.
 #+begin_src elisp
   (setq winner-dont-bind-my-keys t)
   (winner-mode)
-#+end_src
 
-#+begin_src elisp
   (keymap-set sr/window-map "<left>" #'winner-undo)
   (keymap-set sr/window-map "<right>" #'winner-redo)
 #+end_src
@@ -579,7 +598,6 @@ strings to them.
 (defun sr/migrate-org-properties ()
   "Migrate current old Org document to follow the new format. Specifically:
 - move incorrect buffer options (created and updated) into properties.
-- if ZK, call `sr/set-zettel-id-property'.
 - Move filetags into entry tags."
   (interactive)
   (save-excursion
@@ -602,8 +620,7 @@ strings to them.
       (org-next-visible-heading 1)
       (when created-at (org-set-property "created" created-at))
       (when updated-at (org-set-property "updated" updated-at))
-      (when filetags (org-set-tags (string-replace "-" "_" filetags))))
-    (sr/set-zettel-id-property)))
+      (when filetags (org-set-tags (string-replace "-" "_" filetags))))))
 #+end_src
 * Minibuffer
 #+begin_src elisp
@@ -635,7 +652,7 @@ I use default completion system with multiple frontends.
 #+begin_src elisp
   (marginalia-mode)
 #+end_src
-** Icomplete (UI)
+** COMMENT Icomplete (UI)
 #+begin_src elisp
   (require 'icomplete)
 #+end_src
@@ -795,71 +812,7 @@ control over my completions.
 
   (setq dabbrev-abbrev-char-regexp "\\sw\\|[_<>-]")
 #+end_src
-* Software dev
-** Current stack
-- LSP client: Eglot
-- In-buffer completion: Corfu
-- Formatting: Format-all
-- Diagnostics: Flymake
-- Jump to definition: Xref (frontend) and dumb-jump (backend)
-- Symbol renaming: Eglot features
-- Projects: Project (built-in)
-- Documentation: Eldoc
-- Tree-sitter
-  - Experimenting with Combobulate for structured editing
-** Custom mode for shared configurations
-Previously, I would set configurations for programming major mode to
-=prog-mode=. This was based the assumption that all major modes for
-programming languages inherit =prog-mode=.
-
-However, some major modes (e.g. =html-ts-mode=) inherits =text-mode=,
-not =prog-mode=, which broke the assumption. The previous workaround
-was to redefine those major modes myself but this felt an ad-hoc
-solution and was so buggy.
-
-The current solution is to define a minor mode for shared programming
-configurations and attaching it to all major modes.
-
-#+begin_src elisp
-  (defvar-keymap sr/prog-setup-mode-map
-    :doc "Keymap for `sr/prog-setup-mode'.")
-
-  (define-minor-mode sr/prog-setup-mode
-    "Minor mode for shared programming setups."
-    :lighter "")
-
-  (add-hook 'prog-mode-hook #'sr/prog-setup-mode)
-  (add-hook 'html-ts-mode-hook #'sr/prog-setup-mode)
-  (add-hook 'yaml-ts-mode-hook #'sr/prog-setup-mode)
-#+end_src
-** Display line numbers mode
-#+begin_src elisp
-  (add-hook 'sr/prog-setup-mode-hook #'display-line-numbers-mode)
-
-  (setq-default display-line-numbers-width 4)
-  (setq display-line-numbers-type 'relative)
-#+end_src
-** Electric pair mode
-Enable them locally
-#+begin_src elisp
-  (add-hook 'sr/prog-setup-mode-hook #'electric-pair-local-mode)
-#+end_src
-** Global tab settings
-Set tab width.
-#+begin_src elisp
-  (setq-default tab-width 2)
-#+end_src
-
-Disable tabs by default.
-#+begin_src elisp
-  (setq-default indent-tabs-mode nil)
-#+end_src
-** Projects
-#+begin_src elisp
-  (setq project-vc-include-untracked t)
-  (setq project-mode-line t)
-#+end_src
-
+* Projects
 #+begin_src elisp
   (defun sr/project-other-find-file (dir)
     "Prompt for a project, and run `project-find-file' in that project."
@@ -867,521 +820,46 @@ Disable tabs by default.
     (let ((project-current-directory-override dir))
           (call-interactively #'project-find-file)))
 
-  (keymap-set project-prefix-map "F" #'sr/project-other-find-file)
-#+end_src
-** LSP: Eglot
-*** Renaming
-#+begin_src elisp
-  (defun sr/eglot-rename (newname)
-    "Modified `eglot-rename' - set the old name as a default value for minibuffer."
-    (interactive
-     (let ((tap (thing-at-point 'symbol t)))
-       (list (read-from-minibuffer
-              (format "Rename `%s' to: " (or tap "unknown symbol"))
-              tap nil nil nil tap))))
-    (eglot-server-capable-or-lose :renameProvider)
-    (eglot--apply-workspace-edit
-     (eglot--request (eglot--current-server-or-lose)
-                     :textDocument/rename `(,@(eglot--TextDocumentPositionParams)
-                                            :newName ,newname))
-     this-command))
+  (with-eval-after-load 'project
+    (setq project-vc-include-untracked t)
+    (setq project-mode-line t)
 
-  (keymap-set sr/prog-setup-mode-map "C-c g r" #'sr/eglot-rename)
-#+end_src
-*** Code actions
-#+begin_src elisp
-  (keymap-set sr/prog-setup-mode-map "C-c g a" #'eglot-code-actions)
-  (keymap-set sr/prog-setup-mode-map "C-c g f" #'eglot-code-action-quickfix)
-#+end_src
-*** Enabled languages
-#+begin_src elisp
-  (defvar sr/eglot-ensure-hooks
-    '(js-ts-mode-hook
-      typescript-ts-mode-hook
-      tsx-ts-mode-hook
-      html-ts-mode-hook
-      c-ts-mode-hook)
-    "Hooks to attach `eglot-ensure'.")
-
-  (dolist (hook sr/eglot-ensure-hooks)
-    (add-hook hook #'eglot-ensure))
-#+end_src
-*** Configuration
-#+begin_src elisp
-  ;; Fix shifting line height
-  ;; https://www.reddit.com/r/emacs/comments/1lbo5jy/eldoc_undesirably_shifting_my_line_height/
-  (setq eglot-code-action-indications '(eldoc-hint))
-#+end_src
-*** Eglot-booster
-#+begin_src elisp
-  (require 'eglot-booster)
-
-  ;; Disable bytecode mode for eglot-booster to preserve proper UTF-8 encoding
-  ;; https://github.com/blahgeek/emacs-lsp-booster/issues/43
-  (setq eglot-booster-io-only t)
-
-  (eglot-booster-mode)
-#+end_src
-** diagnostics: Flymake
-#+begin_src elisp
-  (require 'flymake)
-#+end_src
-*** Key bindings
-#+begin_src elisp
-  (keymap-set flymake-mode-map "M-n" 'flymake-goto-next-error)
-  (keymap-set flymake-mode-map "M-p" 'flymake-goto-prev-error)
-#+end_src
-*** Eslint
-#+begin_src elisp
-  ;;; eslint
-  ;;; https://www.rahuljuliato.com/posts/eslint-on-emacs
-
-  (require 'flymake-eslint)
-
-  (setq flymake-eslint-prefer-json-diagnostics t)
-
-  (defun sr/flymake-eslint-enable-with-local-binary ()
-    "Run `flymake-eslint-enable' but with local binary support.
-  Set project's `node_modules' binary eslint as first priority, if any."
-    (interactive)
-    (let* ((root (locate-dominating-file (buffer-file-name) "node_modules"))
-           (local-eslint (and root
-                        (expand-file-name "node_modules/.bin/eslint"
-                                          root))))
-      (if (and local-eslint (file-executable-p local-eslint))
-          (progn
-            (setq-local flymake-eslint-executable-name local-eslint)
-            (message (format "Using local Eslint: %s" local-eslint)))
-        (message "Local Eslint not found, using the global binary: %s" flymake-eslint-executable-name))
-      (flymake-eslint-enable)))
-
-  (defvar sr/flymake-eslint-enabled-modes
-    '(tsx-ts-mode typescript-ts-mode js-ts-mode))
-
-  (defun sr/flymake-eslint-enable-on-required-modes ()
-  	(when (memq major-mode sr/flymake-eslint-enabled-modes)
-      (sr/flymake-eslint-enable-with-local-binary)))
-
-  ;; (add-hook 'eglot-managed-mode-hook #'sr/flymake-eslint-enable-on-required-modes)
-#+end_src
-** Eldoc
-#+begin_src elisp
-  (setq eldoc-echo-area-use-multiline-p nil)
-  (setq eldoc-idle-delay 0.5)
-#+end_src
-** Whitespace-mode
-#+begin_src elisp
-  (add-hook 'sr/prog-setup-mode-hook #'whitespace-mode)
-#+end_src
-*** Toggle details
-#+begin_src elisp
-  (defvar sr/whitespace-style-basic
-    '(face trailing newline indentation empty missing-newline-at-eof)
-    "Value for `whitespace-style', highlighting essential stuff only.")
-
-  (defvar sr/whitespace-style-detailed
-    '(face tabs spaces trailing lines space-before-tab newline indentation empty space-after-tab space-mark tab-mark newline-mark missing-newline-at-eof)
-    "Value for `whitespace-style' with full details.")
-
-  (setq whitespace-style sr/whitespace-style-basic)
-
-  (setq-default sr/whitespace-use-detailed nil)
-
-  (defun sr/whitespace-toggle-details ()
-    "Toggle detailed whitespace visualization."
-    (interactive)
-    (if (not whitespace-mode)
-        (user-error "whitespace-mode not enabled")
-      (setq-local sr/whitespace-use-detailed
-                  (not sr/whitespace-use-detailed))
-      (setq-local whitespace-style
-                  (if sr/whitespace-use-detailed
-                      sr/whitespace-style-detailed
-                    sr/whitespace-style-basic))
-                                          ; reload `whitespace-mode'.
-      (whitespace-mode -1)
-      (whitespace-mode 1)))
-
-  (keymap-set sr/prog-setup-mode-map "C-c C-w" #'sr/whitespace-toggle-details)
-#+end_src
-*** Display mappings
-#+begin_src elisp
-  (setq whitespace-display-mappings
-        '(
-          (space-mark   ?\     [?·]     [?.])
-          (space-mark   ?\xA0  [?¤]     [?_])
-          (newline-mark ?\n    [?$ ?\n])
-          (tab-mark     ?\t    [?» ?\t] [?\\ ?\t])
-          ))
-#+end_src
-** Dumb-jump
-#+begin_src elisp
-  (require 'dumb-jump)
-  (add-hook 'xref-backend-functions #'dumb-jump-xref-activate)
-#+end_src
-** Tree-sitter
-*** Grammars
-I haven't tested all of them.
-If you encounter any problems, use the version from the [[https://github.com/mickeynp/combobulate?tab=readme-ov-file#complete-example-with-tree-sitter-grammar-installation][combobulate repository]].
-
-#+begin_src elisp
-  (setq treesit-language-source-alist
-        '((bash "https://github.com/tree-sitter/tree-sitter-bash")
-          (c "https://github.com/tree-sitter/tree-sitter-c")
-          (cmake "https://github.com/uyha/tree-sitter-cmake")
-          (css "https://github.com/tree-sitter/tree-sitter-css")
-          (dockerfile "https://github.com/camdencheek/tree-sitter-dockerfile")
-          (elisp "https://github.com/Wilfred/tree-sitter-elisp")
-          (go "https://github.com/tree-sitter/tree-sitter-go")
-          (html "https://github.com/tree-sitter/tree-sitter-html")
-          (javascript "https://github.com/tree-sitter/tree-sitter-javascript" "master" "src")
-          (json "https://github.com/tree-sitter/tree-sitter-json")
-          (make "https://github.com/alemuller/tree-sitter-make")
-          (markdown "https://github.com/ikatyang/tree-sitter-markdown")
-          (python "https://github.com/tree-sitter/tree-sitter-python")
-          (toml "https://github.com/tree-sitter/tree-sitter-toml")
-          (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
-          (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
-          (yaml "https://github.com/ikatyang/tree-sitter-yaml" "v0.5.0")))
-#+end_src
-*** Remaps
-#+begin_src elisp
-  (add-to-list
-   'major-mode-remap-alist
-   '(js-json-mode . json-ts-mode))
-  (add-to-list
-   'major-mode-remap-alist
-   '(javascript-mode . js-ts-mode))
-#+end_src
-
-#+begin_src elisp
-  (defvar sr/tree-sitter-remap-list
-    '(c css js json python go typescript yaml)
-    "List of tree-sitter remapped languages.
-  For each LANG, LANG-mode is remapped to LANG-ts-mode,
-  and LANG-ts-mode is used with org mode source codes.")
-
-  (setq major-mode-remap-alist
-        (append
-         (mapcar
-          (lambda (x)
-            (let ((pre (symbol-name x)))
-              (cons
-               (intern (concat pre "-mode"))
-               (intern (concat pre "-ts-mode")))))
-          sr/tree-sitter-remap-list)
-         major-mode-remap-alist))
-
-  (setq org-src-lang-modes
-        (append
-         (mapcar
-          (lambda (x)
-            (let ((pre (symbol-name x)))
-              (cons
-               pre
-               (intern (concat pre "-ts")))))
-          sr/tree-sitter-remap-list)
-         org-src-lang-modes))
-#+end_src
-** formatting: Format-all
-#+begin_src elisp
-  (require 'format-all)
-#+end_src
-*** Formatters
-#+begin_src elisp
-  (setq-default format-all-formatters
-                '(("CSS" (prettier))
-                  ("JavaScript" (prettier))
-                  ("TypeScript" (prettier))
-                  ("HTML" (prettier))))
-#+end_src
-*** Key bindings
-I use =C-c C-f= by default. But some major modes use =C-c C-f= for
-their own functionality. In that case, I use =C-c f= instead.
-#+begin_src elisp
-  (keymap-set sr/prog-setup-mode-map "C-c C-f" #'format-all-region-or-buffer)
-  (keymap-set sr/prog-setup-mode-map "C-c f" #'format-all-region-or-buffer)
-#+end_src
-** Language-specific configurations
-*** CSS
-#+begin_src elisp
-  (require 'css-mode)
-#+end_src
-**** Indentation
-#+begin_src elisp
-  (setq css-indent-offset 2)
-#+end_src
-**** Rainbow mode
-#+begin_src elisp
-  (require 'rainbow-mode)
-  (add-hook 'css-ts-mode-hook #'rainbow-mode)
-#+end_src
-*** C (TS)
-#+begin_src elisp
-  (require 'c-ts-mode)
-#+end_src
-**** Indentation
-#+begin_src elisp
-  (setq c-ts-mode-indent-style 'bsd)
-  (setq c-ts-mode-indent-offset 2)
-#+end_src
-**** Go to the body of the next defun
-#+begin_src elisp
-  (defun sr/c-previous-defun-body ()
-    "Go to body of the previous defun."
-    (interactive)
-    (if (c-defun-name)
-        (c-beginning-of-defun))
-    (c-beginning-of-defun)
-    (c-syntactic-re-search-forward "{"))
-
-  (defun sr/c-next-defun-body ()
-    "Go to body of the next defun."
-    (interactive)
-    (if (c-defun-name)
-        (c-end-of-defun))
-    (c-syntactic-re-search-forward "{"))
-
-  (keymap-set c-ts-mode-map "C-M-x" 'sr/c-next-defun-body)
-  (keymap-set c-ts-mode-map "C-M-y" 'sr/c-previous-defun-body)
-#+end_src
-*** Go (TS)
-#+begin_src elisp
-  (require 'go-ts-mode)
-#+end_src
-**** Indentation
-#+begin_src elisp
-  (setq go-ts-mode-indent-offset 2)
-#+end_src
-**** Gofmt
-Normally, format-all is used for code formatting.
-But in Go, gofmt is the standard way for doing the job.
-#+begin_src elisp
-  (keymap-set go-ts-mode-map "C-c C-f" #'gofmt)
-#+end_src
-*** Dockerfile
-#+begin_src elisp
-  (add-to-list 'auto-mode-alist
-               '("Dockerfile\\'" . dockerfile-ts-mode))
-#+end_src
-*** JavaScript
-#+begin_src elisp
-  (require 'js)
-#+end_src
-
-#+begin_src elisp
-  (setq js-indent-level 2)
-#+end_src
-*** TypeScript
-**** Eglot integration
-#+begin_src elisp
-  (defun sr/eglot-ts-handle-file-rename (server file new-name)
-    "Send the TS LSP command to SERVER handling the rename of FILE to NEW-NAME."
-    (eglot--request
-     server
-     :workspace/executeCommand
-     (list
-      :command "_typescript.applyRenameFile"
-      :arguments `[(
-                    :sourceUri ,(eglot-path-to-uri file)
-                    :targetUri ,(eglot-path-to-uri new-name))])))
-
-  (defun sr/eglot-ts-rename (new-name)
-    "Rename the visited file of the current TypeScript buffer to a new name."
-    (interactive (list (read-file-name "Set visited file name: "
-                                       default-directory
-                                       (expand-file-name
-                                        (file-name-nondirectory (buffer-name))
-                                        default-directory))))
-    (when-let* ((server (eglot--current-server-or-lose))
-                (old-file-name (buffer-file-name)))
-      (sr/eglot-ts-handle-file-rename server old-file-name new-name)
-      (rename-visited-file new-name)))
-
-  ;;; Work in progress
-
-  (defun sr/eglot-ts-server-p (server)
-    "Return t if SERVER can manage TS buffers."
-    (prin1 (eglot--language-ids server)))
-
-  ;; FIXME: Refactor w/ project-wise cache
-  (defun sr/eglot-ts-server-for-file (file)
-    "Return the current Eglot TS server for FILE, if one exists."
-    (if-let* ((project (project-current nil (file-name-directory file)))
-              (servers (gethash project eglot--servers-by-project)))
-        (-first #'sr/eglot-ts-server-p servers)))
-
-  (defun sr/eglot-ts-handle-dired-rename (file new-name ok-if-already-exists)
-    (if-let* ((server (sr/eglot-ts-server-for-file file)))
-        (sr/eglot-ts-handle-file-rename server file new-name)))
-
-  ;; (advice-add 'dired-rename-file :after #'sr/eglot-ts-handle-dired-rename)
-#+end_src
-**** Compilation mode integration
-#+begin_src elisp
-  (defun sr/tsc ()
-    "Run `tsc' with `compile.'"
-    (interactive)
-    (compile "tsc --noEmit --pretty false"))
-#+end_src
-*** HTML (TS)
-#+begin_src elisp
-  (require 'html-ts-mode)
-#+end_src
-
-#+begin_src elisp
-  (add-to-list 'major-mode-remap-alist '(mhtml-mode . html-ts-mode))
-#+end_src
-**** Disable SGML mode keymaps
-I don't like them
-#+begin_src elisp
-  (unbind-key "C-c C-f" sgml-mode-map)
-#+end_src
-**** Use emmet
-#+begin_src elisp
-  (require 'emmet-mode)
-  (add-hook 'html-ts-mode-hook #'emmet-mode)
-  (keymap-unset emmet-mode-keymap "C-j")
-  (keymap-set emmet-mode-keymap "C-c C-j" #'emmet-expand-line)
-#+end_src
-*** Markdown
-#+begin_src elisp
-  (require 'markdown-mode)
-
-  (autoload 'markdown-mode "markdown-mode"
-    "Major mode for editing Markdown files" t)
-
-  (add-to-list
-   'auto-mode-alist
-   '("\\.\\(?:md\\|markdown\\|mkd\\|mdown\\|mkdn\\|mdwn\\)\\'" . markdown-mode))
-
-  (autoload 'gfm-mode "markdown-mode"
-    "Major mode for editing GitHub Flavored Markdown files" t)
-
-  (add-to-list 'auto-mode-alist '("README\\.md\\'" . gfm-mode))
-#+end_src
-**** Preview styles
-#+begin_src elisp
-  (setq
-   markdown-css-paths
-   (list (expand-file-name "~/me/ws/projects/github-markdown-css/github-markdown.css")))
-
-  (setq
-   markdown-xhtml-body-preamble
-   "<main class=\"markdown-body\">")
-
-  (setq
-   markdown-xhtml-body-epilogue
-   "</main>")
-#+end_src
-*** Python
-indent offset.
-#+begin_src elisp
-  (setq python-indent-offset 2)
-#+end_src
-*** PlantUML
-#+begin_src elisp
-    (require 'plantuml-mode)
-
-    (setq image-use-external-converter t)
-
-    (setq plantuml-default-exec-mode 'executable)
-    (setq plantuml-executable-path "/opt/homebrew/bin/plantuml")
-    (setq plantuml-svg-background "#ffffff")
-    (setq plantuml-output-type "svg")
-
-    (setq plantuml-indent-level 2)
-
-    (add-to-list
-     'org-src-lang-modes '("plantuml" . plantuml))
-
-    (add-hook 'plantuml-mode-hook #'abbrev-mode)
-
-    (sr/define-abbrev-table
-     'plantuml-mode-abbrev-table
-     '(("oto" "||--||")
-       ("mto" "}o--||")
-       ("otm" "||--o{")
-       ("mtm" "}o--o{")
-       ("pk" "<<PK>>")
-       ("fk" "<<FK>>")
-       ("uq" "<<UNIQUE>>")))
-#+end_src
-*** Restclient
-#+begin_src elisp
-  (require 'restclient)
-  (require 'ob-restclient)
-
-  (org-babel-do-load-languages
-   'org-babel-load-languages
-   '((restclient . t)))
-#+end_src
-*** Yaml
-#+begin_src elisp
-  (require 'yaml-ts-mode)
-#+end_src
-
-#+begin_src elisp
-  (add-to-list 'auto-mode-alist '("\\.yml\\'" . yaml-ts-mode))
-#+end_src
-** movement: Combobulate
-*** Language integration
-#+begin_src elisp
-  (setq sr/combobulate-enable-hooks
-        '(js-ts-mode-hook
-          typescript-ts-mode-hook
-          tsx-ts-mode-hook
-          css-ts-mode-hook
-          json-ts-mode-hook
-          html-ts-mode-hook
-          yaml-ts-mode-hook))
-
-  (dolist (hook sr/combobulate-enable-hooks)
-    (add-hook hook #'combobulate-mode))
-#+end_src
-*** Render navigation tree
-#+begin_src elisp
-  (defun sr/combobulate-display-tree-at-point ()
-    "Render a navigation tree around the node at point."
-    (interactive)
-    (combobulate-display-draw-node-tree (combobulate-node-at-point)))
+    (keymap-set project-prefix-map "F" #'sr/project-other-find-file))
 #+end_src
 * In-buffer completion
 ** Stack
 I use the default =completion-at-point= with corfu.
-** Key bindings
-#+begin_src elisp
-  (keymap-set sr/prog-setup-mode-map "M-TAB" #'completion-at-point)
-#+end_src
 ** Corfu
 #+begin_src elisp
-  (require 'corfu)
+  ;; corfu
 
   ;; Enable on these modes
   (add-hook 'sr/prog-setup-mode-hook #'corfu-mode)
   (add-hook 'minibuffer-setup-hook #'corfu-mode)
   (add-hook 'eshell-mode-hook #'corfu-mode)
 
-  (keymap-set corfu-map "M-TAB" #'corfu-insert)
-  ;; Do not complete on RET.
-  (keymap-unset corfu-map "RET")
+  (with-eval-after-load 'corfu
+    (keymap-set corfu-map "M-TAB" #'corfu-insert)
+    ;; Do not complete on RET.
+    (keymap-unset corfu-map "RET")
 
-  (setq corfu-cycle t)
-  (setq corfu-preview-current nil)
+    (setq corfu-cycle t)
+    (setq corfu-preview-current nil)
 
-  ;; Popupinfo mode
-  (corfu-popupinfo-mode)
-  (setq corfu-popupinfo-direction '(right left vertical))
-  (setq corfu-popupinfo-delay '(nil . 0))
-  (setq corfu-popupinfo-max-height 20)
+    ;; Popupinfo mode
+    (corfu-popupinfo-mode)
+    (setq corfu-popupinfo-direction '(right left vertical))
+    (setq corfu-popupinfo-delay '(nil . 0))
+    (setq corfu-popupinfo-max-height 20)
 
-  (setq corfu-auto t)
-  (setq corfu-auto-delay 0.1)
+    ;; Autocompletions
+    (setq corfu-auto t)
+    (setq corfu-auto-delay 0.1)
 
-  ;; (setq corfu-auto-trigger ".-/")
-  ;; Complete on camelCase.
-  (setq corfu-auto-trigger
-        (concat ".-/" (apply #'string (number-sequence ?A ?Z))))
+    ;; (setq corfu-auto-trigger ".-/")
+    ;; Complete on camelCase.
+    (setq corfu-auto-trigger
+          (concat ".-/" (apply #'string (number-sequence ?A ?Z)))))
 #+end_src
 * English learning
 ** Open dictionary for word at point
@@ -1416,377 +894,15 @@ EWW, I overrode it.
 * LLMs
 ** Agent-shell
 #+begin_src elisp
-  (require 'acp)
-  (require 'agent-shell)
-  (setq agent-shell-anthropic-authentication
-        (agent-shell-anthropic-make-authentication :login t))
+  ;; acp, agent-shell
 
-  (add-hook 'agent-shell-mode-hook #'corfu-mode)
+  (with-eval-after-load 'agent-shell
+    (setq agent-shell-anthropic-authentication
+          (agent-shell-anthropic-make-authentication :login t))
+
+    (add-hook 'agent-shell-mode-hook #'corfu-mode))
 #+end_src
-* Denote
-#+begin_src elisp
-  (require 'denote)
-  (require 'consult-denote)
-#+end_src
-
-#+begin_src elisp
-  (add-hook 'text-mode-hook #'denote-fontify-links-mode-maybe)
-  (add-hook 'dired-mode-hook #'denote-dired-mode)
-#+end_src
-** Key bindings
-#+begin_src elisp
-  (defvar-keymap sr/denote-map)
-
-  (keymap-global-set "C-c n" sr/denote-map)
-
-  (keymap-set sr/denote-map "n" #'sr/denote-create-note-zettelkasten)
-  (keymap-set sr/denote-map "s" #'sr/denote-create-note-second-brain)
-
-  (keymap-set sr/denote-map "r" #'denote-rename-file)
-  (keymap-set sr/denote-map "R" #'denote-rename-file-using-front-matter)
-  (keymap-set sr/denote-map "l l" #'denote-link)
-  (keymap-set sr/denote-map "l b" #'denote-backlinks)
-  (keymap-set sr/denote-map "d" #'denote-dired)
-#+end_src
-** Consult (consult-denote)
-#+begin_src elisp
-  (consult-denote-mode)
-#+end_src
-
-#+begin_src elisp
-  (keymap-set sr/denote-map "g" #'consult-denote-grep)
-  (keymap-set sr/denote-map "f" #'consult-denote-find)
-#+end_src
-
-#+begin_src elisp
-  (defun sr/consult-denote-buffer ()
-    (interactive)
-    (consult-buffer (list consult-denote-buffer-source)))
-
-  (keymap-set sr/denote-map "b" #'sr/consult-denote-buffer)
-#+end_src
-** Options
-#+begin_src elisp
-  (setq denote-directory sr/note-root-directory)
-  (setq denote-prompts '(title keywords subdirectory))
-#+end_src
-
-Backlink buffers.
-#+begin_src elisp
-  (setq denote-backlinks-display-buffer-action
-        '((display-buffer-reuse-mode-window display-buffer-below-selected)
-          (mode . denote-query-mode)
-          (window-height . fit-window-to-buffer)
-          (post-command-select-window . t)))
-#+end_src
-** Buffer names
-#+begin_src elisp
-  (denote-rename-buffer-mode 1)
-  (setq denote-buffer-name-prefix "d: ")
-  (setq denote-rename-buffer-format "%i %t")
-#+end_src
-** Link extensions
-Insert link to the last buffer. This can be useful when creating
-"follow-up" notes (e.g. Forgezettel-style Zettels).
-
-#+begin_src elisp
-  (defun sr/denote-link-from-last-buffer (id-only)
-    "Create link to the last visited file buffer.
-  ID-ONLY is the same as `denote-link'."
-    (interactive "P")
-    (declare (interactive-only t))
-    (let ((prev-buffers (window-prev-buffers (selected-window))))
-      (while (not (buffer-file-name (car (car prev-buffers))))
-        (unless (setq prev-buffers (cdr prev-buffers))
-          (user-error "No file-visiting buffer found")))
-      (let* ((file (buffer-file-name (car (car prev-buffers))))
-             (file-type (denote-filetype-heuristics buffer-file-name))
-             (description (denote-get-link-description file)))
-        (denote-link file file-type description id-only))))
-
-  (keymap-set sr/denote-map "l f" #'sr/denote-link-from-last-buffer)
-#+end_src
-
-Insert link to the buffer in the other window.
-
-#+begin_src elisp
-  (defun sr/denote-link-from-other-window (id-only)
-    "Create link to the file buffer in the other window.
-  ID-ONLY is the same as `denote-link'."
-    (interactive "P")
-    (declare (interactive-only t))
-    (if-let* ((window (next-window))
-              (buffer (window-buffer window))
-              (file (buffer-file-name buffer))
-              (file-type (denote-filetype-heuristics buffer-file-name))
-              (description (denote-get-link-description file)))
-        (denote-link file file-type description id-only)
-      (user-error "No file-visiting buffer found")))
-
-  (keymap-set sr/denote-map "l 4" #'sr/denote-link-from-other-window)
-#+end_src
-
-#+begin_src elisp
-  (defun sr/denote-save-link-to-kill-ring (id-only)
-    "Save the link pointing the current note to the kill ring.
-  It infers the link format using the file type of the current buffer, so
-  this will break across different file formats."
-    (interactive "P")
-    (declare (interactive-only t))
-    (if-let* ((file buffer-file-name)
-              (file-type (denote-filetype-heuristics file))
-              (description (denote-get-link-description file))
-              (link (denote-format-link file description file-type id-only)))
-        (progn
-          (kill-new link)
-          (message link))
-      (user-error "could not create link: check the buffer is visitng a file.")))
-
-  (keymap-set sr/denote-map "l s" #'sr/denote-save-link-to-kill-ring)
-#+end_src
-
-#+begin_src elisp
-  (defun sr/denote-print-title-after-link (file file-type description &optional id-only)
-    "Print the title of the linked note.
-  This function is intended to be used as advice for `denote-link'."
-    (message (format "Linked: \"%s\"" (denote-retrieve-title-or-filename file file-type))))
-
-  (advice-add 'denote-link :after #'sr/denote-print-title-after-link)
-#+end_src
-** Note creation
-#+begin_src elisp
-  (defun sr/denote-get-initial-data-dwim ()
-    "Get appopriate DWIM initial data for new notes.
-  This returns a plist of two properties: TITLE and CONTENT."
-    (pcase major-mode
-      ('eww-mode
-       (let ((url (eww-current-url))
-             (title (or (plist-get eww-data :title) url)))
-         (list
-          :title title
-          :content (format "[[%s][%s]]" url title))))))
-
-  (defun sr/denote-create-note-second-brain ()
-    "Create a new note for the second brain."
-    (declare (interactive-only t))
-    (interactive)
-    (let* ((initial-data (sr/denote-get-initial-data-dwim))
-           (denote-use-signature "sb")
-           (denote-use-title (plist-get initial-data :title)))
-      (call-interactively 'denote)
-      (when-let ((content (plist-get initial-data :content)))
-        (insert content))))
-
-  (defun sr/denote-create-note-problem ()
-    "Create a new problem note."
-    (declare (interactive-only t))
-    (interactive)
-    (let* ((section (read-from-minibuffer "Section number (e.g. 1-5): "))
-           (page (read-number "Page number: "))
-           (problem-num (read-number "Problem number: "))
-           (comment (read-from-minibuffer "Comment (optional): "))
-
-           (denote-use-signature "sb")
-           (denote-use-title
-            (format
-             "Problem (s)%s %dp - %d%s"
-             section page problem-num
-             (if (not (string-empty-p comment))
-                 (format " (%s)" comment)
-               "")))
-           (denote-use-keywords
-            (append
-             (denote-keywords-prompt)
-             '("problem"))))
-      (call-interactively 'denote)))
-
-  (defun sr/denote-create-note-zettelkasten ()
-    "Create a new note for zettelkasten."
-    (declare (interactive-only t))
-    (interactive)
-    (let ((denote-use-directory sr/note-zk-directory))
-      (call-interactively 'denote)))
-#+end_src
-** Dired integration
-When a file is renamed via Dired, update its front matter.
-Useful for bulk-editing with WDired.
-#+begin_src elisp
-  (defun sr/dired-rename-update-denote-front-matter (file new-name ok-if-already-exists)
-    "After renaming files in Dired, update Denote front matter if appropriate."
-    (let* ((file-type (denote-filetype-heuristics file))
-           (title (denote-retrieve-title-or-filename new-name file-type))
-           (keywords (denote-keywords-sort
-                      (denote-retrieve-filename-keywords-as-list new-name)))
-           (signature (denote-retrieve-filename-signature new-name))
-           (date (denote-valid-date-p (denote-retrieve-filename-identifier new-name)))
-           (identifier (denote-retrieve-filename-identifier new-name)))
-      (when (and (denote-file-has-denoted-filename-p new-name)
-                 denote-rename-rewrite-front-matter
-                 (denote-file-has-supported-extension-p file)
-                 (denote-file-is-writable-and-supported-p new-name))
-        (if (denote--file-has-front-matter-p new-name file-type)
-            (denote-rewrite-front-matter new-name title keywords signature date identifier file-type)
-          (when (denote-add-front-matter-prompt new-name)
-            (denote-prepend-front-matter new-name title keywords signature date identifier file-type))))))
-
-  (advice-add 'dired-rename-file :after #'sr/dired-rename-update-denote-front-matter)
-#+end_src
-** Create notes from Org entries
-Migration scripts for moving from a one-file-many-entries Org mode
-setup.
-
-#+begin_src elisp
-  ;; I want the created notes to be in my second brain.
-  (defvar sr/denote-signature-for-org-entry "sb"
-    "Signature to use for Denote notes from Org mode entries.")
-
-  (defvar sr/denote-directory-for-org-entry
-    sr/note-second-brain-directory
-    "Directory for Denote notes from Org mode entries.")
-
-  (defun sr/org-entry-content-start ()
-    "Return the position just after the heading of the current entry."
-    ;; this works based on the assumption that the heading is one line
-    ;; long.
-    (save-excursion
-      (let ((end (org-element-end (org-element-at-point))))
-        (while (progn
-                 (forward-line 1)
-                 ;; handle empty entries.
-                 (and (not (eobp))
-                      (<= (point) end)
-                      (looking-at "^$"))))
-        (min (point) end))))
-
-  (defconst sr/org-simple-link-regexp
-    "\\[\\[\\([^]\n]+\\)\\]\\(\\[\\([^]\n]+\\)\\]\\)?\\]"
-    "Simple regexp to match Org mode links.")
-
-  (defun sr/org-remove-links (str)
-    "Remove all Org links from STR.
-  Return a cons cell whose car is the resulting string and cdr is the
-  extracted links."
-    (let ((links '())
-          (pos 0))
-      (while (and (< pos (length str))
-                  (string-match sr/org-simple-link-regexp str pos))
-        (let* ((full (match-string 0 str))
-               (link (match-string 1 str))
-               (desc (or (match-string 3 str) link)))
-          (push full links)
-          (setq str (replace-match desc t t str))
-          (setq pos (1+ (match-end 0)))))
-      (cons str (nreverse links))))
-
-  (defun sr/denote-get-date-from-org-entry ()
-    "Extract the date to use in Denote notes from current Org entry.
-    Returned date is the string in the format of `org-timestamp-formats'.
-    Return nil if the date cannot be found."
-    (save-match-data
-      (save-excursion
-        (goto-char (org-entry-beginning-position))
-        (if (re-search-forward
-             (org-re-timestamp 'active)
-             ;; `org-entry-end-position' does not include subtrees,
-             ;; which is required here.
-             (org-entry-end-position)
-             t)
-            (match-string 1)
-          nil))))
-
-  (defun sr/denote-new-note-from-org-entry ()
-    "Create a new note from the Org entry at point."
-    (interactive "P")
-    (let* ((element (save-excursion
-                      (org-back-to-heading t)
-                      (org-element-at-point)))
-           (start (org-element-begin element))
-           (end (org-element-end element))
-
-           (content-start (sr/org-entry-content-start))
-           (content (buffer-substring content-start end))
-
-           (denote-use-directory sr/denote-directory-for-org-entry)
-           (denote-use-signature sr/denote-signature-for-org-entry)
-           denote-use-title
-           denote-use-keywords
-           denote-use-date
-           links)
-
-      ;; extract metadata from the entry.
-      (save-excursion
-        (goto-char start)
-        (let ((extracted (sr/org-remove-links (org-get-heading t t t t))))
-          (setq denote-use-title (car extracted))
-          (setq links (cdr extracted)))
-        (setq denote-use-keywords
-              (denote-sluggify-keywords-and-apply-rules (org-get-tags)))
-        (setq denote-use-date (sr/denote-get-date-from-org-entry)))
-
-      (message (format "title: %s" denote-use-title))
-
-      (save-current-buffer
-        (call-interactively 'denote)
-
-        ;; insert links.
-        (insert (string-join links "\n"))
-        (when links (insert "\n\n"))
-
-        (insert content)
-
-        ;; correct the heading levels.
-        (goto-char (point-min))
-        (save-excursion
-          (while (re-search-forward "^\\*\\*" nil t)
-            (replace-match "*"))))))
-
-  (defun sr/outline-try-forward-same-level-p (n)
-    "Try `outline-forward-same-level' and return t on success.
-    Return nil otherwise."
-    (condition-case nil
-        (progn
-          (outline-forward-same-level n)
-          t)
-      (error nil)))
-
-  (defun sr/denote-move-org-entries-in-buffer (preserve)
-    "Move all Org entries in the current buffer to new notes.
-    Delete the original entries unless PRESERVE is non-nil."
-    (interactive "P")
-    (save-excursion
-      (goto-char (point-min))
-      (unless (outline-on-heading-p t)
-        (outline-next-heading))
-      (while (progn
-               (sr/denote-new-note-from-org-entry)
-               (sr/outline-try-forward-same-level-p 1)))
-      (unless preserve
-        (delete-region (point-min) (point-max)))))
-
-  (defun sr/denote-move-org-entries-in-region (preserve)
-    "Move all Org entries in the region to new notes.
-    Delete the original entries unless PRESERVE is non-nil."
-    (interactive "P")
-    (unless (region-active-p)
-      (user-error "Region is not active"))
-    (with-restriction (region-beginning) (region-end)
-      (sr/denote-move-org-entries-in-buffer preserve)))
-
-  (defun sr/denote-move-org-entries-dwim (preserve)
-    "Move Org entries to new notes in the current context.
-    This is a simple wrapper around `sr/denote-move-org-entries-in-region' and `sr/denote-move-org-entries-in-buffer'."
-    (declare (interactive-only t))
-    (interactive "P")
-    (if (region-active-p)
-        (sr/denote-move-org-entries-in-region preserve)
-      (sr/denote-move-org-entries-in-buffer preserve)))
-
-  (keymap-set sr/denote-map "m" #'sr/denote-move-org-entries-dwim)
-#+end_src
-* Consult
-#+begin_src elisp
-  (require 'consult)
-#+end_src
+* Consult (consult)
 ** Key bindings
 #+begin_src elisp
   (keymap-global-set "C-x b" #'consult-buffer)
@@ -1803,14 +919,15 @@ setup.
 #+end_src
 ** Xref
 #+begin_src elisp
-    (setq xref-show-xrefs-function #'consult-xref
-          xref-show-definitions-function #'consult-xref)
+  (setq xref-show-xrefs-function #'consult-xref
+        xref-show-definitions-function #'consult-xref)
 #+end_src
 ** Narrowing
 #+begin_src elisp
-  (setq consult-narrow-key "<")
-  (keymap-set consult-narrow-map "?" #'consult-narrow-help)
-  (keymap-set consult-narrow-map "C-h" #'consult-narrow-help)
+  (with-eval-after-load 'consult
+    (setq consult-narrow-key "<")
+    (keymap-set consult-narrow-map "?" #'consult-narrow-help)
+    (keymap-set consult-narrow-map "C-h" #'consult-narrow-help))
 #+end_src
 ** Clear display-buffer-alist locally
 Live preview is messed up with =display-buffer-alist=, so fix it by
@@ -1822,16 +939,14 @@ temporarily resetting =display-buffer-alist=.
         (let ((display-buffer-alist nil))
           (funcall preview action cand)))))
 
-  (advice-add 'consult--buffer-preview :around #'sr/consult-fix-display)
-  (advice-add 'consult--man-preview :around #'sr/consult-fix-display)
+  (with-eval-after-load 'consult
+    (advice-add 'consult--buffer-preview :around #'sr/consult-fix-display)
+    (advice-add 'consult--man-preview :around #'sr/consult-fix-display))
 #+end_src
-** Jump to Org mode heading
+** Org integration
 #+begin_src elisp
-  (keymap-set org-mode-map "C-c C-j" #'consult-org-heading)
-#+end_src
-
-#+begin_src elisp
-  (keymap-global-set "C-c j s" #'consult-org-agenda)
+  (with-eval-after-load 'org
+    (keymap-set org-mode-map "C-c C-j" #'consult-org-heading))
 #+end_src
 * Org
 ** Global key bindings
@@ -1867,6 +982,8 @@ temporarily resetting =display-buffer-alist=.
   (setq org-footnote-section nil)
 
   (setq org-list-allow-alphabetical t)
+
+  (add-hook 'org-mode-hook #'auto-fill-mode)
   #+end_src
 *** Key bindings
 #+begin_src elisp
@@ -1934,10 +1051,9 @@ temporarily resetting =display-buffer-alist=.
 ** Managing todo items
 #+begin_src elisp
   (setq org-todo-keywords
-        '((sequence "TODO" "WORKING" "|" "DONE" "FAILED")))
+        '((sequence "TODO" "|" "DONE" "FAILED")))
   (setq org-todo-keyword-faces
         '(("TODO" . "gold")
-    	    ("IDEA" . "coral")
     	    ("WORKING" . "CadetBlue2")
     	    ("FAILED" . "brown1")))
 
@@ -2031,132 +1147,106 @@ Dvisvgm configuration is patched for my environment...
 #+end_src
 ** Agenda (org-agenda)
 #+begin_src elisp
-  (require 'org-agenda)
-#+end_src
-*** Configuration
-#+begin_src elisp
-  (setq
-   org-agenda-files
-   (list sr/note-root-directory
-         sr/note-second-brain-directory
-  			 (expand-file-name "projects/" sr/note-root-directory)
-  			 sr/note-zk-directory))
+  (with-eval-after-load 'org-agenda
+    (setq
+     org-agenda-files
+     (list sr/note-root-directory
+           sr/note-second-brain-directory
+    			 (expand-file-name "projects/" sr/note-root-directory)
+    			 sr/note-zk-directory))
 
-  (setq org-agenda-restore-windows-after-quit t)
+    (setq org-agenda-restore-windows-after-quit t)
 
-  (setq org-agenda-todo-ignore-deadlines -1)
-  (setq org-agenda-skip-deadline-prewarning-if-scheduled t)
-  (setq org-agenda-skip-timestamp-if-deadline-is-shown t)
-  (setq org-agenda-sorting-strategy
-        '((agenda habit-up priority-down deadline-up category-keep)
-  	      (todo urgency-down category-keep)
-  	      (tags urgency-down category-keep)
-  	      (search category-keep)))
+    (setq org-agenda-todo-ignore-deadlines -1)
+    (setq org-agenda-skip-deadline-prewarning-if-scheduled t)
+    (setq org-agenda-skip-timestamp-if-deadline-is-shown t)
+    (setq org-agenda-sorting-strategy
+          '((agenda habit-up priority-down deadline-up category-keep)
+    	      (todo urgency-down category-keep)
+    	      (tags urgency-down category-keep)
+    	      (search category-keep)))
 
-  (setq org-agenda-span 14)
-#+end_src
-*** Custom agendas
-#+begin_src elisp
-  (setq org-agenda-custom-commands nil)
-#+end_src
-**** Daily agenda
-#+begin_src elisp
-  (add-to-list
-   'org-agenda-custom-commands
-   '("d" "Daily agenda"
-  	 ((agenda ""
-  		        ((org-agenda-span 'day)
-  		         (org-deadline-past-days 0)
-  		         (org-agenda-deadline-faces
-  		          '((1.0 . org-scheduled-today)
-  		            (0.5 . org-scheduled)
-  		            (0.0 . org-scheduled)))
-  		         (org-agenda-overriding-header "Events")
-  		         (org-super-agenda-groups
-  		          '((:name "Events"
-  			                 :tag ("event"))
-  		            (:discard (:anything))))
-  		         (org-agenda-buffer-name "*Org Daily Agenda*")))
+    (setq org-agenda-span 14)
+    (setq
+     'org-agenda-custom-commands
+     '(("d" "Daily agenda"
+  	    ((agenda ""
+  		           ((org-agenda-span 'day)
+  		            (org-deadline-past-days 0)
+  		            (org-agenda-deadline-faces
+  		             '((1.0 . org-scheduled-today)
+  		               (0.5 . org-scheduled)
+  		               (0.0 . org-scheduled)))
+  		            (org-agenda-overriding-header "Events")
+  		            (org-super-agenda-groups
+  		             '((:name "Events"
+  			                    :tag ("event"))
+  		               (:discard (:anything))))
+  		            (org-agenda-buffer-name "*Org Daily Agenda*")))
 
-  	  (agenda ""
-  		        ((org-agenda-span 'day)
-  		         (org-agenda-overriding-header "Today")
-  		         (org-super-agenda-groups
-  		          '((:discard (:tag "event"))
-                  (:name "Goals"
-                         :tag ("#weekly" "#monthly" "okr"))
-  		            (:name "School"
-  			                 :tag ("schoolwork" "내신"))
-                  (:name "Work"
-  			                 :tag ("work"))
-  		            (:name "Todo"
-  			                 :and (:todo ("TODO" "WORKING")
-                                     :not (:tag "trivial")))
-                  (:name "Trivial tasks"
-  			                 :and (:todo ("TODO" "WORKING")
-  					                         :tag "trivial"))
-                  (:name "ZK"
-                         :category "zk")
-  		            (:name "Journals"
-  			                 :tag "journal"
-  			                 :order 2)
-  		            (:name "Second brain"
-                         :category ("capture" "aor" "project" "archive")
-                         :order 2)
-                  (:name "Today"
-  			                 :time-grid t))))))))
-#+end_src
-**** Project agenda
-#+begin_src elisp
-  (add-to-list 'org-agenda-custom-commands
-  	     '("p" "Projects"
-  	       ((tags "current_project"
-  		      ((org-agenda-prefix-format '((tags . "- ")))
-  		       (org-agenda-overriding-header "Current projects")
-  		       (org-agenda-remove-tags t)))
-  		(tags "project|current_project"
-  		      ((org-agenda-prefix-format '((tags . "- ")))
-  		       (org-agenda-overriding-header "All projects")
-  		       (org-agenda-remove-tags t))))))
-#+end_src
-*** Org-super-agenda
-#+begin_src elisp
-  (require 'org-super-agenda)
-  (org-super-agenda-mode)
+  	     (agenda ""
+  		           ((org-agenda-span 'day)
+  		            (org-agenda-overriding-header "Today")
+  		            (org-super-agenda-groups
+  		             '((:discard (:tag "event"))
+                     (:name "Goals"
+                            :tag ("#weekly" "#monthly" "okr"))
+  		               (:name "School"
+  			                    :tag ("schoolwork" "내신"))
+                     (:name "Work"
+  			                    :tag ("work"))
+  		               (:name "Todo"
+  			                    :and (:todo ("TODO" "WORKING")
+                                        :not (:tag "trivial")))
+                     (:name "Trivial tasks"
+  			                    :and (:todo ("TODO" "WORKING")
+  					                            :tag "trivial"))
+                     (:name "ZK"
+                            :category "zk")
+  		               (:name "Journals"
+  			                    :tag "journal"
+  			                    :order 2)
+  		               (:name "Second brain"
+                            :category ("capture" "aor" "project" "archive")
+                            :order 2)
+                     (:name "Today"
+  			                    :time-grid t)))))))))
+
+    (require 'org-super-agenda)
+    (org-super-agenda-mode))
 #+end_src
 ** Capturing (org-capture)
 #+begin_src elisp
-  (require 'org-capture)
+  (with-eval-after-load 'org-capture
+    (keymap-unset org-capture-mode-map "C-c C-c")
+    (keymap-set org-capture-mode-map "C-c C-f" 'org-capture-finalize)
 
-  (keymap-unset org-capture-mode-map "C-c C-c")
-  (keymap-set org-capture-mode-map "C-c C-f" 'org-capture-finalize)
+    (setq
+     org-capture-templates
 
-  (setq
-   org-capture-templates
+     `(
+       ;; todo files
+       ("t" "Todo"
+        entry (file ,(expand-file-name "todo.org" sr/note-root-directory))
+        "* TODO %?"
+        :prepend t)
 
-   `(
-     ;; todo files
-     ("t" "Todo"
-      entry (file ,(expand-file-name "todo.org" sr/note-root-directory))
-      "* TODO %?"
-      :prepend t)
-
-     ;; coding interview preparation
-     ("p" "Problem")
-     ("pb" "Baekjoon problem"
-      entry (file ,(expand-file-name "problems/baekjoon.org" sr/note-root-directory))
-      "* %t %^{id}. %^{title}
+       ;; coding interview preparation
+       ("p" "Problem")
+       ("pb" "Baekjoon problem"
+        entry (file ,(expand-file-name "problems/baekjoon.org" sr/note-root-directory))
+        "* %t %^{id}. %^{title}
   [[https://www.acmicpc.net/problem/%\\1][Baekjoon]]
   ,** Ideas
   %?"
-      :jump-to-captured t)
-     ("pp" "Programmers problem"
-      entry (file ,(expand-file-name "problems/programmers.org" sr/note-root-directory))
-      "* %t %^{id}. %^{title}
+        :jump-to-captured t)
+       ("pp" "Programmers problem"
+        entry (file ,(expand-file-name "problems/programmers.org" sr/note-root-directory))
+        "* %t %^{id}. %^{title}
   [[%^{url}][Programmers]]
   ,** Ideas
   %?"
-      :jump-to-captured t))
+        :jump-to-captured t)))
 #+end_src
 ** Bookmark support (org-bookmark-heading)
 #+begin_src elisp
@@ -2173,7 +1263,7 @@ Dvisvgm configuration is patched for my environment...
 ** Help enhancements
 *** Elisp-demos
 #+begin_src elisp
-  (require 'elisp-demos)
+  ;; elisp-demos
 
   (advice-add 'describe-function-1 :after #'elisp-demos-advice-describe-function-1)
   (advice-add 'helpful-update :after #'elisp-demos-advice-helpful-update)
@@ -2200,35 +1290,31 @@ Dvisvgm configuration is patched for my environment...
 #+end_src
 ** Man
 #+begin_src elisp
-  (require 'man)
+  ;; man
 
-  ;; disable autocompletion by overriding the completion table function that the
-  ;; `man' command uses. It's slow for me, and I don't need this feature.
-  (defun Man-completion-table (str pred flag)
-  	'())
+  (with-eval-after-load 'man
+    ;; disable autocompletion by overriding the completion table function that the
+    ;; `man' command uses. It's slow for me, and I don't need this feature.
+    (defun Man-completion-table (str pred flag)
+  	  '()))
 #+end_src
-** RFC
-#+begin_src elisp
-  (require 'rfc-mode)
-#+end_src
+** RFC (rfc-mode)
+** Kubernetes documentation (kubedoc)
 * Dired
 #+begin_src elisp
-  (setq dired-listing-switches "-hal")
-  (setq dired-auto-revert-buffer t)
+  (with-eval-after-load 'dired
+    (setq dired-listing-switches "-hal")
+    (setq dired-auto-revert-buffer t)
 
-  (setq delete-by-moving-to-trash t)
+    (setq delete-by-moving-to-trash t)
 
-  (add-hook 'dired-mode-hook 'dired-omit-mode)
-  (add-hook 'dired-mode-hook 'lin-mode)
+    (add-hook 'dired-mode-hook 'dired-omit-mode)
+    (add-hook 'dired-mode-hook 'lin-mode))
 #+end_src
 * Web
 ** Shr
-*** Set max width for readability
 #+begin_src elisp
   (setq shr-max-width 80)
-#+end_src
-*** Disable colors
-#+begin_src elisp
   (setq shr-use-colors nil)
 #+end_src
 ** Browse-url
@@ -2247,7 +1333,7 @@ My customization for browsing functions:
 #+end_src
 ** Goto address mode
 #+begin_src elisp
-  (global-goto-address-mode)
+  ;; (global-goto-address-mode)
 
   (keymap-set goto-address-highlight-keymap "C-c C-o" #'goto-address-at-point)
 #+end_src
@@ -2260,13 +1346,9 @@ My customization for browsing functions:
   (add-hook 'eww-after-render-hook #'sr/eww-enable-diff-mode-github-diff)
 #+end_src
 * Version control and diffing
-** Magit
+** Magit & Forge
 #+begin_src elisp
-  (require 'magit)
-#+end_src
-*** Forge
-#+begin_src elisp
-  (require 'forge)
+  ;; forge
 
   (defun sr/forge-copy-browse-url-as-link ()
     (interactive)
@@ -2275,7 +1357,8 @@ My customization for browsing functions:
       (kill-new (format "[[%s]]" url))
       (message url)))
 
-  (keymap-set magit-mode-map "C-c C-l" #'sr/forge-copy-browse-url-as-link)
+  (with-eval-after-load 'magit
+    (keymap-set magit-mode-map "C-c C-l" #'sr/forge-copy-browse-url-as-link))
 #+end_src
 * Elfeed
 #+begin_src elisp
@@ -2419,20 +1502,15 @@ In show mode:
 #+end_src
 * Avy
 #+begin_src elisp
-  (require 'avy)
-  (keymap-global-set "C-M-'" #'avy-goto-char-timer)
-  (keymap-global-set "M-g t" #'avy-goto-char-2)
-  (keymap-global-set "M-g b" #'avy-goto-char)
-#+end_src
-** Timeout seconds
-#+begin_src elisp
-  (setq avy-timeout-seconds 0.3)
-#+end_src
-** Customize keys
-I use Colemak layout, so the keys are adjusted accordingly.
-#+begin_src elisp
-  ;; the default is '(?a ?s ?d ?f ?g ?h ?j ?k ?l).
-  (setq avy-keys '(?a ?r ?s ?t ?d ?n ?e ?i ?o ?h))
+  (with-eval-after-load 'avy
+    (keymap-global-set "C-M-'" #'avy-goto-char-timer)
+    (keymap-global-set "M-g t" #'avy-goto-char-2)
+    (keymap-global-set "M-g b" #'avy-goto-char)
+
+    (setq avy-timeout-seconds 0.3)
+    ;; I use Colemak layout, so the keys are adjusted accordingly.
+    ;; The default is '(?a ?s ?d ?f ?g ?h ?j ?k ?l).
+    (setq avy-keys '(?a ?r ?s ?t ?d ?n ?e ?i ?o ?h)))
 #+end_src
 * Tools
 #+begin_src elisp
@@ -2440,26 +1518,14 @@ I use Colemak layout, so the keys are adjusted accordingly.
     :doc "Keymap for various tools.")
 
   (keymap-global-set "C-c e" sr/external-tools-map)
-#+end_src
-** Evil
-#+begin_src elisp
-  (require 'evil)
-#+end_src
 
-I don't enable it by default but it's nice to have
-#+begin_src elisp
+  ;; evil-mode
   (keymap-set sr/external-tools-map "e" #'evil-mode)
-#+end_src
-** Docker
-#+begin_src elisp
-  (require 'docker)
-#+end_src
 
-Manage Docker in Emacs.
-#+begin_src elisp
+  ;; docker
   (keymap-set sr/external-tools-map "d" #'docker)
 #+end_src
-** Kubernetes
+** Kele
 #+begin_src elisp
   (require 'kele)
 #+end_src
@@ -2470,10 +1536,6 @@ connect, causing Emacs to freeze on launch.
 
 #+begin_src elisp
   (keymap-set kele-mode-map "C-c k" kele-command-map)
-#+end_src
-** Kubedoc
-#+begin_src elisp
-  (require 'kubedoc)
 #+end_src
 * LaTeX editing
 ** AUCTeX
@@ -2593,27 +1655,24 @@ pain. So I ended up building my own solution.
 #+end_src
 ** Math-delimiters
 #+begin_src elisp
-  (require 'math-delimiters)
+  ;; math-delimiters
+
   (keymap-set org-mode-map "$" #'math-delimiters-insert)
   (keymap-set LaTeX-mode-map "$" #'math-delimiters-insert)
 #+end_src
 * Vterm
 #+begin_src elisp
-  (require 'vterm)
-  (require 'vterm-toggle)
-#+end_src
-** Key bindings
-#+begin_src elisp
-  (keymap-set vterm-mode-map "C-M-;" #'vterm-copy-mode)
-  (keymap-set vterm-copy-mode-map "C-M-;" #'vterm-copy-mode)
+  ;; vterm, vterm-toggle
 
-  (keymap-set vterm-mode-map "C-c C-l" #'vterm-clear)
+  (with-eval-after-load 'vterm
+    (keymap-set vterm-mode-map "C-M-;" #'vterm-copy-mode)
+    (keymap-set vterm-copy-mode-map "C-M-;" #'vterm-copy-mode)
 
-  (keymap-set vterm-mode-map "C-c C-n" #'vterm-toggle-forward)
-  (keymap-set vterm-mode-map "C-c C-p" #'vterm-toggle-backward)
-#+end_src
-** Buffer switching
-#+begin_src elisp
+    (keymap-set vterm-mode-map "C-c C-l" #'vterm-clear)
+
+    (keymap-set vterm-mode-map "C-c C-n" #'vterm-toggle-forward)
+    (keymap-set vterm-mode-map "C-c C-p" #'vterm-toggle-backward))
+
   (defvar sr/vterm-switch-function #'vterm-other-window
     "Function for switching to a vterm buffer.
   It should accept the same arguments as `vterm'.")
@@ -2633,9 +1692,6 @@ pain. So I ended up building my own solution.
         (cd directory))))
 
   (keymap-global-set "C-c e t" #'sr/vterm-switch-and-cd)
-
-  (defvar sr/vterm-task-history nil
-    "Minibuffer history of `sr/vterm-switch-for-task'.")
 #+end_src
 * Window setup
 #+begin_src elisp

@@ -1,9 +1,9 @@
-;;; sr-email.el --- Email configuration  -*- lexical-binding: t; -*-
+;;; sr-email.el --- Personal configuration for email  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) Minjeong Kim
 
-;; Author: Minjeong Kim <kimsaram32@proton.me>
-;; URL: https://github.com/kimsaram32/emacs-config
+;; Author: Minjeong Kim <kimsaram32@fastmail.com>
+;; URL: https://github.com/kimsaram32/dotfiles
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -41,41 +41,41 @@
 
 (keymap-global-set "C-c m" #'notmuch)
 
-;;; Notmuch search/tags setup
+;;; Notmuch search/tags
 
-(setq notmuch-archive-tags '("-inbox" "-new" "+archived"))
+(setq notmuch-archive-tags '("-inbox" "-unread" "+archive"))
 
 (setq notmuch-tagging-keys
       '(("a" notmuch-archive-tags "Archive")
         ("u" notmuch-show-mark-read-tags "Mark read")
-        ("s" ("+spam" "-new" "-inbox") "Mark as spam")
-        ("d" ("+deleted" "-new" "-inbox") "Delete")))
+        ("f" ("+flagged") "Flag")
+        ("s" ("+spam" "-inbox") "Mark as spam")
+        ("d" ("+deleted" "-inbox") "Delete")))
 
 (setq notmuch-saved-searches
-      '((:name "new" :query "tag:new" :key "n")
-        (:name "inbox" :query "tag:inbox" :key "i")
-        (:name "mailing list" :query "tag:list tag:unread -tag:archived" :key "l")
-        (:name "emacs" :query "tag:emacs tag:unread -tag:archived" :key "e")
-
+      '((:name "inbox" :query "tag:inbox" :key "i")
         (:name "unread" :query "tag:unread" :key "u")
-        (:name "archives" :query "tag:archived" :key "a")
+
+        (:name "mailing list" :query "tag:list not tag:archive" :key "l")
+        (:name "emacs" :query "tag:emacs not tag:archive" :key "e")
+
         (:name "flagged" :query "tag:flagged" :key "f")
         (:name "sent" :query "tag:sent" :key "t")
         (:name "drafts" :query "tag:draft" :key "d")
         (:name "deleted" :query "tag:deleted" :key "D")
+        (:name "archives" :query "tag:archive" :key "a")
         (:name "all mail" :query "*" :key "A")))
 
-;;; Notmuch customizations
+;;; Notmuch hello
 
 (setq notmuch-hello-sections
       (list
-       #'notmuch-hello-insert-header
        #'notmuch-hello-insert-saved-searches
        #'notmuch-hello-insert-alltags))
 
 (setq notmuch-show-all-tags-list t)
 
-;;; Notmuch show mode customizations
+;;; Notmuch show mode
 
 (defun sr/notmuch-show-get-message-depth ()
   (plist-get (notmuch-show-get-message-properties) :depth))
@@ -88,10 +88,10 @@
             (not (= (sr/notmuch-show-get-message-depth)
                     target-depth))))))
 
-(keymap-set notmuch-show-mode-map "U" #'sr/notmuch-show-parent-message)
-
 (defun sr/notmuch-show-trash-message ()
   (notmuch-show-tag "+deleted"))
+
+(keymap-set notmuch-show-mode-map "U" #'sr/notmuch-show-parent-message)
 
 ;;; Synchronization
 
