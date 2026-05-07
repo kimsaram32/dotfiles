@@ -6,3 +6,4 @@ notmuch tag -new +list +emacs -- from:emacs-devel@gnu.org or to:emacs-devel@gnu.
 notmuch tag -new +list +emacs -- from:info-gnu-emacs@gnu.org or to:info-gnu-emacs@gnu.org
 notmuch tag -new +list +emacs -- from:help-gnu-emacs@gnu.org or to:help-gnu-emacs@gnu.org
 notmuch tag -new +list +bug -- subject:/^bug#/ and not tag:list
+notmuch tag -new +list +patch -- subject:/PATCH/
