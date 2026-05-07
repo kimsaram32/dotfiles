@@ -53,7 +53,7 @@
 #+end_src
 ** Setup Custom
 #+begin_src elisp
-  (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
+  (setq custom-file (locate-user-emacs-file "custom.el"))
   (load custom-file)
 #+end_src
 * Environment
@@ -154,13 +154,11 @@ Load personal packages. I'm slowly switching to per-file module setup.
   (setq frame-inhibit-implied-resize t)
 #+end_src
 ** Font faces
-Before customizing fonts, temporarily enable fixed windows
-to prevent resizing windows when changing fonts.
 #+begin_src elisp
   (set-face-attribute
    'default nil
-   :height 150
-   :family "JetBrains Mono")
+   :height 160
+   :family "Aporetic Sans Mono")
 
   (set-face-attribute
    'variable-pitch nil
@@ -692,6 +690,8 @@ strings to them.
   (with-eval-after-load 'project
     (setq project-vc-include-untracked t)
     (setq project-mode-line t)
+    (setq project-vc-extra-root-markers
+          '(".Projectile"))
 
     (keymap-set project-prefix-map "F" #'sr/project-other-find-file))
 #+end_src
@@ -771,7 +771,7 @@ EWW, I overrode it.
 
     (add-hook 'agent-shell-mode-hook #'corfu-mode))
 #+end_src
-* Consult (consult)
+* Consult
 ** Key bindings
 #+begin_src elisp
   (keymap-global-set "C-x b" #'consult-buffer)
@@ -851,8 +851,6 @@ temporarily resetting =display-buffer-alist=.
   (setq org-footnote-section nil)
 
   (setq org-list-allow-alphabetical t)
-
-  (add-hook 'org-mode-hook #'auto-fill-mode)
   #+end_src
 *** Key bindings
 #+begin_src elisp
@@ -916,6 +914,10 @@ temporarily resetting =display-buffer-alist=.
        (modes . '(org-mode)))))
 
   (add-hook 'org-mode-hook #'sr/add-zk-toc-align-rule)
+#+end_src
+*** Auto fill mode
+#+begin_src elisp
+  (add-hook 'org-mode-hook #'auto-fill-mode)
 #+end_src
 ** Managing todo items
 #+begin_src elisp
@@ -1121,6 +1123,11 @@ Dvisvgm configuration is patched for my environment...
 #+begin_src elisp
   (require 'org-bookmark-heading)
 #+end_src
+** Citation (org-cite)
+#+begin_src elisp
+  (setq org-cite-global-bibliography
+        (list (expand-file-name "refs/pkm.bib" sr/note-root-directory)))
+#+end_src
 ** COMMENT Social (org-social)
 #+begin_src elisp
   (require 'org-social)
@@ -1139,6 +1146,12 @@ Dvisvgm configuration is patched for my environment...
     (add-hook 'dired-mode-hook 'dired-omit-mode)
     (add-hook 'dired-mode-hook 'lin-mode))
 
+  (defun sr/dired-open-in-finder ()
+    "Open the current Dired directory in macOS Finder."
+    (interactive)
+    (when (not (eq major-mode 'dired-mode))
+      (user-error "Not in a Dired buffer"))
+    (dired-smart-shell-command "open ."))
 #+end_src
 * Version control and diffing
 ** Magit & Forge
@@ -1466,7 +1479,9 @@ pain. So I ended up building my own solution.
     (keymap-set vterm-mode-map "C-c C-l" #'vterm-clear)
 
     (keymap-set vterm-mode-map "C-c C-n" #'vterm-toggle-forward)
-    (keymap-set vterm-mode-map "C-c C-p" #'vterm-toggle-backward))
+    (keymap-set vterm-mode-map "C-c C-p" #'vterm-toggle-backward)
+
+    (keymap-unset vterm-mode-map "M-/"))
 
   (defvar sr/vterm-switch-function #'vterm-other-window
     "Function for switching to a vterm buffer.

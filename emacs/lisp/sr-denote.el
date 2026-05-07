@@ -33,6 +33,8 @@
         (window-height . fit-window-to-buffer)
         (post-command-select-window . t)))
 
+(setq denote-open-link-function #'find-file)
+
 ;;; Buffer renaming
 
 (setq denote-buffer-name-prefix "d: ")
