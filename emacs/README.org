@@ -110,12 +110,24 @@ Load personal packages. I'm slowly switching to per-file module setup.
     (require 'sr-startup))
 
   (sr/load-configuration
+    "Completion"
+    (require 'sr-completion))
+
+  (sr/load-configuration
     "Email"
     (require 'sr-email))
 
   (sr/load-configuration
     "Programming"
     (require 'sr-programming))
+
+  (sr/load-configuration
+    "Web"
+    (require 'sr-web))
+
+  (sr/load-configuration
+    "Documentation"
+    (require 'sr-documentation))
 
   (sr/load-configuration
     "Denote"
@@ -629,149 +641,6 @@ strings to them.
 
   (setq use-short-answers t)
 #+end_src
-* Completion
-I use default completion system with multiple frontends.
-** Vertico (UI, default)
-#+begin_src elisp
-  (require 'vertico)
-  (vertico-mode)
-  (vertico-multiform-mode)
-#+end_src
-*** Key bindings
-#+begin_src elisp
-  (keymap-set vertico-map "M-n" #'vertico-next)
-  (keymap-set vertico-map "M-p" #'vertico-previous)
-  (keymap-set vertico-map "M-TAB" #'vertico-insert)
-  (keymap-set vertico-map "RET" #'vertico-exit-input)
-  (keymap-set vertico-map "M-RET" #'vertico-exit)
-
-  (keymap-set vertico-map "C-n" #'next-history-element)
-  (keymap-set vertico-map "C-p" #'previous-history-element)
-#+end_src
-** Marginalia
-#+begin_src elisp
-  (marginalia-mode)
-#+end_src
-** COMMENT Icomplete (UI)
-#+begin_src elisp
-  (require 'icomplete)
-#+end_src
-*** Vertical mode
-#+begin_src elisp
-  (add-hook 'icomplete-mode-hook #'icomplete-vertical-mode)
-#+end_src
-*** Remap next and previous selection
-Remap next and previous selection to =M-n= and =M-p=. I prefer to
-maintain the "Emacs rhythm" concept from Mastering Emacs.
-
-Now that I can select items with =M-n=, =M-p=, and =M-TAB=, I can hold
-the meta key to maintain the rhythm of pressing keys.
-
-#+begin_src elisp
-  (keymap-set
-   icomplete-vertical-mode-minibuffer-map
-   "M-n" #'icomplete-forward-completions)
-  (keymap-set
-   icomplete-vertical-mode-minibuffer-map
-   "M-p" #'icomplete-backward-completions)
-
-  (keymap-set
-   icomplete-vertical-mode-minibuffer-map
-   "C-n" #'next-history-element)
-  (keymap-set
-   icomplete-vertical-mode-minibuffer-map
-   "C-p" #'previous-history-element)
-#+end_src
-*** Override =TAB=
-By default, =TAB= key is bound to =minibuffer-complete=. Override it
-to use icomplete.
-#+begin_src elisp
-  (keymap-set icomplete-vertical-mode-minibuffer-map
-              "TAB" #'icomplete-force-complete)
-#+end_src
-*** Unmap space
-#+begin_src elisp
-  (keymap-unset minibuffer-local-completion-map "SPC")
-#+end_src
-** List of categories
-Non-exhaustive.
-- eglot-capf: =eglot-completion-at-point=
-- org-heading: [[*Jump to heading][Jump to heading]] and =consult-org-heading=
-- info-menu
-** Completion options
-#+begin_src elisp
-  (setq completion-ignore-case t)
-#+end_src
-** Completion styles
-[[help:completion-styles-alist]]
-
-#+begin_src elisp
-  (setq completion-styles '(basic partial-completion emacs22 orderless))
-#+end_src
-
-Category overrides. I cleared the defaults because I want complete
-control over my completions.
-
-#+begin_src elisp
-  (setq completion-category-defaults nil)
-
-  (setq
-   completion-category-overrides
-   '((command (styles basic substring partial-completion initials orderless))
-     (file (styles partial-completion orderless))
-     (eglot-capf (styles basic initials substring orderless))
-     (project-file (styles partial-completion substring orderless))
-     (xref-location (styles substring))
-     (info-menu (styles substring basic))
-     (org-heading (styles orderless substring))
-     (symbol (styles basic initials substring orderless))
-     (kubedoc (styles partial-completion))))
-#+end_src
-** Testing completion styles
-#+begin_src elisp
-  (defvar sr/--completion-testing nil)
-
-  (defun sr/completion-test-start (style)
-    "Test a completion style STYLE.
-    This makes `'completing-read' to only use STYLE as the completion
-    style. call `sr/completion-test-end' when finished."
-    (interactive (list (completing-read
-                        "Completion style: "
-                        (mapcar (lambda (x) (car x)) completion-styles-alist))))
-    (when (not sr/--completion-testing)
-      (setq sr/--completion-testing t)
-      (setq sr/--completion-styles-prev completion-styles)
-      (setq sr/--completion-category-overrides-prev completion-category-overrides)
-      (setq sr/--completion-category-defaults-prev completion-category-defaults))
-    (setq-default completion-styles (list (intern style)))
-    (setq-default completion-category-overrides nil)
-    (setq-default completion-category-defaults nil))
-
-  (defun sr/completion-test-end ()
-    "Revert completion styles altered by `sr/completion-style-start'."
-    (interactive)
-    (when (not sr/--completion-testing)
-      (user-error "Not testing"))
-    (setq sr/--completion-testing nil)
-    (setq-default completion-styles sr/--completion-styles-prev)
-    (setq-default completion-category-overrides sr/--completion-category-overrides-prev)
-    (setq-default completion-category-defaults sr/--completion-category-defaults-prev))
-#+end_src
-** Show current completion category
-#+begin_src elisp
-  (defun sr/show-completion-category ()
-    "Show category in current completion context."
-    (interactive)
-    (message "%S"
-             (completion-metadata-get
-              (completion-metadata
-               (minibuffer-contents)
-               minibuffer-completion-table
-               minibuffer-completion-predicate)
-              'category)))
-
-  (keymap-set minibuffer-local-map "C-c C-k" #'sr/show-completion-category)
-#+end_src
 * Savehist mode
 #+begin_src elisp
   (savehist-mode)
@@ -1259,47 +1128,6 @@ Dvisvgm configuration is patched for my environment...
   (setq org-social-relay "https://relay.org-social.org/")
   (setq org-social-my-public-url "https://host.org-social.org/saram/social.org")
 #+end_src
-* Documentation
-** Help enhancements
-*** Elisp-demos
-#+begin_src elisp
-  ;; elisp-demos
-
-  (advice-add 'describe-function-1 :after #'elisp-demos-advice-describe-function-1)
-  (advice-add 'helpful-update :after #'elisp-demos-advice-helpful-update)
-#+end_src
-*** Apropos key bindings
-#+begin_src elisp
-  (unbind-key "a" help-map)
-
-  (keymap-set help-map "a a" 'apropos-command)
-  (keymap-set help-map "a f" 'apropos-function)
-  (keymap-set help-map "a v" 'apropos-variable)
-  (keymap-set help-map "a u" 'apropos-user-option)
-  (keymap-set help-map "a l" 'apropos-library)
-#+end_src
-*** Helpful
-#+begin_src elisp
-  (require 'helpful)
-
-  (keymap-set help-map "f" #'helpful-function)
-  (keymap-set help-map "v" #'helpful-variable)
-  (keymap-set help-map "k" #'helpful-key)
-  (keymap-set help-map "x" #'helpful-command)
-  (keymap-set help-map "o" #'helpful-symbol)
-#+end_src
-** Man
-#+begin_src elisp
-  ;; man
-
-  (with-eval-after-load 'man
-    ;; disable autocompletion by overriding the completion table function that the
-    ;; `man' command uses. It's slow for me, and I don't need this feature.
-    (defun Man-completion-table (str pred flag)
-  	  '()))
-#+end_src
-** RFC (rfc-mode)
-** Kubernetes documentation (kubedoc)
 * Dired
 #+begin_src elisp
   (with-eval-after-load 'dired
@@ -1310,40 +1138,7 @@ Dvisvgm configuration is patched for my environment...
 
     (add-hook 'dired-mode-hook 'dired-omit-mode)
     (add-hook 'dired-mode-hook 'lin-mode))
-#+end_src
-* Web
-** Shr
-#+begin_src elisp
-  (setq shr-max-width 80)
-  (setq shr-use-colors nil)
-#+end_src
-** Browse-url
-My customization for browsing functions:
-1. Use EWW by default while providing an option to use external browsers.
-2. Use external browsers for URLs known to require JavaScript.
-#+begin_src elisp
-  (setq browse-url-browser-function #'eww-browse-url)
-  (setq browse-url-secondary-browser-function #'browse-url-default-browser)
 
-  (setq browse-url-handlers
-        '(("github\\.com.+\\.diff$" . eww-browse-url)
-          ("github\\.com" . browse-url-default-browser)
-          ("reddit\\.com" . browse-url-default-browser)
-          ("localhost" . browse-url-default-browser)))
-#+end_src
-** Goto address mode
-#+begin_src elisp
-  ;; (global-goto-address-mode)
-
-  (keymap-set goto-address-highlight-keymap "C-c C-o" #'goto-address-at-point)
-#+end_src
-** EWW
-#+begin_src elisp
-  (defun sr/eww-enable-diff-mode-github-diff ()
-    (when (string-match-p "github\\.com.+\\.diff$" (eww-current-url))
-      (diff-mode)))
-
-  (add-hook 'eww-after-render-hook #'sr/eww-enable-diff-mode-github-diff)
 #+end_src
 * Version control and diffing
 ** Magit & Forge
