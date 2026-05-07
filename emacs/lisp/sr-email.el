@@ -120,6 +120,17 @@
 
 (add-hook 'sr/email-after-sync-hook #'sr/email-refresh-notmuch)
 
+;; prerequisites: alerter
+;; TODO maybe move this into a separate module
+(defun sr/show-notification (message &optional timeout)
+  (interactive)
+  (let ((proc (start-process
+               "Notificaton"
+               "*notification*"
+               "alerter"
+               "--message" message
+               "--timeout" (number-to-string timeout))))))
+
 ;;; _
 
 (provide 'sr-email)
