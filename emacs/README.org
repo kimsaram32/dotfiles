@@ -695,41 +695,6 @@ strings to them.
 
     (keymap-set project-prefix-map "F" #'sr/project-other-find-file))
 #+end_src
-* In-buffer completion
-** Stack
-I use the default =completion-at-point= with corfu.
-** Corfu
-#+begin_src elisp
-  ;; corfu
-
-  ;; Enable on these modes
-  (add-hook 'sr/prog-setup-mode-hook #'corfu-mode)
-  (add-hook 'minibuffer-setup-hook #'corfu-mode)
-  (add-hook 'eshell-mode-hook #'corfu-mode)
-
-  (with-eval-after-load 'corfu
-    (keymap-set corfu-map "M-TAB" #'corfu-insert)
-    ;; Do not complete on RET.
-    (keymap-unset corfu-map "RET")
-
-    (setq corfu-cycle t)
-    (setq corfu-preview-current nil)
-
-    ;; Popupinfo mode
-    (corfu-popupinfo-mode)
-    (setq corfu-popupinfo-direction '(right left vertical))
-    (setq corfu-popupinfo-delay '(nil . 0))
-    (setq corfu-popupinfo-max-height 20)
-
-    ;; Autocompletions
-    (setq corfu-auto t)
-    (setq corfu-auto-delay 0.1)
-
-    ;; (setq corfu-auto-trigger ".-/")
-    ;; Complete on camelCase.
-    (setq corfu-auto-trigger
-          (concat ".-/" (apply #'string (number-sequence ?A ?Z)))))
-#+end_src
 * English learning
 ** Open dictionary for word at point
 I use Merriam Webster as my dictionary. To foster my learning, I wrote

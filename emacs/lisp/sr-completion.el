@@ -6,6 +6,32 @@
 
 (require 'vertico)
 
+;;; Completion configuration
+
+;; Non-exhaustive list of completion categories:
+;; - eglot-capf: `eglot-completion-at-point'
+;; - org-heading: Jump to heading and `consult-org-heading'
+;; - info-menu
+
+(setq completion-ignore-case t)
+(setq completion-styles '(basic partial-completion emacs22))
+(setq completions-format 'one-column)
+
+;; Clear the defaults for complete control over my completions.
+(setq completion-category-defaults nil)
+
+(setq completion-category-overrides
+      '((command (styles basic substring partial-completion initials orderless))
+        (file (styles partial-completion orderless))
+        (project-file (styles partial-completion orderless))
+        (denote-file (styles orderless))
+        (eglot-capf (styles basic initials substring orderless))
+        (xref-location (styles substring))
+        (info-menu (styles substring basic))
+        (org-heading (styles orderless substring))
+        (symbol (styles basic initials substring orderless))
+        (kubedoc (styles partial-completion))))
+
 ;;; Vertico
 
 (vertico-mode)
@@ -24,30 +50,36 @@
 
 (marginalia-mode)
 
-;;; Completion configuration
+;;; Corfu
 
-;; Non-exhaustive list of completion categories:
-;; - eglot-capf: =eglot-completion-at-point=
-;; - org-heading: [[*Jump to heading][Jump to heading]] and =consult-org-heading=
-;; - info-menu
+;; Enable on these modes
+(add-hook 'sr/prog-setup-mode-hook #'corfu-mode)
+(add-hook 'minibuffer-setup-hook #'corfu-mode)
+(add-hook 'eshell-mode-hook #'corfu-mode)
+(add-hook 'agent-shell-mode-hook #'corfu-mode)
 
-(setq completion-ignore-case t)
-(setq completion-styles '(basic partial-completion emacs22 orderless))
+(with-eval-after-load 'corfu
+  (keymap-set corfu-map "M-TAB" #'corfu-insert)
+  ;; Do not complete on RET.
+  (keymap-unset corfu-map "RET")
 
-;; Clear the defaults for complete control over my completions.
-(setq completion-category-defaults nil)
+  (setq corfu-cycle t)
+  (setq corfu-preview-current nil)
 
-(setq
- completion-category-overrides
- '((command (styles basic substring partial-completion initials orderless))
-   (file (styles partial-completion orderless))
-   (eglot-capf (styles basic initials substring orderless))
-   (project-file (styles partial-completion substring orderless))
-   (xref-location (styles substring))
-   (info-menu (styles substring basic))
-   (org-heading (styles orderless substring))
-   (symbol (styles basic initials substring orderless))
-   (kubedoc (styles partial-completion))))
+  ;; Popupinfo mode
+  (corfu-popupinfo-mode)
+  (setq corfu-popupinfo-direction '(right left vertical))
+  (setq corfu-popupinfo-delay '(nil . 0))
+  (setq corfu-popupinfo-max-height 20)
+
+  ;; Autocompletions
+  (setq corfu-auto t)
+  (setq corfu-auto-delay 0.1)
+
+  ;; (setq corfu-auto-trigger ".-/")
+  ;; Complete on camelCase.
+  (setq corfu-auto-trigger
+        (concat ".-/" (apply #'string (number-sequence ?A ?Z)))))
 
 ;;; Testing completion styles
 
