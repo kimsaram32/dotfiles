@@ -2,7 +2,7 @@
 ;;; Commentary:
 ;;; Code:
 
-;;; Require dependencies
+;;; Dependencies
 
 (require 'denote)
 (require 'consult-denote)
@@ -18,20 +18,27 @@
 
 (keymap-set sr/denote-map "r" #'denote-rename-file)
 (keymap-set sr/denote-map "R" #'denote-rename-file-using-front-matter)
+
 (keymap-set sr/denote-map "l l" #'denote-link)
-(keymap-set sr/denote-map "l b" #'denote-backlinks)
+(keymap-set sr/denote-map "l b" #'sr/consult-denote-backlinks)
+(keymap-set sr/denote-map "l f" #'sr/denote-link-from-last-buffer)
+(keymap-set sr/denote-map "l 4" #'sr/denote-link-from-other-window)
+(keymap-set sr/denote-map "l w" #'sr/denote-save-link-to-kill-ring)
+
+(keymap-set sr/denote-map "a" #'denote-find-link)
+
 (keymap-set sr/denote-map "d" #'denote-dired)
+(keymap-set sr/denote-map "f" #'sr/denote-find-note)
+
+(keymap-set sr/denote-map "g" #'consult-denote-grep)
+(keymap-set sr/denote-map "b" #'sr/consult-denote-buffer)
+
+(keymap-set sr/denote-map "m" #'sr/denote-move-org-entries-dwim)
 
 ;;; General configuration
 
-(setq denote-directory sr/note-root-directory)
+(setq denote-directory (list sr/note-root-directory "~/me/cursed"))
 (setq denote-prompts '(title keywords subdirectory))
-
-(setq denote-backlinks-display-buffer-action
-      '((display-buffer-reuse-mode-window display-buffer-below-selected)
-        (mode . denote-query-mode)
-        (window-height . fit-window-to-buffer)
-        (post-command-select-window . t)))
 
 (setq denote-open-link-function #'find-file)
 
@@ -57,8 +64,6 @@ ID-ONLY is the same as `denote-link'."
            (description (denote-get-link-description file)))
       (denote-link file file-type description id-only))))
 
-(keymap-set sr/denote-map "l f" #'sr/denote-link-from-last-buffer)
-
 (defun sr/denote-link-from-other-window (id-only)
   "Create link to the file buffer in the other window.
 ID-ONLY is the same as `denote-link'."
@@ -71,8 +76,6 @@ ID-ONLY is the same as `denote-link'."
             (description (denote-get-link-description file)))
       (denote-link file file-type description id-only)
     (user-error "No file-visiting buffer found")))
-
-(keymap-set sr/denote-map "l 4" #'sr/denote-link-from-other-window)
 
 (defun sr/denote-save-link-to-kill-ring (id-only)
   "Save the link pointing the current note to the kill ring.
@@ -88,8 +91,6 @@ this will break across different file formats."
         (kill-new link)
         (message link))
     (user-error "could not create link: check the buffer is visitng a file.")))
-
-(keymap-set sr/denote-map "l s" #'sr/denote-save-link-to-kill-ring)
 
 (defun sr/denote-print-title-after-link (file file-type description &optional id-only)
   "Print the title of the linked note.
@@ -116,7 +117,6 @@ This returns a plist of two properties: TITLE and CONTENT."
   (declare (interactive-only t))
   (interactive)
   (let* ((initial-data (sr/denote-get-initial-data-dwim))
-         (denote-use-signature "sb")
          (denote-use-title (plist-get initial-data :title)))
     (call-interactively 'denote)
     (when-let ((content (plist-get initial-data :content)))
@@ -152,6 +152,12 @@ This returns a plist of two properties: TITLE and CONTENT."
   (let ((denote-use-directory sr/note-zk-directory))
     (call-interactively 'denote)))
 
+;;; Other commands
+
+(defun sr/denote-find-note ()
+  (interactive)
+  (find-file (denote-file-prompt)))
+
 ;;; Dired integration
 
 (add-hook 'dired-mode-hook #'denote-dired-mode)
@@ -178,20 +184,28 @@ This returns a plist of two properties: TITLE and CONTENT."
 
 ;;; Text mode integration
 
-(add-hook 'text-mode-hook #'denote-fontify-links-mode-maybe)
+(add-hook 'text-mode-hook #'denote-fontify-links-mode)
 
 ;;; Consult integration
 
 (consult-denote-mode)
 
-(keymap-set sr/denote-map "g" #'consult-denote-grep)
-(keymap-set sr/denote-map "f" #'consult-denote-find)
-
 (defun sr/consult-denote-buffer ()
   (interactive)
   (consult-buffer (list consult-denote-buffer-source)))
 
-(keymap-set sr/denote-map "b" #'sr/consult-denote-buffer)
+(defun sr/consult-denote-backlinks ()
+  "Like `denote-backlinks', but uses `consult-xref' for displaying."
+  (interactive)
+  (if-let* ((file buffer-file-name))
+      (if-let* ((identifier (denote-retrieve-filename-identifier file))
+                (fetcher (lambda ()
+                           (let* ((denote-alist (denote-retrieve-xref-alist-for-backlinks identifier))
+                                  (xrefs (mapcan #'cdr denote-alist)))
+                             xrefs))))
+          (consult-xref fetcher)
+        (user-error "The current file does not have a Denote identifier"))
+    (user-error "Buffer `%s' is not associated with a file" (current-buffer))))
 
 ;;; Migration from entry-based workflow w/ Org
 
@@ -339,8 +353,6 @@ extracted links."
   (if (region-active-p)
       (sr/denote-move-org-entries-in-region preserve)
     (sr/denote-move-org-entries-in-buffer preserve)))
-
-(keymap-set sr/denote-map "m" #'sr/denote-move-org-entries-dwim)
 
 ;;; _
 (provide 'sr-denote)
