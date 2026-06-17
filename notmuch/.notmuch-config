@@ -12,7 +12,7 @@ backup_dir=mail/.notmuch/backups
 hook_dir=mail/.notmuch/hooks
 
 [user]
-name=Saram Kim
+name=Minjeong Kim
 primary_email=kimsaram32@fastmail.com
 
 [new]

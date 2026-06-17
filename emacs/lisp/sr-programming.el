@@ -170,6 +170,7 @@ Set project's `node_modules' binary eslint as first priority, if any."
 (setq treesit-language-source-alist
       '((bash "https://github.com/tree-sitter/tree-sitter-bash")
         (c "https://github.com/tree-sitter/tree-sitter-c")
+        (cpp "https://github.com/tree-sitter/tree-sitter-cpp")
         (cmake "https://github.com/uyha/tree-sitter-cmake")
         (css "https://github.com/tree-sitter/tree-sitter-css")
         (dockerfile "https://github.com/camdencheek/tree-sitter-dockerfile")
@@ -262,7 +263,7 @@ and LANG-ts-mode is used with org mode source codes.")
   (setq css-indent-offset 2)
   (add-hook 'css-ts-mode-hook #'rainbow-mode))
 
-;;; C
+;;; C (tree-sitter)
 
 (require 'c-ts-mode)
 
@@ -359,7 +360,9 @@ and LANG-ts-mode is used with org mode source codes.")
 
 (add-to-list 'major-mode-remap-alist '(mhtml-mode . html-ts-mode))
 
-(unbind-key "C-c C-f" sgml-mode-map)
+;; Remove conflicting key bindings.
+(keymap-unset sgml-mode-map "C-c C-f")
+(keymap-unset html-ts-mode-map "M-o")
 
 ;;;; Emmet
 

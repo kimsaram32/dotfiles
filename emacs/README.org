@@ -362,12 +362,17 @@ Key binding for =M-x append-to-register=.
 
   ")
 #+end_src
-** Delete the file of the current buffer
+** Delete the file and kill the buffer
 #+begin_src elisp
-  (defun sr/delete-current-file ()
-    "Delete current buffer's file."
+  (defun sr/buffer-kill-and-delete-file ()
+    "Kill the current buffer, also deleting its file."
     (interactive)
-    (delete-file (buffer-file-name)))
+    (delete-file (buffer-file-name))
+    (kill-buffer))
+
+  (keymap-global-set "C-c C-k" #'sr/buffer-kill-and-delete-file)
+  (with-eval-after-load 'org
+    (keymap-unset org-mode-map "C-c C-k"))
 #+end_src
 * Workflow
 ** Starting hour of a day
@@ -651,12 +656,40 @@ strings to them.
         (clear-abbrev-table (symbol-value name)))
     (apply #'define-abbrev-table name args))
 
+  (defun sr/make-prefixed-abbrev-table (prefix mappings)
+    (mapcan
+     (lambda (entry)
+       (seq-map-indexed
+        (lambda (expansion idx)
+          (list
+           (concat (make-string (1+ idx) prefix) (car entry))
+           expansion))
+        (cdr entry)))
+     mappings))
+
   (sr/define-abbrev-table
    'sr/latex-abbrev-table
-   '(("to" "\\to")
-     ("iff" "\\leftrightarrow")
-     ("la" "\\land")
-     ("lo" "\\lor")))
+   (append
+
+    '(("to" "\\to")
+      ("iff" "\\leftrightarrow")
+      ("la" "\\land")
+      ("lo" "\\lor")
+      ("cap" "\\cap")
+      ("cup" "\\cup"))
+
+    (sr/make-prefixed-abbrev-table
+      ?'
+      '(("a" "\\alpha" "\\land")
+        ("A" "\\forall" "\\aleph")
+        ("b" "\\beta")
+        ("e" "\\exists" "\\varnothing")
+        ("p" "^\\prime")
+        ("pp" "\\textt{++}")
+        ("v" "\\lor")
+        ("-" "\\neg{")
+        ("." " \\cdot")
+        ("," " \\circ")))))
 
   (sr/define-abbrev-table
    'org-mode-abbrev-table
@@ -734,6 +767,9 @@ EWW, I overrode it.
     (setq agent-shell-anthropic-authentication
           (agent-shell-anthropic-make-authentication :login t))
 
+    (setq agent-shell-openai-authentication
+        (agent-shell-openai-make-authentication :login t))
+
     (add-hook 'agent-shell-mode-hook #'corfu-mode))
 #+end_src
 * Consult
@@ -807,6 +843,10 @@ temporarily resetting =display-buffer-alist=.
   (setq org-startup-indented t)
   (setq org-startup-with-inline-images t)
   (setq-default org-startup-folded 'showeverything)
+
+  (setq org-emphasis-alist
+        '(("*" bold) ("/" italic) ("_" underline) ("=" org-verbatim verbatim)
+          ("~" org-code verbatim) ("~~" (:strike-through t))))
 
   (setq org-blank-before-new-entry '((heading . auto) (plain-list-item auto)))
 
@@ -928,17 +968,12 @@ Dvisvgm configuration is patched for my environment...
   		                   :image-converter
   		                   ("TEXMFCNF=\"/usr/local/texlive/2025:$TEXMFCNF\" dvisvgm --no-fonts --exact-bbox --scale=%S --output=%O --keep %f")))
 #+end_src
-*** Use dvisvgm for inline preview
+*** Configuraton
 #+begin_src elisp
   (setq org-preview-latex-default-process 'dvisvgm)
-#+end_src
-*** Preview scaling
-#+begin_src elisp
-  (plist-put org-format-latex-options :scale 2)
-#+end_src
-*** Image location
-#+begin_src elisp
   (setq org-preview-latex-image-directory (expand-file-name "ltximg/" sr/note-root-directory))
+
+  (setq org-latex-packages-alist '(("" "kotex" t) ("" "mathrsfs" t)))
 #+end_src
 ** Tags
 #+begin_src elisp
@@ -986,10 +1021,7 @@ Dvisvgm configuration is patched for my environment...
   (with-eval-after-load 'org-agenda
     (setq
      org-agenda-files
-     (list sr/note-root-directory
-           sr/note-second-brain-directory
-    			 (expand-file-name "projects/" sr/note-root-directory)
-    			 sr/note-zk-directory))
+     (list sr/note-root-directory))
 
     (setq org-agenda-restore-windows-after-quit t)
 
@@ -1004,7 +1036,7 @@ Dvisvgm configuration is patched for my environment...
 
     (setq org-agenda-span 14)
     (setq
-     'org-agenda-custom-commands
+     org-agenda-custom-commands
      '(("d" "Daily agenda"
   	    ((agenda ""
   		           ((org-agenda-span 'day)
@@ -1082,7 +1114,7 @@ Dvisvgm configuration is patched for my environment...
   [[%^{url}][Programmers]]
   ,** Ideas
   %?"
-        :jump-to-captured t)))
+        :jump-to-captured t))))
 #+end_src
 ** Bookmark support (org-bookmark-heading)
 #+begin_src elisp
@@ -1121,6 +1153,27 @@ Dvisvgm configuration is patched for my environment...
 * Version control and diffing
 ** Magit & Forge
 #+begin_src elisp
+  (defvar sr/clone-project-repo-url-history nil
+    "Minibuffer history for `sr/clone-project-repo'.")
+
+  (defun sr/clone-project-repo ()
+    "Prompt for a repository url and clone it inside `sr/dev-project-directory'."
+    (interactive)
+    (let* ((url (read-string "URL to repo: " nil
+                             sr/clone-project-repo-url-history))
+           (name (magit-clone--url-to-name url))
+           (directory-name
+            (expand-file-name
+             (read-directory-name "Clone into: " sr/dev-project-directory
+                                  nil (lambda (file-name) (not (file-exists-p file-name)))
+                                  (format "%s__cloned" name))
+             sr/dev-project-directory)))
+      (magit-clone-regular
+       url
+       directory-name
+       nil)
+      (dired directory-name)))
+
   ;; forge
 
   (defun sr/forge-copy-browse-url-as-link ()
@@ -1143,7 +1196,7 @@ Dvisvgm configuration is patched for my environment...
 #+end_src
 ** Default search filter
 #+begin_src elisp
-  (setq elfeed-search-filter "+unread")
+  (setq elfeed-search-filter "+unread -to-read-list")
 #+end_src
 ** EWW Integration
 #+begin_src elisp
@@ -1358,73 +1411,6 @@ Do not ask before saving.
 
 #+begin_src elisp
   (setq TeX-save-query nil)
-#+end_src
-** Assist mode
-Insert symbols using shortcuts. This is almost identical to cdlatex. I
-tried cdlatex but setting it up for my own workflow was kind of a
-pain. So I ended up building my own solution.
-
-#+begin_src elisp
-  (defvar-keymap sr/latex-assist-mode-map)
-
-  (defvar sr/latex-assist-symbol-prefix nil)
-
-  (defvar-keymap sr/latex-assist-symbol-1-map)
-  (defvar-keymap sr/latex-assist-symbol-2-map)
-  (defvar-keymap sr/latex-assist-symbol-3-map)
-
-  (defun sr/latex-assist-set-symbol-keys (defs)
-    (pcase-dolist (`(,key ,ex1 ,ex2 ,ex3) defs)
-      (when (not (key-valid-p key))
-        (user-error "Not a valid key"))
-      (when (string= key sr/latex-assist-symbol-prefix)
-        (user-error "Cannot use the prefix key"))
-
-      (when ex1
-        (keymap-set sr/latex-assist-symbol-1-map key (lambda ()
-                                                       (interactive)
-                                                       (insert ex1))))
-      (when ex2
-        (keymap-set sr/latex-assist-symbol-2-map key (lambda ()
-                                                       (interactive)
-                                                       (insert ex2))))
-      (when ex3
-        (keymap-set sr/latex-assist-symbol-3-map key (lambda ()
-                                                       (interactive)
-                                                       (insert ex3))))))
-
-  (defun sr/latex-assist-set-symbol-prefix (prefix)
-    (when (not (key-valid-p prefix))
-      (user-error "Not a valid key"))
-
-    (when sr/latex-assist-symbol-prefix
-      (keymap-unset sr/latex-assist-mode-map sr/latex-assist-symbol-prefix)
-      (keymap-unset sr/latex-assist-symbol-1-map sr/latex-assist-symbol-prefix)
-      (keymap-unset sr/latex-assist-symbol-2-map sr/latex-assist-symbol-prefix))
-
-    (keymap-set sr/latex-assist-mode-map prefix sr/latex-assist-symbol-1-map)
-    (keymap-set sr/latex-assist-symbol-1-map prefix sr/latex-assist-symbol-2-map)
-    (keymap-set sr/latex-assist-symbol-2-map prefix sr/latex-assist-symbol-3-map)
-
-    (setq sr/latex-assist-symbol-prefix prefix))
-
-  (define-minor-mode sr/latex-assist-mode
-    "Minor mode for quicker LaTeX editings."
-    :lighter "Latex Assist"
-    :init-value nil)
-
-  (sr/latex-assist-set-symbol-prefix "'")
-
-  (sr/latex-assist-set-symbol-keys
-   '(("a" "\\alpha" "\\land")
-     ("A" "\\forall" "\\aleph")
-     ("b" "\\beta")
-     ("e" "\\exists ")
-     ("v" "\\lor")
-     ("-" "\\neg{")
-     ("." " \\cdot ")
-     ("," " \\circ ")
-     ("p" "^\\prime")))
 #+end_src
 ** Math-delimiters
 #+begin_src elisp

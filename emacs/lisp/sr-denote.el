@@ -37,7 +37,7 @@
 
 ;;; General configuration
 
-(setq denote-directory (list sr/note-root-directory "~/me/cursed"))
+(setq denote-directory (list sr/note-root-directory "~/me/z"))
 (setq denote-prompts '(title keywords subdirectory))
 
 (setq denote-open-link-function #'find-file)
@@ -156,7 +156,8 @@ This returns a plist of two properties: TITLE and CONTENT."
 
 (defun sr/denote-find-note ()
   (interactive)
-  (find-file (denote-file-prompt)))
+  (let ((denote-directory sr/note-root-directory))
+    (find-file (denote-file-prompt))))
 
 ;;; Dired integration
 

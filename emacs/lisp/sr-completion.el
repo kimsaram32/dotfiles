@@ -14,7 +14,7 @@
 ;; - info-menu
 
 (setq completion-ignore-case t)
-(setq completion-styles '(basic partial-completion emacs22))
+(setq completion-styles '(basic partial-completion emacs22 orderless))
 (setq completions-format 'one-column)
 
 ;; Clear the defaults for complete control over my completions.
