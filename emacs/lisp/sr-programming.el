@@ -449,6 +449,57 @@ and LANG-ts-mode is used with org mode source codes.")
  'org-babel-load-languages
  '((restclient . t)))
 
+;;; BNF
+
+;; A minimal BNF mode with indentation support only. TODO syntax tables, font
+;; lock keywords, and maybe support multiple EBNF variants?
+
+(defvar sr/bnf-rule-beginning-regexp "^\\s-*<\\([[:alnum:]_]+\\)>\\s-*::=")
+
+(defun sr/bnf-mode-rule-beginning-bounds ()
+  (save-excursion
+    (while (progn
+             (beginning-of-line)
+             (not (or (bobp)
+                      (looking-at-p "^$")
+                      (looking-at-p sr/bnf-rule-beginning-regexp))))
+      (forward-line -1))
+    (if (search-forward-regexp sr/bnf-rule-beginning-regexp (line-end-position) t)
+        (cons (point) (match-end 0))
+      nil)))
+
+(defun sr/bnf-mode-indentation-amount (beg)
+  "Indentation level at BEG."
+  (save-excursion
+    (goto-char beg)
+    (when-let* ((line-num (line-number-at-pos))
+                (rule-bounds (progn
+                               (if (looking-at-p "^$")
+                                   (forward-line -1))
+                               (sr/bnf-mode-rule-beginning-bounds)))
+                (rule-end (cdr rule-bounds))
+                (_ (not (eq line-num (line-number-at-pos rule-end)))))
+      (goto-char rule-end)
+      (skip-syntax-forward " ")
+      (current-column))))
+
+(defun sr/bnf-mode-indent-line ()
+  "Indent production continuation lines."
+  (when-let ((amount (sr/bnf-mode-indentation-amount (point))))
+    (progn
+      (back-to-indentation)
+      (delete-horizontal-space)
+      (indent-to amount))))
+
+(define-derived-mode sr/bnf-mode prog-mode "BNF"
+  "Major mode for editing BNF files."
+  (setq-local comment-use-syntax nil)
+  (setq-local comment-start "(*")
+  (setq-local comment-end "*)")
+  (setq-local indent-line-function #'sr/bnf-mode-indent-line))
+
+(add-to-list 'auto-mode-alist '("\\.ebnf\\'" . sr/bnf-mode))
+
 ;;; YAML
 
 (add-to-list 'auto-mode-alist '("\\.yml\\'" . yaml-ts-mode))
