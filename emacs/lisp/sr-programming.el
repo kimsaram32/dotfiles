@@ -288,6 +288,16 @@ and LANG-ts-mode is used with org mode source codes.")
 (keymap-set c-ts-mode-map "C-M-x" 'sr/c-next-defun-body)
 (keymap-set c-ts-mode-map "C-M-y" 'sr/c-previous-defun-body)
 
+;;; Elisp
+
+(defun sr/eval-sexp-next-window ()
+  (interactive)
+  (let ((string (thing-at-point 'sexp :no-properties)))
+    (with-current-buffer (window-buffer (next-window))
+      (prin1 (eval (read string))))))
+
+(keymap-global-set "C-x C-4 C-e" #'sr/eval-sexp-next-window)
+
 ;;; Go
 
 (with-eval-after-load 'go-ts-mode

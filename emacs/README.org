@@ -72,8 +72,8 @@ These are ad-hoc configurations for my local environment.
 #+end_src
 ** exec-path-from-shell
 #+begin_src elisp
-(when (memq window-system '(mac ns x))
-  (exec-path-from-shell-initialize))
+  (when (memq window-system '(mac ns x))
+    (exec-path-from-shell-initialize))
 #+end_src
 ** macOS keyboard
 #+begin_src elisp
@@ -83,6 +83,10 @@ These are ad-hoc configurations for my local environment.
 #+begin_src elisp
   (put 'scroll-left 'disabled nil)
   (put 'downcase-region 'disabled nil)
+#+end_src
+* Random
+#+begin_src elisp
+  (setq ring-bell-function 'ignore)
 #+end_src
 * Load
 #+begin_src elisp
@@ -167,7 +171,7 @@ Load personal packages. I'm slowly switching to per-file module setup.
 #+end_src
 ** Line height
 #+begin_src elisp
-(setq-default line-spacing 3)
+  (setq-default line-spacing 3)
 #+end_src
 * Custom
 #+begin_src elisp
@@ -186,10 +190,8 @@ Load personal packages. I'm slowly switching to per-file module setup.
 #+end_src
 ** Visual line mode
 #+begin_src elisp
-(global-visual-line-mode)
-#+end_src
-*** Disable on org agenda
-#+begin_src elisp
+  (global-visual-line-mode)
+
   (add-hook 'org-agenda-mode-hook
             (lambda ()
               (visual-line-mode 0)))
@@ -201,7 +203,7 @@ Load personal packages. I'm slowly switching to per-file module setup.
 #+end_src
 ** Mark ring
 #+begin_src elisp
-(setq set-mark-command-repeat-pop t)
+  (setq set-mark-command-repeat-pop t)
 #+end_src
 ** Killing
 #+begin_src elisp
@@ -270,18 +272,6 @@ Key binding for =M-x append-to-register=.
 (setq delete-pair-blink-delay 0)
 (keymap-global-set "C-M-z" 'delete-pair)
 #+end_src
-** Macros
-#+begin_src elisp
-  (defalias 'sr/macro-introduction-to-logic
-    (kmacro "M-m \\ { C-s SPC <return> C-b \\ } C-f & SPC ( C-M-f ) SPC <backspace> C-f \\ ( C-s & <return> C-b C-b \\ ) C-e SPC \\ \\ C-n M-m"))
-
-  (defun sr/run-macro-introduction-to-logic ()
-    (interactive)
-    (let ((electric-pair-mode nil))
-      (call-interactively #'sr/macro-introduction-to-logic)))
-
-  (keymap-global-set "C-c 0" #'sr/run-macro-introduction-to-logic)
-#+end_src
 ** Lin mode
 #+begin_src elisp
   (keymap-global-set "C-c e l" #'lin-mode)
@@ -300,10 +290,36 @@ Key binding for =M-x append-to-register=.
   (keymap-global-set "<f10>" #'outline-minor-mode)
   (setq outline-minor-mode-cycle t)
   (setq outline-minor-mode-prefix "\C-c")
+
+  (defun sr/consult-outline ()
+    "`consult-outline' with workarounds."
+    (interactive)
+    (let ((outline-regexp (if (derived-mode-p 'lisp-data-mode)
+                              ";;;;* [^ \t\n]" ; show headings only.
+                            outline-regexp)))
+      (consult-outline)))
+
+  (keymap-set outline-minor-mode-map "C-c C-j" #'sr/consult-outline)
 #+end_src
 ** Filling
 #+begin_src elisp
   (setq-default fill-column 80)
+#+end_src
+** Automatic whitespace deletion
+#+begin_src elisp
+  (keymap-global-set "S-<return>" #'electric-indent-just-newline)
+
+  (defun sr/delete-trailing-whitespace-after-newline ()
+    "After inserting a newline, delete trailing whitespace in the previous line.
+  This function is intended to be added to `post-self-insert-hook'."
+    (when (and (not (bobp))
+               (<= (point) (line-beginning-position)))
+      (save-excursion
+        (goto-char (1- (point)))
+        (skip-syntax-backward "-" (line-beginning-position))
+        (delete-region (point) (line-end-position)))))
+
+  (add-hook 'post-self-insert-hook #'sr/delete-trailing-whitespace-after-newline)
 #+end_src
 * Windows
 [[https://karthinks.com/software/emacs-window-management-almanac][The Emacs Window Management Almanac]] is a good reference
@@ -350,20 +366,17 @@ Key binding for =M-x append-to-register=.
   (keymap-set sr/window-map "<right>" #'winner-redo)
 #+end_src
 * Buffers
-** Key bindings
 #+begin_src elisp
   (keymap-global-set "C-x C-b" #'ibuffer)
-  (keymap-global-set "<f12>" #'scratch-buffer)
-#+end_src
-** Default scratch buffer message
-#+begin_src elisp
-  (setq initial-scratch-message "\
-  ;; Hi this is a scratch buffer
 
-  ")
-#+end_src
-** Delete the file and kill the buffer
-#+begin_src elisp
+  (defvar sr/scratch-file-name "~/scratch.el")
+
+  (defun sr/open-scratch-file ()
+    (interactive)
+    (find-file sr/scratch-file-name))
+
+  (keymap-global-set "<f12>" #'sr/open-scratch-file)
+
   (defun sr/buffer-kill-and-delete-file ()
     "Kill the current buffer, also deleting its file."
     (interactive)
@@ -974,6 +987,11 @@ Dvisvgm configuration is patched for my environment...
   (setq org-preview-latex-image-directory (expand-file-name "ltximg/" sr/note-root-directory))
 
   (setq org-latex-packages-alist '(("" "kotex" t) ("" "mathrsfs" t)))
+
+  (setq org-format-latex-options
+        '(:foreground "White" :background "Transparent" :scale 2 :html-foreground "Black"
+                      :html-background "Transparent" :html-scale 1.0 :matchers
+                      ("begin" "$1" "$" "$$" "\\(" "\\[")))
 #+end_src
 ** Tags
 #+begin_src elisp
@@ -1135,7 +1153,7 @@ Dvisvgm configuration is patched for my environment...
 * Dired
 #+begin_src elisp
   (with-eval-after-load 'dired
-    (setq dired-listing-switches "-hal")
+    (setq dired-listing-switches "-halX --group-directories-first")
     (setq dired-auto-revert-buffer t)
 
     (setq delete-by-moving-to-trash t)
