@@ -1,28 +1,21 @@
 #+property: header-args :tangle out/.zshrc
 
-* Start profiling
+* COMMENT Start profiling
 #+begin_src zsh
   zmodload zsh/zprof
 #+end_src
-* Start tmux on WezTerm
-#+begin_src bash
-  if [[ ("$TERM_PROGRAM" == "WezTerm") && -z "$(tmux list-clients 2>/dev/null)" ]]; then
-      exec tmux new -As main;
-  fi
-#+end_src
-* Powerlevel10k instant prompt
-Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
-Initialization code that may require console input (password prompts, [y/n]
-confirmations, etc.) must go above this block; everything else may go below.
+* Configuration
+#+begin_src zsh
+  export LANG="en_US.UTF-8"
+  PS1='%F{blue}%~ %(?.%F{green}.%F{red})%#%f '
 
-#+begin_src zsh
-  if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-    source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
-  fi
-#+end_src
-* Lang
-#+begin_src zsh
-export LANG="en_US.UTF-8"
+  alias g="git"
+  alias l="ls -lah"
+  alias kubens="kubectl config set-context --current --namespace "
+
+  export PATH="/Users/kimsaram32/me/ws/bin:$PATH"
+
+  export INFOPATH="/Users/kimsaram32/me/ws/
 #+end_src
 * HomeBrew
 #+begin_src zsh
@@ -37,47 +30,12 @@ alias brewup="brew update && brew upgrade && brew doctor"
   export LDFLAGS="-L$BREW/lib"
   export CPPFLAGS="-I$BREW/include"
 #+end_src
-* Antidote
-#+begin_src zsh
-  source /opt/homebrew/opt/antidote/share/antidote/antidote.zsh
-  antidote load
-#+end_src
-* Powerlevel10k
-#+begin_src zsh
-  # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-  [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-#+end_src
-* Directories
-#+begin_src zsh
-  DIR_WS="$HOME/me/ws"
-  DIR_DOTFILES="$HOME/me/dotfiles"
-
-  w () {
-      cd "$DIR_WS/$1"
-  }
-
-  wp () {
-      cd "$DIR_WS/projects/$1"
-  }
-
-  alias d="cd $DIR_DOTFILES"
-#+end_src
-* Aliases
-#+begin_src zsh
-  alias g="git"
-  alias l="ls -lah"
-#+end_src
-* Scripts
-#+begin_src zsh
-export PATH="/Users/kimsaram32/me/ws/bin:$PATH"
-#+end_src
-* mise
-** Activate
+* Tools
+** mise
 #+begin_src zsh
   eval "$(mise activate zsh)"
   export PATH=$PATH:$HOME/zk/bin
 #+end_src
-* Tools
 ** postgresql@16
 #+begin_src zsh
 export PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH"
@@ -151,6 +109,10 @@ export PATH="$HOME/.local/bin/:$PATH"
 export GOPATH="/Users/kimsaram32/go"
 export PATH="$GOPATH/bin:$PATH"
 #+end_src
+** ruby
+#+begin_src zsh
+  export PATH="/opt/homebrew/lib/ruby/gems/4.0.0/bin:$PATH"
+#+end_src
 ** gcloud
 #+begin_src zsh
 # The next line updates PATH for the Google Cloud SDK.
@@ -173,12 +135,28 @@ else
 fi
 unset __conda_setup
 #+end_src
+** antigravity
+#+begin_src zsh
+  export PATH="/Users/kimsaram32/.antigravity/antigravity/bin:$PATH"
+#+end_src
 ** gpg
 #+begin_src zsh
   # https://github.com/keybase/keybase-issues/issues/2798
   export GPG_TTY=$(tty)
 #+end_src
-* End profiling
-#+begin_src zsh :tangle no
+* Xquare
+#+begin_src zsh
+  xqns () {
+      kubectl config set-context --current --namespace "$1-dsm-project"
+  }
+
+  xqgrafana () {
+      local secret=$(kubectl get secret grafana-admin-password -oyaml | grep -- "password:" | awk '{print $2}' | base64 -d)
+      pbcopy <<< $secret
+      echo $secret
+  }
+#+end_src
+* COMMENT End profiling
+#+begin_src zsh
   zprof
 #+end_src

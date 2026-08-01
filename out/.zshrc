@@ -1,14 +1,10 @@
-zmodload zsh/zprof
-
 if [[ ("$TERM_PROGRAM" == "WezTerm") && -z "$(tmux list-clients 2>/dev/null)" ]]; then
     exec tmux new -As main;
 fi
 
-if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
-fi
-
 export LANG="en_US.UTF-8"
+
+PS1='%F{blue}%~ %(?.%F{green}.%F{red})%#%f '
 
 alias brewup="brew update && brew upgrade && brew doctor"
 
@@ -19,27 +15,9 @@ export LIBRARY_PATH="$LIBRARY_PATH:$BREW/lib/gcc/current"
 export LDFLAGS="-L$BREW/lib"
 export CPPFLAGS="-I$BREW/include"
 
-source /opt/homebrew/opt/antidote/share/antidote/antidote.zsh
-antidote load
-
-# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-
-DIR_WS="$HOME/me/ws"
-DIR_DOTFILES="$HOME/me/dotfiles"
-
-w () {
-    cd "$DIR_WS/$1"
-}
-
-wp () {
-    cd "$DIR_WS/projects/$1"
-}
-
-alias d="cd $DIR_DOTFILES"
-
 alias g="git"
 alias l="ls -lah"
+alias kubens="kubectl config set-context --current --namespace "
 
 export PATH="/Users/kimsaram32/me/ws/bin:$PATH"
 
@@ -96,6 +74,8 @@ export PATH="$HOME/.local/bin/:$PATH"
 export GOPATH="/Users/kimsaram32/go"
 export PATH="$GOPATH/bin:$PATH"
 
+export PATH="/opt/homebrew/lib/ruby/gems/4.0.0/bin:$PATH"
+
 # The next line updates PATH for the Google Cloud SDK.
 if [ -f '/Users/kimsaram32/.local/google-cloud-sdk/path.zsh.inc' ]; then . '/Users/kimsaram32/.local/google-cloud-sdk/path.zsh.inc'; fi
 
@@ -114,5 +94,17 @@ else
 fi
 unset __conda_setup
 
+export PATH="/Users/kimsaram32/.antigravity/antigravity/bin:$PATH"
+
 # https://github.com/keybase/keybase-issues/issues/2798
 export GPG_TTY=$(tty)
+
+xqns () {
+    kubectl config set-context --current --namespace "$1-dsm-project"
+}
+
+xqgrafana () {
+    local secret=$(kubectl get secret grafana-admin-password -oyaml | grep -- "password:" | awk '{print $2}' | base64 -d)
+    pbcopy <<< $secret
+    echo $secret
+}
