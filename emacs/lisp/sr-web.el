@@ -62,6 +62,7 @@
         ("github\\.com" . browse-url-default-browser)
         ("youtube\\.com" . browse-url-default-browser)
         ("reddit\\.com" . browse-url-default-browser)
+        ("lobste\\.rs" . browse-url-default-browser)
         ("localhost" . browse-url-default-browser)))
 
 ;;; Goto address mode

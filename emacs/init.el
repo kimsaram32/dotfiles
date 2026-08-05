@@ -18,3 +18,4 @@ Do nothing if the current buffer is not in Emacs Lisp Mode."
 (add-hook 'org-babel-post-tangle-hook #'me:ensure-lexical-binding)
 
 (org-babel-load-file (expand-file-name "README.org" user-emacs-directory))
+(put 'upcase-region 'disabled nil)

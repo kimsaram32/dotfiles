@@ -207,8 +207,24 @@ Load personal packages. I'm slowly switching to per-file module setup.
 #+end_src
 ** Killing
 #+begin_src elisp
-  (setq save-interprogram-paste-before-kill t)
   (setq kill-do-not-save-duplicates t)
+#+end_src
+** Clipboard
+#+begin_src elisp
+  (setq save-interprogram-paste-before-kill t)
+
+  (defun sr/normalize-ellipsis (str)
+    "Replace … with ... in STR."
+    (string-replace "…" "..." str))
+
+  (defun sr/gui-selection-value-transformed ()
+    "Call `gui-selection-value', then transform its result."
+    (let ((selection-value (gui-selection-value)))
+      (if (listp selection-value)
+          (mapcar #'sr/normalize-ellipsis selection-value)
+        (sr/normalize-ellipsis selection-value))))
+
+  (setq interprogram-paste-function #'sr/gui-selection-value-transformed)
 #+end_src
 ** Registers
 #+begin_src elisp
@@ -218,29 +234,6 @@ Load personal packages. I'm slowly switching to per-file module setup.
 Key binding for =M-x append-to-register=.
 #+begin_src elisp
   (keymap-set ctl-x-r-map "a" #'append-to-register)
-#+end_src
-** Insert quotes more easily
-#+begin_src elisp
-  (defun sr/insert-quotes (&optional arg)
-    "Like `insert-parentheses`, but for quotes."
-    (interactive "P")
-    (insert-pair arg ?\" ?\"))
-  (keymap-global-set "M-\"" 'sr/insert-quotes)
-#+end_src
-** Toggle between let and let*
-[[https://www.reddit.com/r/emacs/comments/1qyp1rk/toggle_between_let_and_let/][Source]]
-
-#+begin_src elisp
-  (defun sr/toggle-let* ()
-    "Make the closest enclosing let or let* form a let* or let form, respectively,
-  then reindent that form's bindings. "
-    (interactive)
-    (save-excursion
-      (while (progn
-               (condition-case nil (backward-up-list nil t) (scan-error (error "Not within a let form")))
-               (not (search-forward-regexp (rx point "(" (* space) "let" (? "*") symbol-end) nil t))))
-      (if (= ?* (char-before)) (backward-delete-char 1) (insert "*"))
-      (indent-region (point) (progn (forward-sexp) (point)))))
 #+end_src
 ** Clear empty lines
 #+begin_src elisp
@@ -289,7 +282,7 @@ Key binding for =M-x append-to-register=.
 #+begin_src elisp
   (keymap-global-set "<f10>" #'outline-minor-mode)
   (setq outline-minor-mode-cycle t)
-  (setq outline-minor-mode-prefix "\C-c")
+  (setopt outline-minor-mode-prefix "\C-c")
 
   (defun sr/consult-outline ()
     "`consult-outline' with workarounds."
@@ -300,15 +293,19 @@ Key binding for =M-x append-to-register=.
       (consult-outline)))
 
   (keymap-set outline-minor-mode-map "C-c C-j" #'sr/consult-outline)
+  (keymap-set outline-minor-mode-map "M-h" #'outline-mark-subtree)
 #+end_src
 ** Filling
 #+begin_src elisp
   (setq-default fill-column 80)
 #+end_src
-** Automatic whitespace deletion
+** Indentation
 #+begin_src elisp
   (keymap-global-set "S-<return>" #'electric-indent-just-newline)
-
+  (keymap-unset org-mode-map "S-<return>")
+#+end_src
+** Automatic whitespace deletion
+#+begin_src elisp
   (defun sr/delete-trailing-whitespace-after-newline ()
     "After inserting a newline, delete trailing whitespace in the previous line.
   This function is intended to be added to `post-self-insert-hook'."
@@ -320,6 +317,18 @@ Key binding for =M-x append-to-register=.
         (delete-region (point) (line-end-position)))))
 
   (add-hook 'post-self-insert-hook #'sr/delete-trailing-whitespace-after-newline)
+#+end_src
+** Search
+#+begin_src elisp
+  (setq lazy-highlight-initial-delay 0)
+#+end_src
+** Expreg
+#+begin_src elisp
+  (keymap-global-set "C-M-SPC" #'expreg-expand)
+#+end_src
+** Recentf mode
+#+begin_src elisp
+  (recentf-mode)
 #+end_src
 * Windows
 [[https://karthinks.com/software/emacs-window-management-almanac][The Emacs Window Management Almanac]] is a good reference
@@ -369,7 +378,7 @@ Key binding for =M-x append-to-register=.
 #+begin_src elisp
   (keymap-global-set "C-x C-b" #'ibuffer)
 
-  (defvar sr/scratch-file-name "~/scratch.el")
+  (defvar sr/scratch-file-name (expand-file-name "emacs/lisp/sr-others.el" sr/dotfiles-directory))
 
   (defun sr/open-scratch-file ()
     (interactive)
@@ -724,6 +733,7 @@ strings to them.
   (setq dabbrev-friend-buffer-function #'sr/dabbrev-is-friend-buffer)
 
   (setq dabbrev-abbrev-char-regexp "\\sw\\|[_<>-]")
+  (setq dabbrev-case-replace nil)
 #+end_src
 * Projects
 #+begin_src elisp
@@ -940,7 +950,7 @@ temporarily resetting =display-buffer-alist=.
 ** Managing todo items
 #+begin_src elisp
   (setq org-todo-keywords
-        '((sequence "TODO" "|" "DONE" "FAILED")))
+        '((sequence "TODO" "WORKING" "|" "DONE" "FAILED")))
   (setq org-todo-keyword-faces
         '(("TODO" . "gold")
     	    ("WORKING" . "CadetBlue2")
@@ -992,11 +1002,15 @@ Dvisvgm configuration is patched for my environment...
         '(:foreground "White" :background "Transparent" :scale 2 :html-foreground "Black"
                       :html-background "Transparent" :html-scale 1.0 :matchers
                       ("begin" "$1" "$" "$$" "\\(" "\\[")))
+
+  (add-hook 'org-mode-hook #'org-cdlatex-mode)
+
+  (keymap-unset org-cdlatex-mode-map "$")
 #+end_src
 ** Tags
 #+begin_src elisp
   (setq org-complete-tags-always-offer-all-agenda-tags t)
-  (setq org-use-tag-inheritance nil)
+  (setq org-use-tag-inheritance '("work"))
   (setq org-tags-match-list-sublevels t)
 #+end_src
 ** Links
@@ -1033,6 +1047,11 @@ Dvisvgm configuration is patched for my environment...
   (setq org-id-method 'uuid)
   (setq org-id-track-globally t)
   (setq org-id-search-archives nil)
+#+end_src
+** Exports (org-export)
+#+begin_src elisp
+  (setq org-export-backends '(ascii md html icalendar latex))
+  (setq org-export-with-toc nil)
 #+end_src
 ** Agenda (org-agenda)
 #+begin_src elisp
@@ -1439,6 +1458,8 @@ Do not ask before saving.
 #+end_src
 ** Cdlatex
 #+begin_src elisp
+  (require 'cdlatex)
+
   (setq cdlatex-math-symbol-alist
     '(
       ( ?a  ("\\alpha"          ))
@@ -1494,7 +1515,7 @@ Do not ask before saving.
       ( ?z  ("\\zeta"           ))
       ( ?Z  (""                 ))
       ( ?   (""                 ))
-      ( ?0  ("\\emptyset"       ))
+      ( ?0  ("\\varnothing"     ))
       ( ?1  (""                 ))
       ( ?2  (""                 ))
       ( ?3  (""                 ))
@@ -1593,7 +1614,14 @@ Do not ask before saving.
 
     (keymap-unset vterm-mode-map "M-/"))
 
-  (defvar sr/vterm-switch-function #'vterm-other-window
+  (defun sr/vterm-switch (arg)
+    (vterm--internal
+     #'switch-to-buffer
+     (cond ((stringp arg) arg)
+           (arg (concat "*vterm " (read-string "Session name: ") "*"))
+           (t nil))))
+
+  (defvar sr/vterm-switch-function #'sr/vterm-switch
     "Function for switching to a vterm buffer.
   It should accept the same arguments as `vterm'.")
 

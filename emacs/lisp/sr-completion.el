@@ -29,7 +29,7 @@
         (xref-location (styles substring))
         (info-menu (styles substring basic))
         (org-heading (styles orderless substring))
-        (symbol (styles basic initials substring orderless))
+        (symbol (styles basic substring orderless))
         (kubedoc (styles partial-completion))))
 
 ;;; Vertico

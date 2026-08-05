@@ -13,6 +13,10 @@
 (add-hook 'html-ts-mode-hook #'sr/prog-setup-mode)
 (add-hook 'yaml-ts-mode-hook #'sr/prog-setup-mode)
 
+;;; Compilation mode
+
+(add-hook 'compilation-filter-hook 'ansi-color-compilation-filter)
+
 ;;; Display line numbers mode
 
 (add-hook 'sr/prog-setup-mode-hook #'display-line-numbers-mode)
@@ -48,17 +52,6 @@
 (keymap-set sr/prog-setup-mode-map "C-c g r" #'sr/eglot-rename)
 (keymap-set sr/prog-setup-mode-map "C-c g a" #'eglot-code-actions)
 (keymap-set sr/prog-setup-mode-map "C-c g f" #'eglot-code-action-quickfix)
-
-(defvar sr/eglot-ensure-hooks
-  '(js-ts-mode-hook
-    typescript-ts-mode-hook
-    tsx-ts-mode-hook
-    html-ts-mode-hook
-    c-ts-mode-hook)
-  "Hooks to attach `eglot-ensure'.")
-
-(dolist (hook sr/eglot-ensure-hooks)
-  (add-hook hook #'eglot-ensure))
 
 ;; Fix shifting line height
 ;; https://www.reddit.com/r/emacs/comments/1lbo5jy/eldoc_undesirably_shifting_my_line_height/
@@ -222,6 +215,14 @@ and LANG-ts-mode is used with org mode source codes.")
         sr/tree-sitter-remap-list)
        org-src-lang-modes))
 
+(defun sr/treesit-beginning-of-next-defun ()
+  "Go to the beginning of the next defun."
+  (interactive)
+  (if (treesit-defun-at-point)
+      (treesit-end-of-defun))
+  (treesit-end-of-defun)
+  (treesit-beginning-of-defun))
+
 ;;; Format-all
 
 (with-eval-after-load 'format-all
@@ -270,23 +271,7 @@ and LANG-ts-mode is used with org mode source codes.")
 (setq c-ts-mode-indent-style 'bsd)
 (setq c-ts-mode-indent-offset 2)
 
-(defun sr/c-previous-defun-body ()
-  "Go to body of the previous defun."
-  (interactive)
-  (if (c-defun-name)
-      (c-beginning-of-defun))
-  (c-beginning-of-defun)
-  (c-syntactic-re-search-forward "{"))
-
-(defun sr/c-next-defun-body ()
-  "Go to body of the next defun."
-  (interactive)
-  (if (c-defun-name)
-      (c-end-of-defun))
-  (c-syntactic-re-search-forward "{"))
-
-(keymap-set c-ts-mode-map "C-M-x" 'sr/c-next-defun-body)
-(keymap-set c-ts-mode-map "C-M-y" 'sr/c-previous-defun-body)
+(keymap-set c-ts-mode-map "C-M-x" #'sr/treesit-beginning-of-next-defun)
 
 ;;; Elisp
 
@@ -296,7 +281,24 @@ and LANG-ts-mode is used with org mode source codes.")
     (with-current-buffer (window-buffer (next-window))
       (prin1 (eval (read string))))))
 
+;; https://www.reddit.com/r/emacs/comments/1qyp1rk/toggle_between_let_and_let/
+
+(defun sr/toggle-let* ()
+    "Make the closest enclosing let or let* form a let* or let form, respectively,
+  then reindent that form's bindings. "
+    (interactive)
+    (save-excursion
+      (while (progn
+               (condition-case nil (backward-up-list nil t) (scan-error (error "Not within a let form")))
+               (not (search-forward-regexp (rx point "(" (* space) "let" (? "*") symbol-end) nil t))))
+      (if (= ?* (char-before)) (backward-delete-char 1) (insert "*"))
+      (indent-region (point) (progn (forward-sexp) (point)))))
+
 (keymap-global-set "C-x C-4 C-e" #'sr/eval-sexp-next-window)
+
+(with-eval-after-load 'elisp-mode
+  (add-hook 'lisp-data-mode-hook (lambda () (setq-local tab-width 4)))
+  (add-hook 'emacs-lisp-mode-hook #'outline-minor-mode))
 
 ;;; Go
 

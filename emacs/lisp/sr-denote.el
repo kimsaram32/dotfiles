@@ -5,6 +5,7 @@
 ;;; Dependencies
 
 (require 'denote)
+(require 'denote-explore)
 (require 'consult-denote)
 
 ;;; Keymap
@@ -24,20 +25,24 @@
 (keymap-set sr/denote-map "l f" #'sr/denote-link-from-last-buffer)
 (keymap-set sr/denote-map "l 4" #'sr/denote-link-from-other-window)
 (keymap-set sr/denote-map "l w" #'sr/denote-save-link-to-kill-ring)
-
 (keymap-set sr/denote-map "a" #'denote-find-link)
 
 (keymap-set sr/denote-map "d" #'denote-dired)
 (keymap-set sr/denote-map "f" #'sr/denote-find-note)
+(keymap-set sr/denote-map "A" #'sr/denote-find-all-files)
 
 (keymap-set sr/denote-map "g" #'consult-denote-grep)
-(keymap-set sr/denote-map "b" #'sr/consult-denote-buffer)
+
+(keymap-set sr/denote-map "e r" #'sr/denote-explore-random-zettel)
 
 (keymap-set sr/denote-map "m" #'sr/denote-move-org-entries-dwim)
 
 ;;; General configuration
 
-(setq denote-directory (list sr/note-root-directory "~/me/z"))
+(setq sr/denote-primary-directories (list sr/note-zk-directory sr/note-second-brain-directory))
+(setq sr/denote-secondary-directories (list "~/me/z"))
+
+(setq denote-directory (append sr/denote-primary-directories sr/denote-secondary-directories))
 (setq denote-prompts '(title keywords subdirectory))
 
 (setq denote-open-link-function #'find-file)
@@ -156,8 +161,17 @@ This returns a plist of two properties: TITLE and CONTENT."
 
 (defun sr/denote-find-note ()
   (interactive)
-  (let ((denote-directory sr/note-root-directory))
+  (let ((denote-directory sr/denote-primary-directories))
     (find-file (denote-file-prompt))))
+
+(defun sr/denote-find-all-files ()
+  (interactive)
+  (find-file (denote-file-prompt)))
+
+(defun sr/denote-explore-random-zettel ()
+  (interactive)
+  (let ((denote-directory sr/note-zk-directory))
+    (denote-explore-random-note)))
 
 ;;; Dired integration
 
