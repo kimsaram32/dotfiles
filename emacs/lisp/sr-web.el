@@ -69,6 +69,94 @@
 
 (keymap-set goto-address-highlight-keymap "C-c C-o" #'goto-address-at-point)
 
+;;; Elfeed
+
+(keymap-global-set "C-c w" 'elfeed)
+
+(defvar sr/elfeed-to-read-tag 'to-read-list
+  "Elfeed tag for 'to read' entries.")
+
+;;;; Load entries
+
+(defun sr/elfeed-load-entries ()
+  "Load entries from elfeed.org."
+  (interactive)
+  (org-babel-load-file (expand-file-name "emacs/elfeed.org" sr/dotfiles-directory))
+  (elfeed-update))
+
+;;;; Integration with EWW
+
+(defun sr/elfeed-show-visit-eww ()
+  "Visit the current entry with `eww'."
+  (interactive)
+  (when-let ((link (elfeed-entry-link elfeed-show-entry)))
+    (eww link)))
+
+;;;; Managing 'to read' entries
+
+(defun sr/elfeed-show-add-to-read ()
+  "Add current entry to 'to read' list and go to the next entry."
+  (interactive)
+  (when-let ((entry elfeed-show-entry))
+    (elfeed-show-tag 'unread sr/elfeed-to-read-tag)
+    (message "Addded entry to to-read list")
+    (elfeed-show-next)))
+
+(defun sr/elfeed-show-add-to-read ()
+  "Add current entry to 'to read' list and go to the next entry."
+  (interactive)
+  (when-let ((entry elfeed-show-entry))
+    (elfeed-show-tag 'unread sr/elfeed-to-read-tag)
+    (message "Addded entry to to-read list")
+    (elfeed-show-next)))
+
+(defun sr/elfeed-search-show-to-reads ()
+  "Set Elfeed filter to show 'to read' entries only."
+  (interactive)
+  (elfeed-search-set-filter "+to-read-list"))
+
+(defun sr/elfeed-export-entries ()
+  "Push current entries to the mark ring."
+  (interactive)
+  (kill-new (string-join
+  	       (mapcar
+  	        (lambda (entry) (elfeed-entry-link entry))
+  	        (if (region-active-p)
+                  (elfeed-search-selected)
+                elfeed-search-entries))
+  	       "\n"))
+  (message "Pushed current entries to the mark ring."))
+
+;;;; Mark entries as read
+
+(defun sr/elfeed-search-read ()
+  "Read elfeed entries in search mode."
+  (interactive)
+  (let ((entries (elfeed-search-selected)))
+    (elfeed-untag entries 'unread)
+    (elfeed-untag entries sr/elfeed-to-read-tag)
+    (mapc #'elfeed-search-update-entry entries)
+    (unless (or elfeed-search-remain-on-entry (use-region-p))
+      (forward-line))))
+
+(defun sr/elfeed-show-read ()
+  "Read current elfeed entry."
+  (interactive)
+  (elfeed-show-untag 'unread 'to-read-list))
+
+;;;; Configuration
+
+(with-eval-after-load 'elfeed
+  (setq elfeed-search-filter "+unread -to-read-list")
+
+  (keymap-set elfeed-show-mode-map "w" #'sr/elfeed-show-visit-eww)
+  (keymap-set elfeed-show-mode-map "a" 'sr/elfeed-show-add-to-read)
+  (keymap-set elfeed-show-mode-map "r" #'sr/elfeed-show-read)
+
+  (keymap-set elfeed-search-mode-map "l" 'sr/elfeed-search-show-to-reads)
+  (keymap-set elfeed-search-mode-map "e" 'sr/elfeed-export-entries)
+  (keymap-set elfeed-search-mode-map "r" #'sr/elfeed-search-read))
+
 ;;; _
 
 (provide 'sr-web)

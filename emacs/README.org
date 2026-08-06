@@ -136,6 +136,10 @@ Load personal packages. I'm slowly switching to per-file module setup.
   (sr/load-configuration
     "Denote"
     (require 'sr-denote))
+
+  (sr/load-configuration
+    "Others"
+    (require 'sr-others))
 #+end_src
 * UI and Display
 ** Remove bars
@@ -378,7 +382,7 @@ Key binding for =M-x append-to-register=.
 #+begin_src elisp
   (keymap-global-set "C-x C-b" #'ibuffer)
 
-  (defvar sr/scratch-file-name (expand-file-name "emacs/lisp/sr-others.el" sr/dotfiles-directory))
+  (defvar sr/scratch-file-name (expand-file-name "emacs/lisp/sr-scratch.el" sr/dotfiles-directory))
 
   (defun sr/open-scratch-file ()
     (interactive)
@@ -751,49 +755,10 @@ strings to them.
 
     (keymap-set project-prefix-map "F" #'sr/project-other-find-file))
 #+end_src
-* English learning
-** Open dictionary for word at point
-I use Merriam Webster as my dictionary. To foster my learning, I wrote
-a simple function to open the word at point in the browser.
-
-I tried using EWW to browse words inside Emacs, but the site feels
-broken when rendered in pure HTML. EWW overrides
-~browse-url-browser-function~ to ~eww-browse-url~, so to avoid using
-EWW, I overrode it.
-
-#+begin_src elisp
-  (defcustom sr/eng-dictionary-url
-    "https://www.merriam-webster.com/dictionary/%s"
-    "Format string for English dictionary.")
-
-  (defun sr/eng-browse-dictionary-at-point ()
-    "Look up dictionary for a word at point."
-    (interactive)
-    (if-let* ((word (word-at-point t))
-              (browse-url-browser-function 'browse-url-default-browser)) ; do not use EWW
-        (browse-url (url-encode-url (format sr/eng-dictionary-url word)))
-      (user-error "No word found at point")))
-
-  (keymap-global-set "C-c d d" #'sr/eng-browse-dictionary-at-point)
-#+end_src
 * Authentication
 #+begin_src elisp
   (setq auth-sources '("~/.authinfo.gpg"))
   (setq epg-pinentry-mode 'loopback)
-#+end_src
-* LLMs
-** Agent-shell
-#+begin_src elisp
-  ;; acp, agent-shell
-
-  (with-eval-after-load 'agent-shell
-    (setq agent-shell-anthropic-authentication
-          (agent-shell-anthropic-make-authentication :login t))
-
-    (setq agent-shell-openai-authentication
-        (agent-shell-openai-make-authentication :login t))
-
-    (add-hook 'agent-shell-mode-hook #'corfu-mode))
 #+end_src
 * Consult
 ** Key bindings
@@ -1223,130 +1188,6 @@ Dvisvgm configuration is patched for my environment...
   (with-eval-after-load 'magit
     (keymap-set magit-mode-map "C-c C-l" #'sr/forge-copy-browse-url-as-link))
 #+end_src
-* Elfeed
-#+begin_src elisp
-  (require 'elfeed)
-#+end_src
-** Key bindings
-#+begin_src elisp
-  (keymap-global-set "C-c w" 'elfeed)
-#+end_src
-** Default search filter
-#+begin_src elisp
-  (setq elfeed-search-filter "+unread -to-read-list")
-#+end_src
-** EWW Integration
-#+begin_src elisp
-  (defun sr/elfeed-show-visit-eww ()
-    "Visit the current entry with `eww'."
-    (interactive)
-    (when-let ((link (elfeed-entry-link elfeed-show-entry)))
-      (eww link)))
-
-  (keymap-set elfeed-show-mode-map "w" 'sr/elfeed-show-visit-eww)
-#+end_src
-** Managing 'to read' entries
-I often copy my elfeed entries to my iPhone so I can read them while
-walking around.
-
-#+begin_src elisp
-  (defvar sr/elfeed-to-read-tag 'to-read-list
-    "Elfeed tag for 'to read' entries.")
-#+end_src
-
-My workflow is as follows: I go through the unread entries, and for
-each entry, I hit =a= to add it, and =f= to skip it. When I'm done, I
-export the entries to clipboard, paste them to the Notes app, and read
-them on my iPhone.
-
-When I come back, I process the entries intoto fleeting notes. Then, I
-mark the entries as read.
-
-*** Add current entry to the list with =a=
-#+begin_src elisp
-  (defun sr/elfeed-show-add-to-read ()
-    "Add current entry to 'to read' list and go to the next entry."
-    (interactive)
-    (when-let ((entry elfeed-show-entry))
-      (elfeed-show-tag 'unread sr/elfeed-to-read-tag)
-      (message "Addded entry to to-read list")
-      (elfeed-show-next)))
-
-  (keymap-set elfeed-show-mode-map "a" 'sr/elfeed-show-add-to-read)
-#+end_src
-*** Skip current entry with =f=
-#+begin_src elisp
-  (defun sr/elfeed-show-skip ()
-    "Skip the current entry.
-
-  Mark the entry as unread and go to the next entry."
-    (interactive)
-    (elfeed-show-tag 'unread)
-    (elfeed-show-next))
-
-  (keymap-set elfeed-show-mode-map "f" #'sr/elfeed-show-skip)
-#+end_src
-*** Export the entries with =l= and =e=
-Currently, exporting is done by pushing items to the mark ring. I
-export the entries just before I leave, so I apply the filter to show
-only the entries in the reading list after I come back.
-
-#+begin_src elisp
-  (defun sr/elfeed-search-show-to-reads ()
-    "Set Elfeed filter to show 'to read' entries only."
-    (interactive)
-    (elfeed-search-set-filter "+to-read-list"))
-
-  (defun sr/elfeed-export-entries ()
-    "Push current entries to the mark ring."
-    (interactive)
-    (kill-new (string-join
-  	     (mapcar
-  	      (lambda (entry) (elfeed-entry-link entry))
-  	      (if (region-active-p)
-              (elfeed-search-selected)
-            elfeed-search-entries))
-  	     "\n"))
-    (message "Pushed current entries to the mark ring."))
-
-  (keymap-set elfeed-search-mode-map "l" 'sr/elfeed-search-show-to-reads)
-  (keymap-set elfeed-search-mode-map "e" 'sr/elfeed-export-entries)
-#+end_src
-** Mark entries as read
-In search mode:
-#+begin_src elisp
-  (defun sr/elfeed-search-read ()
-    "Read elfeed entries in search mode."
-    (interactive)
-    (let ((entries (elfeed-search-selected)))
-      (elfeed-untag entries 'unread)
-      (elfeed-untag entries sr/elfeed-to-read-tag)
-      (mapc #'elfeed-search-update-entry entries)
-      (unless (or elfeed-search-remain-on-entry (use-region-p))
-        (forward-line))))
-
-  (keymap-set elfeed-search-mode-map "r" #'sr/elfeed-search-read)
-#+end_src
-
-In show mode:
-#+begin_src elisp
-  (defun sr/elfeed-show-read ()
-    "Read current elfeed entry."
-    (interactive)
-    (elfeed-show-untag 'unread 'to-read-list))
-
-  (keymap-set elfeed-show-mode-map "r" #'sr/elfeed-show-read)
-#+end_src
-** Load entries
-#+begin_src elisp
-  (defun sr/elfeed-load-entries ()
-    "Load entries from elfeed.org."
-    (interactive)
-    (org-babel-load-file (expand-file-name "emacs/elfeed.org" sr/dotfiles-directory))
-    (elfeed-update))
-
-  (sr/elfeed-load-entries)
-#+end_src
 * Themes
 #+begin_src elisp
   ;; Modus themes
@@ -1358,47 +1199,6 @@ In show mode:
   ;; Ef themes
   (require-theme 'ef-themes)
   (ef-themes-take-over-modus-themes-mode 1)
-#+end_src
-* Spray
-#+begin_src elisp
-  (keymap-global-set "<f6>" #'spray-mode)
-#+end_src
-* Avy
-#+begin_src elisp
-  (with-eval-after-load 'avy
-    (keymap-global-set "C-M-'" #'avy-goto-char-timer)
-    (keymap-global-set "M-g t" #'avy-goto-char-2)
-    (keymap-global-set "M-g b" #'avy-goto-char)
-
-    (setq avy-timeout-seconds 0.3)
-    ;; I use Colemak layout, so the keys are adjusted accordingly.
-    ;; The default is '(?a ?s ?d ?f ?g ?h ?j ?k ?l).
-    (setq avy-keys '(?a ?r ?s ?t ?d ?n ?e ?i ?o ?h)))
-#+end_src
-* Tools
-#+begin_src elisp
-  (defvar-keymap sr/external-tools-map
-    :doc "Keymap for various tools.")
-
-  (keymap-global-set "C-c e" sr/external-tools-map)
-
-  ;; evil-mode
-  (keymap-set sr/external-tools-map "e" #'evil-mode)
-
-  ;; docker
-  (keymap-set sr/external-tools-map "d" #'docker)
-#+end_src
-** Kele
-#+begin_src elisp
-  (require 'kele)
-#+end_src
-
-=kele-mode= is not enabled by default, because the cluster might be
-unreachable at startup. When this is the case, Kele still tries to
-connect, causing Emacs to freeze on launch.
-
-#+begin_src elisp
-  (keymap-set kele-mode-map "C-c k" kele-command-map)
 #+end_src
 * LaTeX editing
 ** AUCTeX
