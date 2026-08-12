@@ -1,31 +1,24 @@
 ;;; sr-org.el --- Personal configuration for Org  -*- lexical-binding: t; -*-
 
-;; Copyright (C) Minjeong Kim
+;; Copyright (C) 2026  Minjeong Kim
 
-;; Author: Minjeong Kim <kimsaram32@fastmail.com>
+;; Author: Minjeong Kim
 ;; URL: https://github.com/kimsaram32/dotfiles
-
-;; This file is NOT part of GNU Emacs.
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
-;; the Free Software Foundation; either version 3, or (at your option)
-;; any later version.
-;;
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
 ;; This program is distributed in the hope that it will be useful,
 ;; but WITHOUT ANY WARRANTY; without even the implied warranty of
 ;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 ;; GNU General Public License for more details.
-;;
+
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs; see the file COPYING.  If not, write to the
-;; Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-;; Boston, MA 02110-1301, USA.
+;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ;;; Commentary:
-;;
-;; Personal library for Org configuration.
-
 ;;; Code:
 
 (setq org-use-extra-keys t) ;; this should be enabled before loading org
@@ -111,7 +104,7 @@
 (defvar sr/denote-signature-for-media "media"
   "Signature to use for media files.")
 
-;; EXTERNAL: pngpaste https://github.com/jcsalterego/pngpaste (macOS)
+;; EXTERNAL: pngpaste <https://github.com/jcsalterego/pngpaste> (macOS)
 
 (defun sr/org-insert-image-from-clipboard ()
   "Create an image file with clipboard data and insert a link to it.
