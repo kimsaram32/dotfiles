@@ -144,6 +144,10 @@ This function is intended to be added to `post-self-insert-hook'."
 (put 'beginning-of-defun 'isearch-motion
      (cons #'beginning-of-defun 'forward))
 
+(with-eval-after-load 'treesit
+  (put 'treesit-beginning-of-defun 'isearch-motion
+       (cons #'treesit-beginning-of-defun 'forward)))
+
 ;;; Buffers
 
 (keymap-global-set "C-x C-b" #'ibuffer)

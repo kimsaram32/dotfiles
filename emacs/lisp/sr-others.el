@@ -205,6 +205,7 @@
   (keymap-unset vterm-mode-map "M-/"))
 
 (defun sr/vterm-switch (arg)
+  (require 'vterm)
   (vterm--internal
    #'switch-to-buffer
    (cond ((stringp arg) arg)

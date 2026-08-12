@@ -398,6 +398,8 @@ and LANG-ts-mode is used with org mode source codes.")
 (add-to-list 'auto-mode-alist '("README\\.md\\'" . gfm-mode))
 
 (with-eval-after-load 'markdown-mode
+  (setq markdown-command "cmark-gfm")
+
   (setq
    markdown-css-paths
    (list (expand-file-name "~/me/ws/projects/github-markdown-css/github-markdown.css")))

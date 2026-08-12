@@ -263,7 +263,6 @@ pngpaste is used to retrieve the image from clipboard."
 			              :tag ("event"))
 		           (:discard (:anything))))
 		        (org-agenda-buffer-name "*Org Daily Agenda*")))
-
 	   (agenda ""
 		       ((org-agenda-span 'day)
 		        (org-agenda-overriding-header "Today")
@@ -271,8 +270,6 @@ pngpaste is used to retrieve the image from clipboard."
 		         '((:discard (:tag "event"))
                    (:name "Goals"
                           :tag ("#weekly" "#monthly" "okr"))
-		           (:name "School"
-			              :tag ("schoolwork" "내신"))
                    (:name "Work"
 			              :tag ("work"))
 		           (:name "Todo"
@@ -280,17 +277,7 @@ pngpaste is used to retrieve the image from clipboard."
                                       :not (:tag "trivial")))
                    (:name "Trivial tasks"
 			              :and (:todo ("TODO" "WORKING")
-					                  :tag "trivial"))
-                   (:name "ZK"
-                          :category "zk")
-		           (:name "Journals"
-			              :tag "journal"
-			              :order 2)
-		           (:name "Second brain"
-                          :category ("capture" "aor" "project" "archive")
-                          :order 2)
-                   (:name "Today"
-			              :time-grid t)))))))))
+					                  :tag "trivial"))))))))))
 
   (require 'org-super-agenda)
   (org-super-agenda-mode))
@@ -305,28 +292,10 @@ pngpaste is used to retrieve the image from clipboard."
    org-capture-templates
 
    `(
-     ;; todo files
      ("t" "Todo"
       entry (file ,(expand-file-name "todo.org" sr/note-root-directory))
       "* TODO %?"
-      :prepend t)
-
-     ;; coding interview preparation
-     ("p" "Problem")
-     ("pb" "Baekjoon problem"
-      entry (file ,(expand-file-name "problems/baekjoon.org" sr/note-root-directory))
-      "* %t %^{id}. %^{title}
-[[https://www.acmicpc.net/problem/%\\1][Baekjoon]]
-** Ideas
-%?"
-      :jump-to-captured t)
-     ("pp" "Programmers problem"
-      entry (file ,(expand-file-name "problems/programmers.org" sr/note-root-directory))
-      "* %t %^{id}. %^{title}
-[[%^{url}][Programmers]]
-** Ideas
-%?"
-      :jump-to-captured t))))
+      :prepend t))))
 
 ;;; Citation (org-cite)
 
