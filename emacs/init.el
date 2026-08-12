@@ -8,44 +8,63 @@
 
 ;;; Shared files and directories
 
-(defconst sr/dotfiles-directory (expand-file-name "~/me/dotfiles/")
-  "Root directory for dotfiles.")
+(defgroup sr/emacs nil
+  "Personal Emacs configuration."
+  :group 'files)
 
-(defconst sr/emacs-load-directory
+(defcustom sr/dotfiles-directory (expand-file-name "~/me/dotfiles/")
+  "Root directory for dotfiles."
+  :type 'directory)
+
+(defcustom sr/emacs-load-directory
   (file-name-concat sr/dotfiles-directory "emacs/lisp/")
-  "Directory for personal lisp libraries.")
+  "Directory for personal lisp libraries."
+  :type 'directory)
 
-(defconst sr/note-root-directory (expand-file-name "~/me/myself/")
-  "Root directory for notes.")
+(defcustom sr/note-root-directory (expand-file-name "~/me/myself/")
+  "Root directory for notes."
+  :type 'directory)
 
-(defconst sr/note-periodic-directory
+(defcustom sr/note-periodic-directory
   (expand-file-name "life/" sr/note-root-directory)
-  "Directory for periodic notes.")
+  "Directory for periodic notes."
+  :type 'directory
+  :set-after '(sr/note-root-directory))
 
-(defconst sr/note-project-directory
+(defcustom sr/note-project-directory
   (expand-file-name "projects/" sr/note-root-directory)
-  "Directory for project notes.")
+  "Directory for project notes."
+  :type 'directory
+  :set-after '(sr/note-root-directory))
 
-(defconst sr/note-second-brain-directory
+(defcustom sr/note-second-brain-directory
   (expand-file-name "second-brain/" sr/note-root-directory)
-  "Directory for second bran.")
+  "Directory for second brain."
+  :type 'directory
+  :set-after '(sr/note-root-directory))
 
-(defconst sr/note-zk-directory
+(defcustom sr/note-zk-directory
   (expand-file-name "zettelkasten/" sr/note-root-directory)
-  "Directory for Zettelkasten.")
+  "Directory for Zettelkasten."
+  :type 'directory
+  :set-after '(sr/note-root-directory))
 
-(defconst sr/note-media-directory
+(defcustom sr/note-media-directory
   (expand-file-name "media/" sr/note-root-directory)
-  "Directory for media (e.g. images)")
+  "Directory for media (e.g. images)."
+  :type 'directory
+  :set-after '(sr/note-root-directory))
 
-(defconst sr/dev-project-directory
+(defcustom sr/dev-project-directory
   (expand-file-name "~/me/ws/projects/")
-  "Directory for software projects")
+  "Directory for software projects."
+  :type 'directory)
 
 ;;; Workflow
 
-(defconst sr/note-day-start-hour 3
-  "The starting hour of a day for notes.")
+(defcustom sr/note-day-start-hour 3
+  "The starting hour of a day for notes."
+  :type 'natnum)
 
 (add-to-list 'load-path sr/emacs-load-directory)
 
