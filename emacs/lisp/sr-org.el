@@ -111,6 +111,8 @@
 (defvar sr/denote-signature-for-media "media"
   "Signature to use for media files.")
 
+;; EXTERNAL: pngpaste https://github.com/jcsalterego/pngpaste (macOS)
+
 (defun sr/org-insert-image-from-clipboard ()
   "Create an image file with clipboard data and insert a link to it.
 Images are created in `sr/note-media-directory' with Denote file-naming
@@ -180,6 +182,9 @@ pngpaste is used to retrieve the image from clipboard."
 
 (with-eval-after-load 'org
   ;; Lualatex
+  ;; EXTERNAL: lualatex
+  ;; EXTERNAL: imagemagick
+
   (add-to-list 'org-preview-latex-process-alist
                '(luamagick :programs ("lualatex" "convert")
                            :description "pdf > png"
@@ -192,6 +197,8 @@ pngpaste is used to retrieve the image from clipboard."
                            :image-converter ("convert -density %D -trim -antialias %f -quality 100 %O")))
 
   ;; dvisvgm
+  ;; EXTERNAL: dvisvgm
+
   (add-to-list 'org-preview-latex-process-alist
 	           '(dvisvgm :programs ("latex" "dvisvgm") :description "dvi > svg"
 		                 :message

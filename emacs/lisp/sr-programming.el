@@ -59,6 +59,8 @@
 
 ;;; Eglot-booster
 
+;; EXTERNAL: emacs-lsp-booster https://github.com/blahgeek/emacs-lsp-booster
+
 (require 'eglot-booster)
 
 ;; Disable bytecode mode for eglot-booster to preserve proper UTF-8 encoding
@@ -361,6 +363,8 @@ and LANG-ts-mode is used with org mode source codes.")
 
 ;; (advice-add 'dired-rename-file :after #'sr/eglot-ts-handle-dired-rename)
 
+;; EXTERNAL: tsc
+
 (defun sr/tsc ()
   "Run `tsc' with `compile.'"
   (interactive)
@@ -396,6 +400,8 @@ and LANG-ts-mode is used with org mode source codes.")
   "Major mode for editing GitHub Flavored Markdown files" t)
 
 (add-to-list 'auto-mode-alist '("README\\.md\\'" . gfm-mode))
+
+;; EXTERNAL: cmark-gfm
 
 (with-eval-after-load 'markdown-mode
   (setq markdown-command "cmark-gfm")

@@ -4,6 +4,8 @@
 
 ;;; Code:
 
+;; EXTERNAL: notmuch
+
 (require 'notmuch)
 
 ;;; Mail sending
@@ -71,6 +73,8 @@
 
 ;;; Synchronization
 
+;; EXTERNAL: mbsync
+
 (defvar sr/email-sync-process-name "mail-sync")
 
 (defvar sr/email-sync-command "mbsync fastmail:INBOX")
@@ -120,7 +124,8 @@
 
 (add-hook 'sr/email-after-sync-hook #'sr/email-refresh-notmuch)
 
-;; prerequisites: alerter
+;; EXTERNAL: alerter https://github.com/vjeantet/alerter (macOS)
+
 ;; TODO maybe move this into a separate module
 (defun sr/show-notification (message &optional timeout)
   (interactive)
