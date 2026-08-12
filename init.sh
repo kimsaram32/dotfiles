@@ -5,10 +5,6 @@ set -Eeuo pipefail
 DOTFILES_DIR="$HOME/me/dotfiles"
 
 declare -A links=(
-  ["wezterm/"]="${HOME}/.config/wezterm"
-
-  ["out/.tmux.conf"]="${HOME}/.tmux.conf"
-
   ["out/.zshrc"]="${HOME}/.zshrc"
   ["out/.zprofile"]="${HOME}/.zprofile"
   [".zsh_plugins.txt"]="${HOME}/.zsh_plugins.txt"
