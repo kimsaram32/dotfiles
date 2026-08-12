@@ -81,6 +81,44 @@
   (setq corfu-auto-trigger
         (concat ".-/" (apply #'string (number-sequence ?A ?Z)))))
 
+;;; Consult
+
+(keymap-global-set "C-x b" #'consult-buffer)
+(keymap-global-set "C-x 4 b" #'consult-buffer-other-window)
+(keymap-set tab-prefix-map "b" #'consult-buffer-other-tab)
+(keymap-global-set "C-x 5 b" #'consult-buffer-other-frame)
+(keymap-global-set "C-x r b" #'consult-bookmark)
+(keymap-set project-prefix-map "b" #'consult-project-buffer)
+
+(keymap-global-set "M-g i" #'consult-imenu)
+
+(keymap-global-set "M-s M-l" #'consult-line)
+(keymap-global-set "M-s g" #'consult-ripgrep)
+
+(setq xref-show-xrefs-function #'consult-xref
+      xref-show-definitions-function #'consult-xref)
+
+(with-eval-after-load 'org
+  (keymap-set org-mode-map "C-c C-j" #'consult-org-heading))
+
+;; Clear display-buffer-alist locally: Live previews are messed up
+;; `display-buffer-alist', so temporarily reset it.
+
+(with-eval-after-load 'consult
+  (setq consult-narrow-key "<")
+  (keymap-set consult-narrow-map "?" #'consult-narrow-help)
+  (keymap-set consult-narrow-map "C-h" #'consult-narrow-help))
+
+(defun sr/consult-fix-display (consultf)
+  (let ((preview (funcall consultf)))
+    (lambda (action cand)
+      (let ((display-buffer-alist nil))
+        (funcall preview action cand)))))
+
+(with-eval-after-load 'consult
+  (advice-add 'consult--buffer-preview :around #'sr/consult-fix-display)
+  (advice-add 'consult--man-preview :around #'sr/consult-fix-display))
+
 ;;; Testing completion styles
 
 (defvar sr/--completion-testing nil)
