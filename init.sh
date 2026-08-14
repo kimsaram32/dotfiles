@@ -5,8 +5,8 @@ set -Eeuo pipefail
 DOTFILES_DIR="$HOME/me/dotfiles"
 
 declare -A links=(
-  ["out/.zshrc"]="${HOME}/.zshrc"
-  ["out/.zprofile"]="${HOME}/.zprofile"
+  [".zshrc"]="${HOME}/.zshrc"
+  [".zprofile"]="${HOME}/.zprofile"
   [".zsh_plugins.txt"]="${HOME}/.zsh_plugins.txt"
 
   ["mise.toml"]="${HOME}/.config/mise/config.toml"
