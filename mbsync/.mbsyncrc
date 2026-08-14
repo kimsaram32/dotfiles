@@ -12,15 +12,18 @@ Account fastmail
 MaildirStore fastmail-local
 Path ~/mail/
 Inbox ~/mail/INBOX
-Trash ~/mail/Trash
+# The 'Trash' option is unnecessary here (see the manual for details).
 SubFolders Verbatim
 
+# About message deletion: the 'Gone' synchronization option propagates message
+# deletions only by marking the corresponding messages as deleted. Actual
+# deletion of the marked messages is enabled by setting the 'Expunge' option.
 Channel fastmail
 Far :fastmail-remote:
 Near :fastmail-local:
 Patterns *
-Expunge None
+Expunge Both
 CopyArrivalDate yes
-Sync All
+Sync New Upgrade Flags Gone
 Create Near
 SyncState *

@@ -98,7 +98,8 @@
 
 (defvar sr/email-sync-process-name "mail-sync")
 
-(defvar sr/email-sync-command "mbsync fastmail:INBOX")
+(defvar sr/email-sync-command
+  (expand-file-name "mbsync/sync.bash" sr/dotfiles-directory))
 
 (defvar sr/email-after-sync-hook nil)
 
