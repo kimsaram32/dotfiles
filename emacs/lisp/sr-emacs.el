@@ -71,6 +71,7 @@
 (which-key-mode)
 (recentf-mode)
 (savehist-mode)
+(blink-cursor-mode -1)
 
 ;;; Outline minor mode
 

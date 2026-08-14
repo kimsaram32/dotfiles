@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2026  Minjeong Kim
 
-;; Author: Minjeong Kim
+;; Author: Minjeong Kim <kimsaram32@fastmail.com>
 ;; URL: https://github.com/kimsaram32/dotfiles
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -21,6 +21,14 @@
 ;;; Commentary:
 ;;; Code:
 
+(defgroup sr/workflow nil
+  "Personal workflows."
+  :group 'local)
+
+(defvar-keymap sr/workflow-map)
+
+;;; The note system
+
 (defun sr/note-current-date ()
   "Return current time value for the note system. If the time is before
 `sr/note-day-start-hour', return yesterday's date. Otherwise, return
@@ -38,8 +46,6 @@ today's date."
    (format-time-string "%Y-%m.org" (sr/note-current-date))
    sr/note-periodic-directory))
 
-(defvar-keymap sr/workflow-map)
-
 (keymap-global-set "C-c j" sr/workflow-map)
 
 (defun sr/find-today-buffer ()
@@ -49,12 +55,18 @@ today's date."
 
 (keymap-set sr/workflow-map "j" #'sr/find-today-buffer)
 
+(defun sr/is-empty-line-p ()
+  "Return t if current line only includes whitespace, else return nil."
+  (string-match-p "^[[:blank:]]*$"
+                  (buffer-substring (line-beginning-position)
+                                    (line-end-position))))
+
 (defun sr/start-today ()
   "Begin today by creating an entry to the Org buffer for today."
   (interactive)
   (find-file (sr/file-name-today))
   (goto-char (point-max))
-  (unless (is-empty-line-p)
+  (unless (sr/is-empty-line-p)
     (insert "\n"))
   (insert (concat
            "* "
@@ -63,29 +75,20 @@ today's date."
   (save-excursion
     (insert "\n** Logs")))
 
-(defconst sr/personal-git-repositories
-  `(
-    ; (,sr/dotfiles-directory . "dotfiles")
-    (,sr/note-root-directory . "notes"))
-  "Git repositories for personal workflow.
-Used by `sr/finish-today' for automatic daily commits.")
-
 (defun sr/finish-today ()
   "Finish daily workflow; save all buffers associated with a file, commit
-changes in personal repositories."
+changes in the note directory."
   (interactive)
   (save-some-buffers t)
-  (dolist (repo sr/personal-git-repositories)
-    (let ((name (cdr repo))
-	  (default-directory (car repo))
-	  (subcommands `(("add" ".")
-			 ("commit" "-m"
-			  ,(format-time-string "%Y%m%d" (sr/note-current-date)))
-			 ("push"))))
-      (dolist (args subcommands)
-	(apply 'call-process (append '("git" nil nil nil) args)))
-      (message (format "Commited and pushed changes in %s." name))))
-  (message "Done. Good night :)"))
+  (let ((default-directory sr/note-root-directory)
+	    (subcommands `(("add" ".")
+			           ("commit" "-m"
+			            ,(format-time-string "%Y%m%d" (sr/note-current-date)))
+			           ("push"))))
+    (dolist (args subcommands)
+	  (apply 'call-process (append '("git" nil nil nil) args)))
+    (message "Commited and pushed changes in the note directory.")
+    (message "Done. Good night :)")))
 
 ;;; _
 

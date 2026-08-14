@@ -110,7 +110,9 @@
 (defun sr/eng-browse-dictionary-at-point ()
   "Look up dictionary for a word at point."
   (interactive)
-  (if-let* ((word (word-at-point t))
+  (if-let* ((word (if (region-active-p)
+                      (buffer-substring (region-beginning) (region-end))
+                    (word-at-point t)))
             (browse-url-browser-function 'browse-url-default-browser)) ; do not use EWW
       (browse-url (url-encode-url (format sr/eng-dictionary-url word)))
     (user-error "No word found at point")))
@@ -134,6 +136,8 @@
 (keymap-global-set "<f6>" #'spray-mode)
 
 ;;; SRS
+
+(require 'srs)
 
 (defconst sr/note-flashcards-directory
   (expand-file-name "flashcards/" sr/note-root-directory)
