@@ -11,7 +11,6 @@ declare -A links=(
 
   ["mise.toml"]="${HOME}/.config/mise/config.toml"
 
-  ["emacs/README.org"]="${HOME}/.emacs.d/README.org"
   ["emacs/init.el"]="${HOME}/.emacs.d/init.el"
 
   ["notmuch/.notmuch-config"]="${HOME}/.notmuch-config"
