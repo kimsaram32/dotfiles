@@ -107,6 +107,10 @@
   (require 'sr-workflow))
 
 (sr/load-configuration
+  "Projects"
+  (require 'sr-projects))
+
+(sr/load-configuration
   "Email"
   (require 'sr-email))
 
