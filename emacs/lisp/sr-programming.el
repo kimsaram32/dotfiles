@@ -318,7 +318,7 @@ and LANG-ts-mode is used with org mode source codes.")
 (keymap-global-set "C-x C-4 C-e" #'sr/eval-sexp-next-window)
 
 (with-eval-after-load 'elisp-mode
-  (add-hook 'lisp-data-mode-hook (lambda () (setq-local tab-width 4)))
+  (add-hook 'lisp-data-mode-hook (lambda () (setq-local tab-width 8)))
   (add-hook 'emacs-lisp-mode-hook #'outline-minor-mode))
 
 ;;; Go

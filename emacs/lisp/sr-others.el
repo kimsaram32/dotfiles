@@ -142,18 +142,17 @@
   (interactive)
   (let* ((url (read-string "URL to repo: " nil
                            sr/clone-project-repo-url-history))
-         (name (magit-clone--url-to-name url))
          (directory-name
           (expand-file-name
-           (read-directory-name "Clone into: " sr/dev-project-directory
-                                nil (lambda (file-name) (not (file-exists-p file-name)))
-                                (format "%s__cloned" name))
+           (read-directory-name "Directory name: " sr/dev-project-directory
+                                nil (lambda (file-name) (not (file-exists-p file-name))))
            sr/dev-project-directory)))
+    (make-directory directory-name t)
+    (dired directory-name)
     (magit-clone-regular
      url
      directory-name
-     nil)
-    (dired directory-name)))
+     nil)))
 
 ;;;; Forge
 

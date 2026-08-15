@@ -58,8 +58,13 @@
 
 ;;; General configuration
 
-(setq sr/denote-primary-directories (list sr/note-zk-directory sr/note-second-brain-directory))
-(setq sr/denote-secondary-directories (list "~/me/z"))
+(defconst sr/denote-primary-directories
+  (list sr/note-zk-directory sr/note-second-brain-directory)
+  "Primary directories for Denote.")
+
+(defconst sr/denote-secondary-directories
+  (list "~/me/z")
+  "Secondary directories for Denote.")
 
 (setq denote-directory (append sr/denote-primary-directories sr/denote-secondary-directories))
 (setq denote-prompts '(title keywords subdirectory))
@@ -389,5 +394,7 @@ extracted links."
     (sr/denote-move-org-entries-in-buffer preserve)))
 
 ;;; _
+
 (provide 'sr-denote)
+
 ;;; sr-denote.el ends here

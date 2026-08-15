@@ -74,8 +74,7 @@
 (defun sr/elfeed-load-entries ()
   "Load entries from elfeed.org."
   (interactive)
-  (org-babel-load-file (expand-file-name "emacs/elfeed.org" sr/dotfiles-directory))
-  (elfeed-update))
+  (org-babel-load-file (expand-file-name "emacs/elfeed.org" sr/dotfiles-directory)))
 
 ;;;; Integration with EWW
 
@@ -140,7 +139,8 @@
 ;;;; Configuration
 
 (with-eval-after-load 'elfeed
-  (setq elfeed-search-filter "+unread -to-read-list")
+  (setq-default elfeed-search-filter "+unread -to-read-list")
+  (remove-hook 'elfeed-search-update-hook #'elfeed-search-add-separators)
 
   (keymap-set elfeed-show-mode-map "w" #'sr/elfeed-show-visit-eww)
   (keymap-set elfeed-show-mode-map "a" 'sr/elfeed-show-add-to-read)
@@ -148,7 +148,9 @@
 
   (keymap-set elfeed-search-mode-map "l" 'sr/elfeed-search-show-to-reads)
   (keymap-set elfeed-search-mode-map "e" 'sr/elfeed-export-entries)
-  (keymap-set elfeed-search-mode-map "r" #'sr/elfeed-search-read))
+  (keymap-set elfeed-search-mode-map "r" #'sr/elfeed-search-read)
+
+  (sr/elfeed-load-entries))
 
 ;;; _
 
