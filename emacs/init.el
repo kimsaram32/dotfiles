@@ -55,6 +55,12 @@
   :type 'directory
   :set-after '(sr/note-root-directory))
 
+(defcustom sr/note-flashcards-directory
+  (expand-file-name "flashcards/" sr/note-root-directory)
+  "Directory for flashcards."
+  :type 'directory
+  :set-after '(sr/note-root-directory))
+
 (defcustom sr/dev-project-directory
   (expand-file-name "~/me/ws/projects/")
   "Directory for software projects."
@@ -142,6 +148,10 @@
 (sr/load-configuration
   "Latex"
   (require 'sr-latex))
+
+(sr/load-configuration
+  "English"
+  (require 'sr-english))
 
 (sr/load-configuration
   "Others"

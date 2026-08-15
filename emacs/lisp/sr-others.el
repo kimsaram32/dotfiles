@@ -97,28 +97,6 @@
 
   (add-hook 'agent-shell-mode-hook #'corfu-mode))
 
-;;; English learning
-
-;; I tried using EWW to browse words inside Emacs, but the site feels broken
-;; when rendered in pure HTML. EWW overrides `browse-url-browser-function' to
-;; `eww-browse-url', so to avoid using EWW, I overrode it.
-
-(defcustom sr/eng-dictionary-url
-  "https://www.merriam-webster.com/dictionary/%s"
-  "Format string for English dictionary.")
-
-(defun sr/eng-browse-dictionary-at-point ()
-  "Look up dictionary for a word at point."
-  (interactive)
-  (if-let* ((word (if (region-active-p)
-                      (buffer-substring (region-beginning) (region-end))
-                    (word-at-point t)))
-            (browse-url-browser-function 'browse-url-default-browser)) ; do not use EWW
-      (browse-url (url-encode-url (format sr/eng-dictionary-url word)))
-    (user-error "No word found at point")))
-
-(keymap-global-set "C-c d d" #'sr/eng-browse-dictionary-at-point)
-
 ;;; Avy
 
 ;; (keymap-global-set "C-M-'" #'avy-goto-char-timer)
