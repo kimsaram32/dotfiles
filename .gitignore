@@ -4,6 +4,7 @@ node_modules/
 *~
 \#*\#
 .#*
+*-autoloads.el
 
 # Personal
 emacs/elfeed.el

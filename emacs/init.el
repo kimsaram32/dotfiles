@@ -66,7 +66,16 @@
   "The starting hour of a day for notes."
   :type 'natnum)
 
+;;; Load path
+
 (add-to-list 'load-path sr/emacs-load-directory)
+
+;;; Autoloads
+
+(unless (require 'sr-autoloads nil t)
+  (message
+   "Autoload file must be generated in %s; some features might not work"
+   (expand-file-name "sr-autoloads.el" sr/emacs-load-directory)))
 
 ;;; Load modules
 
