@@ -276,7 +276,6 @@ window."
 
 ;; Ef themes
 (require-theme 'ef-themes)
-(ef-themes-take-over-modus-themes-mode 1)
 
 ;;; _
 

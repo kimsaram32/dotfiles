@@ -122,6 +122,7 @@
   "Directory for flashcards.")
 
 (with-eval-after-load 'srs
+  (add-to-list 'srs-path-list (expand-file-name "*.org" sr/note-flashcards-directory))
   (add-to-list 'srs-path-list (expand-file-name "*.txt" sr/note-flashcards-directory)))
 
 (defvar-keymap sr/srs-map)

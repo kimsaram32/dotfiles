@@ -45,14 +45,41 @@
 
 ;;;; Configuration
 
+(defface sr/org-bold
+  '((default :inherit bold))
+  "Org face for bold text.")
+
+(defface sr/org-italic
+  '((default :inherit italic))
+  "Org face for italic text.")
+
+(defun sr/org-customize-faces-with-modus-themes ()
+  (modus-themes-with-colors
+    (custom-set-faces
+     `(sr/org-bold
+       ((default :inherit bold)
+        (((class color) (min-colors 88))
+         :foreground ,fg-alt)))
+     `(sr/org-italic
+       ((default :inherit italic)
+        (((class color) (min-colors 88))
+         :foreground ,fg-alt))))))
+
+(with-eval-after-load 'modus-themes
+  (add-hook 'modus-themes-after-load-theme-hook #'sr/org-customize-faces-with-modus-themes))
+
 (with-eval-after-load 'org
   (setq org-startup-indented t)
   (setq org-startup-with-inline-images t)
   (setq-default org-startup-folded 'showeverything)
 
   (setq org-emphasis-alist
-        '(("*" bold) ("/" italic) ("_" underline) ("=" org-verbatim verbatim)
-          ("~" org-code verbatim) ("~~" (:strike-through t))))
+        '(("*" sr/org-bold bold)
+          ("/" sr/org-italic italic)
+          ("_" underline)
+          ("=" org-verbatim verbatim)
+          ("~" org-code verbatim)
+          ("~~" (:strike-through t))))
 
   (setq org-blank-before-new-entry '((heading . auto) (plain-list-item auto)))
 
@@ -179,28 +206,30 @@ pngpaste is used to retrieve the image from clipboard."
   ;; EXTERNAL: imagemagick
 
   (add-to-list 'org-preview-latex-process-alist
-               '(luamagick :programs ("lualatex" "convert")
-                           :description "pdf > png"
-                           :message "you need to install lualatex and imagemagick."
-                           :use-xcolor t
-                           :image-input-type "pdf"
-                           :image-output-type "png"
-                           :image-size-adjust (1.0 . 1.0)
-                           :latex-compiler ("lualatex -interaction nonstopmode -output-directory %o %f")
-                           :image-converter ("convert -density %D -trim -antialias %f -quality 100 %O")))
+               '(luamagick
+                 :programs ("lualatex" "convert")
+                 :description "pdf > png"
+                 :message "you need to install lualatex and imagemagick."
+                 :use-xcolor t
+                 :image-input-type "pdf"
+                 :image-output-type "png"
+                 :image-size-adjust (1.0 . 1.0)
+                 :latex-compiler ("lualatex -interaction nonstopmode -output-directory %o %f")
+                 :image-converter ("convert -density %D -trim -antialias %f -quality 100 %O")))
 
   ;; dvisvgm
   ;; EXTERNAL: dvisvgm
 
   (add-to-list 'org-preview-latex-process-alist
-	           '(dvisvgm :programs ("latex" "dvisvgm") :description "dvi > svg"
-		                 :message
-		                 "you need to install the programs: latex and dvisvgm."
-		                 :image-input-type "dvi" :image-output-type "svg"
-		                 :image-size-adjust (1.2 . 1.5) :latex-compiler
-		                 ("latex -interaction nonstopmode -output-directory %o %f")
-		                 :image-converter
-		                 ("TEXMFCNF=\"/usr/local/texlive/2025:$TEXMFCNF\" dvisvgm --no-fonts --exact-bbox --scale=%S --output=%O --keep %f")))
+	           '(dvisvgm
+                 :programs ("latex" "dvisvgm") :description "dvi > svg"
+		         :message
+		         "you need to install the programs: latex and dvisvgm."
+		         :image-input-type "dvi" :image-output-type "svg"
+		         :image-size-adjust (1.2 . 1.5) :latex-compiler
+		         ("latex -interaction nonstopmode -output-directory %o %f")
+		         :image-converter
+		         ("TEXMFCNF=\"/usr/local/texlive/2025:$TEXMFCNF\" dvisvgm --no-fonts --exact-bbox --scale=%S --output=%O --keep %f")))
 
   (setq org-preview-latex-default-process 'dvisvgm)
   (setq org-preview-latex-image-directory (expand-file-name "ltximg/" sr/note-root-directory))
