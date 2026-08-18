@@ -73,6 +73,49 @@
 (savehist-mode)
 (blink-cursor-mode -1)
 
+;;; Whitespace mode
+
+(require 'whitespace)
+
+(global-whitespace-mode)
+
+(defvar sr/whitespace-style-basic
+  '(face trailing newline indentation empty missing-newline-at-eof)
+  "Value for `whitespace-style', highlighting essential stuff only.")
+
+(defvar sr/whitespace-style-detailed
+  '(face tabs spaces trailing lines space-before-tab newline indentation empty space-after-tab space-mark tab-mark newline-mark missing-newline-at-eof)
+  "Value for `whitespace-style', displaying full details.")
+
+(setq whitespace-style sr/whitespace-style-basic)
+
+(setq-default sr/whitespace-use-detailed nil)
+
+(defun sr/whitespace-toggle-details ()
+  "Toggle detailed whitespace visualization."
+  (interactive)
+  (if (not whitespace-mode)
+      (user-error "whitespace-mode not enabled")
+    (setq-local sr/whitespace-use-detailed
+                (not sr/whitespace-use-detailed))
+    (setq-local whitespace-style
+                (if sr/whitespace-use-detailed
+                    sr/whitespace-style-detailed
+                  sr/whitespace-style-basic))
+    ;; reload `whitespace-mode'.
+    (whitespace-mode -1)
+    (whitespace-mode 1)))
+
+(keymap-global-set "C-c C-w" #'sr/whitespace-toggle-details)
+
+(setq whitespace-display-mappings
+      '(
+        (space-mark   ?\     [?·]     [?.])
+        (space-mark   ?\xA0  [?¤]     [?_])
+        (newline-mark ?\n    [?↩ ?\n])
+        (tab-mark     ?\t    [?» ?\t] [?\\ ?\t])
+        ))
+
 ;;; Outline minor mode
 
 (keymap-global-set "<f10>" #'outline-minor-mode)
