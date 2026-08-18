@@ -393,6 +393,25 @@ extracted links."
       (sr/denote-move-org-entries-in-region preserve)
     (sr/denote-move-org-entries-in-buffer preserve)))
 
+;;; Performance improvement hacks
+
+(defvar sr/denote--directory-files-cache nil)
+(defvar sr/denote--directory-files-use-cache nil)
+
+(defun sr/org-link-preview-flag (orig &rest args)
+  (setq sr/denote--directory-files-use-cache t)
+  (apply orig args)
+  (setq sr/denote--directory-files-use-cache nil))
+
+(defun sr/denote--directory-files-with-cache (orig &rest args)
+  (if (and sr/denote--directory-files-use-cache
+           sr/denote--directory-files-cache)
+      sr/denote--directory-files-cache
+    (setq sr/denote--directory-files-cache (apply orig args))))
+
+(advice-add 'org-link-preview :around #'sr/org-link-preview-flag)
+(advice-add 'denote-directory-files :around #'sr/denote--directory-files-with-cache)
+
 ;;; _
 
 (provide 'sr-denote)
