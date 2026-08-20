@@ -38,7 +38,29 @@
 (keymap-set help-map "a u" 'apropos-user-option)
 (keymap-set help-map "a l" 'apropos-library)
 
-;;; helpful
+;;; Info
+
+(defconst sr/info-display-action
+  '((display-buffer-reuse-mode-window display-buffer-use-some-window)
+    (mode . Info-mode)
+    (inhibit-same-window . t)
+    (post-command-select-window . t))
+  "Display action to use in `sr/info'.")
+
+(defun sr/info ()
+  "Call `info' with overriding display action."
+  (interactive)
+  ;; If an overriding action already exists (e.g. by `same-window-prefix'), keep
+  ;; it.
+  (let ((display-buffer-overriding-action
+         (if (equal display-buffer-overriding-action '(nil . nil))
+             sr/info-display-action
+           display-buffer-overriding-action)))
+    (call-interactively 'info)))
+
+(keymap-global-set "C-h i" #'sr/info)
+
+;;; Helpful
 
 (require 'helpful)
 
@@ -48,7 +70,7 @@
 (keymap-set help-map "x" #'helpful-command)
 (keymap-set help-map "o" #'helpful-symbol)
 
-;;; man
+;;; Man
 
 (with-eval-after-load 'man
   ;; disable autocompletion by overriding the completion table function that the

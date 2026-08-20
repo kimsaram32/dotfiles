@@ -66,6 +66,9 @@
          :foreground ,fg-alt))))))
 
 (with-eval-after-load 'modus-themes
+  ;; A theme might be loaded before the hook is added.
+  (when (modus-themes-get-current-theme)
+    (sr/org-customize-faces-with-modus-themes))
   (add-hook 'modus-themes-after-load-theme-hook #'sr/org-customize-faces-with-modus-themes))
 
 (with-eval-after-load 'org

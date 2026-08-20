@@ -64,9 +64,9 @@
 (add-to-list
  'display-buffer-alist
  `((or
-	(derived-mode help-mode)
+    (derived-mode help-mode)
     (derived-mode helpful-mode)
-	(derived-mode occur-mode))
+    (derived-mode occur-mode))
    (display-buffer-in-side-window)
    (side . bottom)
    (window-height . 0.4)
@@ -77,36 +77,35 @@
 ;; (add-to-list
 ;;  'display-buffer-alist
 ;;  `((or
-;; 	(derived-mode Info-mode)
-;; 	(derived-mode apropos-mode))
-;;    (display-buffer-reuse-mode-window display-buffer-in-side-window)
+;;     (derived-mode Info-mode)
+;;     (derived-mode apropos-mode))
+;;    (display-buffer-reuse-mode-window display-buffer-use-some-window)
 ;;    (mode . Info-mode)
-;;    (side . right)
-;;    (window-width . 0.5)
+;;    (inhibit-same-window . t)
 ;;    (post-command-select-window . t)))
 
 ;; Manuals
 
-(defconst sr/manual-mode-list
-  '(Man-mode kubedoc-mode)
-  "List of major modes that function as manuals.")
+;; (defconst sr/manual-mode-list
+;;   '(Man-mode kubedoc-mode)
+;;   "List of major modes that function as manuals.")
 
-(add-to-list
- 'display-buffer-alist
- `((or
-    ,@(mapcar (lambda (x) (list 'derived-mode x)) sr/manual-mode-list))
-   (display-buffer-reuse-mode-window display-buffer-in-side-window)
-   (mode . ,sr/manual-mode-list)
-   (side . right)
-   (window-width . 0.5)
-   (post-command-select-window . t)))
+;; (add-to-list
+;;  'display-buffer-alist
+;;  `((or
+;;     ,@(mapcar (lambda (x) (list 'derived-mode x)) sr/manual-mode-list))
+;;    (display-buffer-reuse-mode-window display-buffer-in-side-window)
+;;    (mode . ,sr/manual-mode-list)
+;;    (side . right)
+;;    (window-width . 0.5)
+;;    (post-command-select-window . t)))
 
 (with-eval-after-load 'man
   (setq Man-notify-method 'thrifty))
 
 (add-hook 'Man-mode-hook
           (lambda ()
-			(set-window-dedicated-p (selected-window) nil)))
+            (set-window-dedicated-p (selected-window) nil)))
 
 ;; Tabulated lists
 

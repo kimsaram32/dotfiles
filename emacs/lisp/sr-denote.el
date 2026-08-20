@@ -56,7 +56,7 @@
 
 (keymap-set sr/denote-map "m" #'sr/denote-move-org-entries-dwim)
 
-;;; General configuration
+;;; Basic configuration
 
 (defconst sr/denote-primary-directories
   (list sr/note-zk-directory sr/note-second-brain-directory)
@@ -203,17 +203,20 @@ This returns a plist of two properties: TITLE and CONTENT."
 
 (defun sr/dired-rename-update-denote-front-matter (file new-name ok-if-already-exists)
   "After renaming files in Dired, update Denote front matter if appropriate."
-  (let* ((file-type (denote-filetype-heuristics file))
-         (title (denote-retrieve-title-or-filename new-name file-type))
-         (keywords (denote-keywords-sort
-                    (denote-retrieve-filename-keywords-as-list new-name)))
-         (signature (denote-retrieve-filename-signature new-name))
-         (date (denote-valid-date-p (denote-retrieve-filename-identifier new-name)))
-         (identifier (denote-retrieve-filename-identifier new-name)))
-    (when (and (denote-file-has-denoted-filename-p new-name)
-               denote-rename-rewrite-front-matter
-               (denote-file-has-supported-extension-p file)
-               (denote-file-is-writable-and-supported-p new-name))
+  (when (and (denote-file-has-denoted-filename-p file)
+             (denote-file-has-denoted-filename-p new-name)
+             denote-rename-rewrite-front-matter
+             (denote-file-is-writable-and-supported-p new-name))
+    (if (not (equal (denote-retrieve-filename-title file)
+                    (denote-retrieve-filename-title new-name)))
+        (message "Title change for '%s' is ignored" new-name))
+    (when-let* ((file-type (denote-filetype-heuristics new-name))
+                (title (denote-retrieve-title-or-filename new-name file-type))
+                (keywords (denote-keywords-sort
+                           (denote-retrieve-filename-keywords-as-list new-name)))
+                (signature (or (denote-retrieve-filename-signature new-name) ""))
+                (date (denote-valid-date-p (denote-retrieve-filename-identifier new-name)))
+                (identifier (denote-retrieve-filename-identifier new-name)))
       (if (denote--file-has-front-matter-p new-name file-type)
           (denote-rewrite-front-matter new-name title keywords signature date identifier file-type)
         (when (denote-add-front-matter-prompt new-name)
