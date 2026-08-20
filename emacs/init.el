@@ -154,6 +154,10 @@
   (require 'sr-english))
 
 (sr/load-configuration
+  "Periodic"
+  (require 'sr-periodic))
+
+(sr/load-configuration
   "Others"
   (require 'sr-others))
 

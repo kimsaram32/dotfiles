@@ -30,9 +30,9 @@
 ;;; The note system
 
 (defun sr/note-current-date ()
-  "Return current time value for the note system. If the time is before
-`sr/note-day-start-hour', return yesterday's date. Otherwise, return
-today's date."
+  "Return current time value for the note system.
+If the time is before `sr/note-day-start-hour', use the previous date.
+Otherwise, use the current date."
   (let* ((time (decode-time))
 	 (current-day (decoded-time-day time))
 	 (day (if (< (decoded-time-hour time) sr/note-day-start-hour)
