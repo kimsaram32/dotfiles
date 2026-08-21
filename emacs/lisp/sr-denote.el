@@ -59,7 +59,7 @@
 ;;; Basic configuration
 
 (defconst sr/denote-primary-directories
-  (list sr/note-zk-directory sr/note-second-brain-directory)
+  (list sr/note-zk-directory sr/note-second-brain-directory sr/note-periodic-directory)
   "Primary directories for Denote.")
 
 (defconst sr/denote-secondary-directories

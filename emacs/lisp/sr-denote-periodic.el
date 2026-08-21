@@ -31,7 +31,7 @@
   :group 'denote)
 
 (defcustom sr/denote-periodic-directory
-  (expand-file-name "test-periodic/" sr/note-root-directory)
+  "~/periodic"
   "Directory for storing periodic notes."
   :type 'directory)
 
@@ -82,6 +82,12 @@ note type. PLIST is a plist that consists of the following elements:
   :type '(alist :key-type symbol
                 :value-type plist))
 
+(defcustom sr/denote-periodic-get-today-date-function
+  #'current-time
+  "Function to get the date of today.
+The function should return a time value."
+  :type 'function)
+
 (defun sr/denote-periodic-get-type (type)
   "Get the plist of periodic note type TYPE."
   (cdr (assq type sr/denote-periodic-types)))
@@ -125,7 +131,9 @@ DATE should be a time value."
   (interactive (list (intern (completing-read
                               "Note type: " (mapcar #'car sr/denote-periodic-types)
                               nil t))))
-  (sr/denote-periodic-find-or-create-note type (sr/note-current-date)))
+  (sr/denote-periodic-find-or-create-note
+   type
+   (funcall sr/denote-periodic-get-today-date-function)))
 
 ;;; Daily note commands
 

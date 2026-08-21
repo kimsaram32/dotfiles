@@ -26,8 +26,14 @@
   :type 'directory)
 
 (defcustom sr/note-periodic-directory
-  (expand-file-name "life/" sr/note-root-directory)
+  (expand-file-name "life2/" sr/note-root-directory)
   "Directory for periodic notes."
+  :type 'directory
+  :set-after '(sr/note-root-directory))
+
+(defcustom sr/note-periodic-directory-old
+  (expand-file-name "life/" sr/note-root-directory)
+  "Directory for older periodic notes."
   :type 'directory
   :set-after '(sr/note-root-directory))
 

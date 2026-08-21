@@ -95,6 +95,10 @@
 
 (require 'sr-denote-periodic)
 
+(with-eval-after-load 'sr-denote-periodic
+  (setq sr/denote-periodic-directory sr/note-periodic-directory)
+  (setq sr/denote-periodic-get-today-date-function #'sr/note-current-date))
+
 (defun sr/denote-periodic-daily-note-today ()
   (interactive)
   (sr/denote-periodic-today 'daily))
