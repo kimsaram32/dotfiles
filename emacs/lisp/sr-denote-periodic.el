@@ -101,6 +101,7 @@ DATE should be a time value."
 
 ;;; Basic note commands
 
+;;;###autoload
 (defun sr/denote-periodic-create-note (type date)
   "Create the periodic note of TYPE for DATE."
   (let ((type-entry (sr/denote-periodic-get-type type))
@@ -119,6 +120,7 @@ DATE should be a time value."
      (plist-get type-entry :signature)
      (sr/denote-periodic-date-to-identifier type date))))
 
+;;;###autoload
 (defun sr/denote-periodic-find-or-create-note (type date)
   "Find the periodic note of TYPE for DATE, creating one if it does not exist."
   (if-let* ((file (denote-get-path-by-id
@@ -126,6 +128,7 @@ DATE should be a time value."
       (find-file file)
     (sr/denote-periodic-create-note type date)))
 
+;;;###autoload
 (defun sr/denote-periodic-today (type)
   "Find or create the periodic note of TYPE for the current date."
   (interactive (list (intern (completing-read
@@ -152,6 +155,7 @@ if IDENTIFIER is invalid as a daily note identifier, return nil."
              (identifier (denote-retrieve-filename-identifier file)))
     (sr/denote-periodic-daily-note-id-to-date identifier)))
 
+;;;###autoload
 (defun sr/denote-periodic-find-previous-daily-note ()
   "Find the previous Denote daily note."
   (interactive)
@@ -164,6 +168,7 @@ if IDENTIFIER is invalid as a daily note identifier, return nil."
           (sr/denote-periodic-create-note 'daily prev-date)))
     (user-error "Not inside a Denote daily note")))
 
+;;;###autoload
 (defun sr/denote-periodic-find-next-daily-note ()
   "Find the next Denote daily note."
   (interactive)
@@ -180,6 +185,7 @@ if IDENTIFIER is invalid as a daily note identifier, return nil."
   "C-c j n" #'sr/denote-periodic-find-next-daily-note
   "C-c j p" #'sr/denote-periodic-find-previous-daily-note)
 
+;;;###autoload
 (define-minor-mode sr/denote-periodic-daily-note-mode
   "Minor mode for Denote daily notes.")
 
@@ -210,6 +216,7 @@ if IDENTIFIER is invalid as a daily note identifier, return nil."
 (defvar-keymap sr/denote-periodic-calendar-mode-map
   "d" #'sr/denote-periodic-calendar-find-daily-note-at-cursor)
 
+;;;###autoload
 (define-minor-mode sr/denote-periodic-calendar-mode
   "Minor mode for navigating Denote periodec notes within `calendar'.
 
