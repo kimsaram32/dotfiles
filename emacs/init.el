@@ -160,8 +160,8 @@
   (require 'sr-english))
 
 (sr/load-configuration
-  "Periodic"
-  (require 'sr-periodic))
+  "Calendar"
+  (require 'sr-calendar))
 
 (sr/load-configuration
   "Others"

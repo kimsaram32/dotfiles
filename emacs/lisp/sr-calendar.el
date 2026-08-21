@@ -1,4 +1,4 @@
-;;; sr-periodic.el --- Personal periodic note-taking configuration  -*- lexical-binding: t; -*-
+;;; sr-calendar.el --- Personal calendar configurations  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2026  Minjeong Kim
 
@@ -19,16 +19,12 @@
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ;;; Commentary:
+
 ;;; Code:
 
-;;; Dependencies
-
-(require 'denote)
 (require 'calendar)
 
-;;; Calendar
-
-;;;; Date/time formats
+;;; Date/time formats
 
 (setq calendar-week-start-day 1)
 (calendar-set-date-style 'iso)
@@ -36,7 +32,7 @@
 (setq calendar-time-zone-style 'numeric)
 (setq calendar-date-display-form calendar-iso-date-display-form)
 
-;;;; Holidays
+;;; Holidays
 
 (defvar sr/calendar-korean-holidays
   '((holiday-fixed    1  1 "신정")
@@ -60,7 +56,7 @@
 ;; calendar-holidays directly.
 (setq calendar-holidays sr/calendar-korean-holidays)
 
-;;;; Buffer display
+;;; Buffer display
 
 (setq calendar-left-margin 8)
 (setq calendar-intermonth-text
@@ -84,29 +80,13 @@
 
 (add-hook 'calendar-today-visible-hook #'calendar-mark-today)
 
-;;;; Window setup
+;;; Window setup
 
 (defun sr/calendar-dedicate-window ()
   (set-window-dedicated-p (get-buffer-window calendar-buffer) t))
 
 (add-hook 'calendar-initial-window-hook #'sr/calendar-dedicate-window)
 
-;;; Periodic notes
+(provide 'sr-calendar)
 
-(require 'sr-denote-periodic)
-
-(with-eval-after-load 'sr-denote-periodic
-  (setq sr/denote-periodic-directory sr/note-periodic-directory)
-  (setq sr/denote-periodic-get-today-date-function #'sr/note-current-date))
-
-(defun sr/denote-periodic-daily-note-today ()
-  (interactive)
-  (sr/denote-periodic-today 'daily))
-
-(keymap-global-set "C-c j j" #'sr/denote-periodic-daily-note-today)
-
-;;; _
-
-(provide 'sr-periodic)
-
-;;; sr-periodic.el ends here
+;;; sr-calendar.el ends here
