@@ -106,7 +106,7 @@
     (whitespace-mode -1)
     (whitespace-mode 1)))
 
-(keymap-global-set "C-c C-w" #'sr/whitespace-toggle-details)
+(keymap-global-set "C-c C-1" #'sr/whitespace-toggle-details)
 
 (setq whitespace-display-mappings
       '(

@@ -253,6 +253,12 @@ and LANG-ts-mode is used with org mode source codes.")
 
 ;;; Elisp
 
+(defun sr/insert-macroexpand-last-sexp ()
+  (interactive)
+  (let ((str (pp-to-string (macroexpand-1 (pp-last-sexp)))))
+    (insert "\n")
+    (insert str)))
+
 (defun sr/eval-sexp-next-window ()
   (interactive)
   (let ((string (thing-at-point 'sexp :no-properties)))
@@ -275,6 +281,8 @@ and LANG-ts-mode is used with org mode source codes.")
 (keymap-global-set "C-x C-4 C-e" #'sr/eval-sexp-next-window)
 
 (with-eval-after-load 'elisp-mode
+  (keymap-set emacs-lisp-mode-map "C-x C-h" #'sr/insert-macroexpand-last-sexp)
+
   (add-hook 'lisp-data-mode-hook (lambda () (setq-local tab-width 8)))
   (add-hook 'emacs-lisp-mode-hook #'outline-minor-mode))
 

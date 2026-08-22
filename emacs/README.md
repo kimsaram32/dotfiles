@@ -2,7 +2,7 @@
 
 ## External software
 
-The following external software must be installed separately:
+The following external software must be installed separately (may not be exhaustive):
 
 - cmark-gfm
 - tsc
