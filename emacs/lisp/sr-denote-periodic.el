@@ -208,20 +208,13 @@ if IDENTIFIER is invalid as a daily note identifier, return nil."
 
 ;;; Calendar integration (in progress)
 
+;; TODO
 (defun sr/denote-periodic-daily-note-id-from-calendar (date)
   (format
    "D%d%02d%02d"
    (calendar-extract-year date)
    (calendar-extract-month date)
    (calendar-extract-day date)))
-
-(defun sr/denote-periodic-calendar-mark-notes ()
-  ;; (dolist (file (denote-directory-files sr/denote-periodic-daily-note-id-regexp))
-  ;;   (calendar-mark-visible-date
-  ;;    (sr/time-to-calendar-date
-  ;;     (sr/denote-periodic-daily-note-id-to-date (denote-retrieve-filename-identifier file)))
-  ;;    sr/denote-periodic-calendar-marker))
-  )
 
 (defun sr/denote-periodic-calendar-find-daily-note-at-cursor ()
   (interactive)
@@ -235,15 +228,11 @@ if IDENTIFIER is invalid as a daily note identifier, return nil."
 
 ;;;###autoload
 (define-minor-mode sr/denote-periodic-calendar-mode
-  "Minor mode for navigating Denote periodec notes within `calendar'.
+  "Minor mode for navigating periodic notes within `calendar'.
 
-- Mark Denote daily note entries using `sr/denote-periodic-calendar' face.
-- Open Denote daily note at point."
-  :global nil
-  (dolist (hook '(calendar-today-visible-hook calendar-today-invisible-hook))
-    (if sr/denote-periodic-calendar-mode
-        (add-hook hook #'sr/denote-periodic-calendar-mark-notes nil :local)
-      (remove-hook hook #'sr/denote-periodic-calendar-mark-dates :local))))
+Currently, it only supports opending a daily note at point, if any."
+  :lighter " Periodic"
+  :global nil)
 
 (add-hook 'calendar-mode-hook #'sr/denote-periodic-calendar-mode)
 
