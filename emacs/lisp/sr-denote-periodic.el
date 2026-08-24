@@ -78,7 +78,11 @@ note type. PLIST is a plist that consists of the following elements:
 - `:title-format' is a format string that is used to construct the title
   of a new note.
 
-- `:signature' is a Denote signature to use in new notes."
+- `:signature' is a Denote signature to use in new notes.
+
+Changing the value of this variable does not create or delete the
+convenience \"today\" functions, e.g.,
+`sr/denote-periodic-daily-note-today'."
   :type '(alist :key-type symbol
                 :value-type plist))
 
@@ -99,7 +103,7 @@ DATE should be a time value."
    (plist-get (sr/denote-periodic-get-type type) :id-format)
    date))
 
-;;; Basic note commands
+;;; Note commands
 
 ;;;###autoload
 (defun sr/denote-periodic-create-note (type date)
@@ -138,7 +142,20 @@ DATE should be a time value."
    type
    (funcall sr/denote-periodic-get-today-date-function)))
 
-;;; Daily note commands
+;; Convenience functions
+
+(defmacro sr/denote-periodic-define-today-function (name)
+  `(defun ,(intern (format "sr/denote-periodic-%s-note-today" name)) ()
+     ,(format "Find or create the %s note for the current date." name)
+     (interactive)
+     (sr/denote-periodic-today ',name)))
+
+(sr/denote-periodic-define-today-function daily)
+(sr/denote-periodic-define-today-function weekly)
+(sr/denote-periodic-define-today-function monthly)
+(sr/denote-periodic-define-today-function yearly)
+
+;;; Daily note mode
 
 (defun sr/denote-periodic-daily-note-id-to-date (identifier)
   "Return the corresponding date of a daily note identifier IDENTIFIER.

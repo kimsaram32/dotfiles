@@ -55,11 +55,12 @@ changes in the note directory."
   (setq sr/denote-periodic-directory sr/note-periodic-directory)
   (setq sr/denote-periodic-get-today-date-function #'sr/note-current-date))
 
-(defun sr/denote-periodic-daily-note-today ()
-  (interactive)
-  (sr/denote-periodic-today 'daily))
-
 (keymap-global-set "C-c j j" #'sr/denote-periodic-daily-note-today)
+(keymap-global-set "C-c j w" #'sr/denote-periodic-weekly-note-today)
+(keymap-global-set "C-c j m" #'sr/denote-periodic-monthly-note-today)
+(keymap-global-set "C-c j y" #'sr/denote-periodic-yearly-note-today)
+
+(add-hook 'org-mode-hook #'sr/denote-periodic-daily-note-mode)
 
 ;;; _
 
