@@ -281,6 +281,7 @@ and LANG-ts-mode is used with org mode source codes.")
 (keymap-global-set "C-x C-4 C-e" #'sr/eval-sexp-next-window)
 
 (with-eval-after-load 'elisp-mode
+  (keymap-set emacs-lisp-mode-map "C-c C-r" #'eval-region)
   (keymap-set emacs-lisp-mode-map "C-x C-h" #'sr/insert-macroexpand-last-sexp)
 
   (add-hook 'lisp-data-mode-hook (lambda () (setq-local tab-width 8)))
