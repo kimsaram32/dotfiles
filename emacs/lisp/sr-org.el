@@ -82,7 +82,7 @@
           ("_" underline)
           ("=" org-verbatim verbatim)
           ("~" org-code verbatim)
-          ("~~" (:strike-through t))))
+          ("+" (:strike-through t))))
 
   (setq org-blank-before-new-entry '((heading . auto) (plain-list-item auto)))
 

@@ -68,6 +68,7 @@
 
 (setq denote-directory (append sr/denote-primary-directories sr/denote-secondary-directories))
 (setq denote-prompts '(title keywords subdirectory))
+(setq denote-save-buffers t)
 
 (setq denote-open-link-function #'find-file)
 

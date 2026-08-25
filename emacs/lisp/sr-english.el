@@ -32,11 +32,11 @@
   "Format string for English dictionary."
   :type 'string)
 
-(defcustom sr/english-srs-file
-  (expand-file-name "english.org" sr/note-flashcards-directory)
+(defcustom sr/english-capture-file
+  (expand-file-name "english2.org" sr/note-root-directory)
   "Location to the SRS file for storing English flashcards."
   :type 'file
-  :set-after '(sr/note-flashcards-directory))
+  :set-after '(sr/note-root-directory))
 
 ;;; Dictionary
 
