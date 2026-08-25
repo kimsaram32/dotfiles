@@ -56,13 +56,13 @@
 
 (keymap-global-set "C-c d d" #'sr/english-browse-dictionary-at-point)
 
-;;; SRS
+;;; Sentences
 
 ;; TODO: Maybe merge with `'sr/denote-get-initial-data-dwim'?
 (defun sr/english-get-buffer-page ()
   "Get the web page information the current buffer is visiting.
 Return a plist consisting of two properties: URL and TITLE. TITLE can be
-nil."
+nil. When there is no appropriate page data, return nil."
   (cond
    ((eq major-mode 'eww-mode)
     (list
@@ -74,40 +74,52 @@ nil."
        :url (elfeed-entry-link entry)
        :title (elfeed-entry-title entry))))))
 
-(defun sr/english-capture-region-pause-and-think ()
-  "Add the region's content as a pause-and-think entry to the SRS file.
+(defun sr/english-capture (content page)
+  "Add a new entry in the capture file.
 Navigate to the buffer visiting the file, and place the point to the
-beginning of the text."
-  (interactive)
-  ;; TODO lazy-load the library instead
-  (require 'org)
-  (unless (region-active-p)
-    (user-error "The region is not active"))
-  (let* ((content (buffer-substring (region-beginning) (region-end)))
-         (page (sr/english-get-buffer-page))
-         (link (and page
+beginning of the text.
+
+CONTENT is the English text to capture, and PAGE is either nil or a plist
+returned by `sr/english-get-buffer-page'."
+  (interactive
+   (list (read-string-from-buffer "Content: " "")
+         (sr/english-get-buffer-page)))
+  (if (string-empty-p content)
+      (user-error "Empty content"))
+  (let* ((link (and page
                     (org-link-make-string
                      (plist-get page :url)
                      (plist-get page :title))))
-         (buf (or (get-file-buffer sr/english-srs-file)
-                  (create-file-buffer sr/english-srs-file)))
+         (buf (or (get-file-buffer sr/english-capture-file)
+                  (create-file-buffer sr/english-capture-file)))
          (start-pos))
     (switch-to-buffer buf)
-    (goto-char (point-max))
-    ;; Invariant: Each flashcard should end with an empty line. This still does
-    ;; not prevent from having multiple empty lines though.
-    (unless (looking-at "^$")
-      (insert "\n"))
+    (goto-char (point-min))
     (setq start-pos (point))
-    (insert "\nPause-and-think: ")
     (save-excursion
-      (insert content)
+      (insert (format "* A\n\n%s" content))
       (fill-region start-pos (point))
-      ;; `fill-region' does not work properly with Org mode links, as
-      ;; they have different displayed string length.
       (when page
-        (insert (format " (%s)" link)))
-      (insert "\n\n-\n"))))
+        (insert (format "\n\n%s" link)))
+      (insert "\n\n"))))
+
+(defun sr/english-capture-region ()
+  "Call `sr/english-capture' with the region's content."
+  (interactive)
+  ;; TODO lazy-load the library instead
+  (require 'org)
+  (unless (use-region-p)
+    (user-error "The region is not active"))
+  (sr/english-capture
+     (buffer-substring (region-beginning) (region-end))
+     (sr/english-get-buffer-page)))
+
+(defun sr/english-capture-dwim ()
+  "Add a new entry in the capture file with appropriate data."
+  (interactive)
+  (if (use-region-p)
+      (sr/english-capture-region)
+    (call-interactively #'sr/english-capture)))
 
 ;;; _
 
