@@ -174,7 +174,7 @@ if IDENTIFIER is invalid as a daily note identifier, return nil."
 
 ;;;###autoload
 (defun sr/denote-periodic-find-previous-daily-note ()
-  "Find the previous Denote daily note."
+  "Find the previous daily note."
   (interactive)
   (if-let* ((date (sr/denote-periodic-daily-note-buffer-date))
             (prev-date (time-subtract date (days-to-time 1))))
@@ -183,11 +183,11 @@ if IDENTIFIER is invalid as a daily note identifier, return nil."
           (funcall denote-open-link-function file)
         (when (y-or-n-p "No previous daily note found. create?")
           (sr/denote-periodic-create-note 'daily prev-date)))
-    (user-error "Not inside a Denote daily note")))
+    (user-error "Not inside a daily note")))
 
 ;;;###autoload
 (defun sr/denote-periodic-find-next-daily-note ()
-  "Find the next Denote daily note."
+  "Find the next daily note."
   (interactive)
   (if-let* ((date (sr/denote-periodic-daily-note-buffer-date))
             (next-date (time-add date (days-to-time 1))))
@@ -196,7 +196,7 @@ if IDENTIFIER is invalid as a daily note identifier, return nil."
           (funcall denote-open-link-function file)
         (when (y-or-n-p "No next daily note found. create?")
           (sr/denote-periodic-create-note 'daily next-date)))
-    (user-error "Not inside a Denote daily note")))
+    (user-error "Not inside a daily note")))
 
 (defvar-keymap sr/denote-periodic-daily-note-mode-map
   "C-c j n" #'sr/denote-periodic-find-next-daily-note
@@ -204,7 +204,7 @@ if IDENTIFIER is invalid as a daily note identifier, return nil."
 
 ;;;###autoload
 (define-minor-mode sr/denote-periodic-daily-note-mode
-  "Minor mode for Denote daily notes.")
+  "Minor mode for daily notes.")
 
 ;;; Calendar integration (in progress)
 
