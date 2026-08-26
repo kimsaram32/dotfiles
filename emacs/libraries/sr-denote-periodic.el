@@ -96,7 +96,7 @@ The function should return a time value."
   "Get the plist of periodic note type TYPE."
   (cdr (assq type sr/denote-periodic-types)))
 
-(defun sr/denote-periodic-date-to-identifier (type date)
+(defun sr/denote-periodic-date-to-identifier (date type)
   "Generate a note identifier for TYPE corresponding to DATE.
 DATE should be a time value."
   (format-time-string
@@ -105,9 +105,31 @@ DATE should be a time value."
 
 ;;; Note commands
 
-;;;###autoload
-(defun sr/denote-periodic-create-note (type date)
-  "Create the periodic note of TYPE for DATE."
+(defun sr/denote-periodic--calendar-date-to-time (date)
+  "Convert a calendar date to a time value."
+  (encode-time
+   (decoded-time-set-defaults
+    (list
+     nil nil nil
+     (calendar-extract-day date)
+     (calendar-extract-month date)
+     (calendar-extract-year date)
+     nil -1 nil))))
+
+(defun sr/denote-periodic-time-prompt ()
+  "Prompt for a time value."
+  (sr/denote-periodic--calendar-date-to-time (calendar-read-date)))
+
+(defun sr/denote-periodic-type-prompt ()
+  "Prompt for periodic type."
+  (intern (completing-read
+           "Period type: " (mapcar #'car sr/denote-periodic-types)
+           nil t)))
+
+(defun sr/denote-periodic--create-note (date type)
+  "Create the periodic note of TYPE for DATE.
+This function should be called only if there is no existing note with
+the encoded identifier."
   (let ((type-entry (sr/denote-periodic-get-type type))
         (directory (expand-file-name
                     (format-time-string "%Y" date)
@@ -122,25 +144,25 @@ DATE should be a time value."
      date
      nil
      (plist-get type-entry :signature)
-     (sr/denote-periodic-date-to-identifier type date))))
+     (sr/denote-periodic-date-to-identifier date type))))
 
 ;;;###autoload
-(defun sr/denote-periodic-find-or-create-note (type date)
-  "Find the periodic note of TYPE for DATE, creating one if it does not exist."
+(defun sr/denote-periodic-find-or-create-note (date type)
+  "Find the periodic note of TYPE for DATE, or create one if it does not exist."
+  (interactive (list (sr/denote-periodic-time-prompt)
+                     (sr/denote-periodic-type-prompt)))
   (if-let* ((file (denote-get-path-by-id
-                   (sr/denote-periodic-date-to-identifier type date))))
+                   (sr/denote-periodic-date-to-identifier date type))))
       (find-file file)
-    (sr/denote-periodic-create-note type date)))
+    (sr/denote-periodic--create-note date type)))
 
 ;;;###autoload
 (defun sr/denote-periodic-today (type)
   "Find or create the periodic note of TYPE for the current date."
-  (interactive (list (intern (completing-read
-                              "Note type: " (mapcar #'car sr/denote-periodic-types)
-                              nil t))))
-  (sr/denote-periodic-find-or-create-note
-   type
-   (funcall sr/denote-periodic-get-today-date-function)))
+  (interactive (list (sr/denote-periodic-type-prompt)))
+  (sr/denote-periodic-create-or-find-note
+   (funcall sr/denote-periodic-get-today-date-function)
+   type))
 
 ;; Convenience functions
 
@@ -179,10 +201,10 @@ if IDENTIFIER is invalid as a daily note identifier, return nil."
   (if-let* ((date (sr/denote-periodic-daily-note-buffer-date))
             (prev-date (time-subtract date (days-to-time 1))))
       (if-let ((file (denote-get-path-by-id
-                      (sr/denote-periodic-date-to-identifier 'daily prev-date))))
+                      (sr/denote-periodic-date-to-identifier prev-date 'daily))))
           (funcall denote-open-link-function file)
         (when (y-or-n-p "No previous daily note found. create?")
-          (sr/denote-periodic-create-note 'daily prev-date)))
+          (sr/denote-periodic--create-note prev-date 'daily)))
     (user-error "Not inside a daily note")))
 
 ;;;###autoload
@@ -192,10 +214,10 @@ if IDENTIFIER is invalid as a daily note identifier, return nil."
   (if-let* ((date (sr/denote-periodic-daily-note-buffer-date))
             (next-date (time-add date (days-to-time 1))))
       (if-let ((file (denote-get-path-by-id
-                      (sr/denote-periodic-date-to-identifier 'daily next-date))))
+                      (sr/denote-periodic-date-to-identifier next-date 'daily))))
           (funcall denote-open-link-function file)
         (when (y-or-n-p "No next daily note found. create?")
-          (sr/denote-periodic-create-note 'daily next-date)))
+          (sr/denote-periodic--create-note next-date 'daily)))
     (user-error "Not inside a daily note")))
 
 (defvar-keymap sr/denote-periodic-daily-note-mode-map
