@@ -163,7 +163,7 @@
 
 (sr/load-configuration
   "English"
-  (require 'sr-english))
+  (require 'sr-english-config))
 
 (sr/load-configuration
   "Calendar"

@@ -1,4 +1,4 @@
-;;; sr-english.el --- Personal configuration for English learning  -*- lexical-binding: t; -*-
+;;; sr-english.el --- Personal library for English learning  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2026  Minjeong Kim
 
@@ -33,10 +33,9 @@
   :type 'string)
 
 (defcustom sr/english-capture-file
-  (expand-file-name "english2.org" sr/note-root-directory)
+  "~/english.org"
   "Location to the file storing captured English sentences."
-  :type 'file
-  :set-after '(sr/note-root-directory))
+  :type 'file)
 
 ;;; Dictionary
 
@@ -44,6 +43,7 @@
 ;; when rendered in pure HTML. EWW overrides `browse-url-browser-function' to
 ;; `eww-browse-url', so to avoid using EWW, I overrode it.
 
+;;;###autoload
 (defun sr/english-browse-dictionary-at-point ()
   "Look up dictionary for a word at point."
   (interactive)
@@ -53,8 +53,6 @@
             (browse-url-browser-function 'browse-url-default-browser)) ; do not use EWW
       (browse-url (url-encode-url (format sr/english-dictionary-url word)))
     (user-error "No word found at point")))
-
-(keymap-global-set "C-c d d" #'sr/english-browse-dictionary-at-point)
 
 ;;; Sentence capture
 
@@ -74,6 +72,7 @@ nil. When there is no appropriate page data, return nil."
        :url (elfeed-entry-link entry)
        :title (elfeed-entry-title entry))))))
 
+;;;###autoload
 (defun sr/english-capture (content page)
   "Add a new entry in the capture file.
 Navigate to the buffer visiting the file, and place the point to the
@@ -103,6 +102,7 @@ returned by `sr/english-get-buffer-page'."
         (insert (format "\n\n%s" link)))
       (insert "\n\n"))))
 
+;;;###autoload
 (defun sr/english-capture-region ()
   "Call `sr/english-capture' with the region's content."
   (interactive)
@@ -112,6 +112,7 @@ returned by `sr/english-get-buffer-page'."
      (buffer-substring (region-beginning) (region-end))
      (sr/english-get-buffer-page)))
 
+;;;###autoload
 (defun sr/english-capture-dwim ()
   "Add a new entry in the capture file with appropriate data."
   (interactive)
@@ -145,6 +146,7 @@ returned by `sr/english-get-buffer-page'."
 
 (defvar-local sr/english--capture-non-due-hidden nil)
 
+;;;###autoload
 (defun sr/english-capture-hide-non-due ()
   "Hide non-due entries."
   (interactive)
@@ -154,12 +156,14 @@ returned by `sr/english-get-buffer-page'."
    (lambda (todo tags level) (not (sr/english--capture-is-entry-due)))
    nil))
 
+;;;###autoload
 (defun sr/english-capture-show-non-due ()
   "Show non-due entries."
   (interactive)
   (setq sr/english--capture-non-due-hidden nil)
   (remove-overlays (point-min) (point-max) 'invisible 'english-capture))
 
+;;;###autoload
 (defun sr/english-capture-toggle-non-due-visibility ()
   "Toggle whether non-due entries are visible."
   (interactive)
@@ -167,6 +171,7 @@ returned by `sr/english-get-buffer-page'."
       (sr/english-capture-show-non-due)
     (sr/english-capture-hide-non-due)))
 
+;;;###autoload
 (defun sr/english-capture-finish-review-at-point (next-review)
   "Update review properties for entry at point.
 NEXT-REVIEW must be a time value."
@@ -192,6 +197,7 @@ NEXT-REVIEW must be a time value."
   "C-c C-." #'sr/english-capture-toggle-non-due-visibility
   "C-c r r" #'sr/english-capture-finish-review-at-point)
 
+;;;###autoload
 (define-minor-mode sr/english-capture-mode
   "Minor mode for the English capture buffer."
   :global nil
