@@ -19,6 +19,22 @@
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ;;; Commentary:
+
+;; Manage periodic notes in Denote.
+;;
+;; A periodic note is a note associated to a specific period, e.g. a day, a
+;; week, a month, etc.
+;;
+;; The idea is establishing a unique identifier encoding format for each period,
+;; e.g, "D20260826" for daily notes, "W202633" for weekly notes, and so on. This
+;; guarantees that at most one note is associated to a period.
+;;
+;; The encoding formats, as well as additional metadata for creation of new
+;; periodic notes, are stored in `sr/denote-periodic-types'.
+;;
+;; Notes are located in a separate subdirectory for each year, e.g., notes in
+;; 2026 are inside "2026/".
+
 ;;; Code:
 
 (require 'denote)
