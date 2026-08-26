@@ -21,7 +21,7 @@
 ;;; Commentary:
 ;;; Code:
 
-(require 'srs)
+(require 'org)
 
 (defgroup sr/english nil
   "Personal English learning."
@@ -29,12 +29,12 @@
 
 (defcustom sr/english-dictionary-url
   "https://www.merriam-webster.com/dictionary/%s"
-  "Format string for English dictionary."
+  "Format string for opening English dictionary."
   :type 'string)
 
 (defcustom sr/english-capture-file
   (expand-file-name "english2.org" sr/note-root-directory)
-  "Location to the SRS file for storing English flashcards."
+  "Location to the file storing captured English sentences."
   :type 'file
   :set-after '(sr/note-root-directory))
 
@@ -56,7 +56,7 @@
 
 (keymap-global-set "C-c d d" #'sr/english-browse-dictionary-at-point)
 
-;;; Sentences
+;;; Sentence capture
 
 ;; TODO: Maybe merge with `'sr/denote-get-initial-data-dwim'?
 (defun sr/english-get-buffer-page ()
@@ -106,8 +106,6 @@ returned by `sr/english-get-buffer-page'."
 (defun sr/english-capture-region ()
   "Call `sr/english-capture' with the region's content."
   (interactive)
-  ;; TODO lazy-load the library instead
-  (require 'org)
   (unless (use-region-p)
     (user-error "The region is not active"))
   (sr/english-capture
@@ -120,6 +118,89 @@ returned by `sr/english-get-buffer-page'."
   (if (use-region-p)
       (sr/english-capture-region)
     (call-interactively #'sr/english-capture)))
+
+;;; Capture buffer
+
+(defun sr/english--capture-org-timestamp-string-to-time (string)
+  (org-timestamp-to-time (org-timestamp-from-string string)))
+
+(defun sr/english--capture-hide-entry ()
+  (let ((overlay (make-overlay
+                  (org-entry-beginning-position)
+                  (org-entry-end-position))))
+    (overlay-put overlay 'invisible 'english-capture)))
+
+(defun sr/english--capture-show-entry ()
+  (remove-overlays
+   (org-entry-beginning-position)
+   (org-entry-end-position)
+   'invisible 'english-capture))
+
+(defun sr/english--capture-is-entry-due ()
+  "Return t if entry at point is due today."
+  (let ((time (sr/english--capture-org-timestamp-string-to-time
+               (org-entry-get (point) "NEXT_REVIEW"))))
+     (or (time-less-p time (current-time))
+         (time-equal-p time (current-time)))))
+
+(defvar-local sr/english--capture-non-due-hidden nil)
+
+(defun sr/english-capture-hide-non-due ()
+  "Hide non-due entries."
+  (interactive)
+  (setq sr/english--capture-non-due-hidden t)
+  (org-scan-tags
+   #'sr/english--capture-hide-entry
+   (lambda (todo tags level) (not (sr/english--capture-is-entry-due)))
+   nil))
+
+(defun sr/english-capture-show-non-due ()
+  "Show non-due entries."
+  (interactive)
+  (setq sr/english--capture-non-due-hidden nil)
+  (remove-overlays (point-min) (point-max) 'invisible 'english-capture))
+
+(defun sr/english-capture-toggle-non-due-visibility ()
+  "Toggle whether non-due entries are visible."
+  (interactive)
+  (if sr/english--capture-non-due-hidden
+      (sr/english-capture-show-non-due)
+    (sr/english-capture-hide-non-due)))
+
+(defun sr/english-capture-finish-review-at-point (next-review)
+  "Update review properties for entry at point.
+NEXT-REVIEW must be a time value."
+  (interactive
+   (list (let* ((last-interval
+                 (-
+                  (time-to-days
+                   (sr/english--capture-org-timestamp-string-to-time
+                    (org-entry-get (point) "NEXT_REVIEW")))
+                  (time-to-days
+                   (sr/english--capture-org-timestamp-string-to-time
+                    (org-entry-get (point) "LAST_REVIEW")))))
+                (prompt (format "Next review date (last interval was %d): " last-interval)))
+           (date-to-time (org-read-date nil nil nil prompt)))))
+  (org-entry-put (point) "NEXT_REVIEW"
+                 (format-time-string (org-time-stamp-format) next-review))
+  (org-entry-put (point) "LAST_REVIEW"
+                 (format-time-string (org-time-stamp-format) (current-time)))
+  (if sr/english--capture-non-due-hidden
+      (sr/english--capture-hide-entry)))
+
+(defvar-keymap sr/english-capture-mode-map
+  "C-c C-." #'sr/english-capture-toggle-non-due-visibility
+  "C-c r r" #'sr/english-capture-finish-review-at-point)
+
+(define-minor-mode sr/english-capture-mode
+  "Minor mode for the English capture buffer."
+  :global nil
+  :lighter " Eng"
+  (if sr/english-capture-mode
+      (progn
+        (add-to-invisibility-spec 'english-capture))
+    (sr/english-capture-show-non-due)
+    (remove-from-invisibility-spec 'english-capture)))
 
 ;;; _
 
