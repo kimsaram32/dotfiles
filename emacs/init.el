@@ -16,9 +16,14 @@
   "Root directory for dotfiles."
   :type 'directory)
 
-(defcustom sr/emacs-load-directory
-  (file-name-concat sr/dotfiles-directory "emacs/lisp/")
+(defcustom sr/emacs-library-directory
+  (file-name-concat sr/dotfiles-directory "emacs/libraries/")
   "Directory for personal lisp libraries."
+  :type 'directory)
+
+(defcustom sr/emacs-config-directory
+  (file-name-concat sr/dotfiles-directory "emacs/configs/")
+  "Directory for personal configurations."
   :type 'directory)
 
 (defcustom sr/note-root-directory (expand-file-name "~/me/myself/")
@@ -80,7 +85,8 @@
 
 ;;; Load path
 
-(add-to-list 'load-path sr/emacs-load-directory)
+(add-to-list 'load-path sr/emacs-library-directory)
+(add-to-list 'load-path sr/emacs-config-directory)
 
 ;;; Autoloads
 

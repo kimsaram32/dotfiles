@@ -9,7 +9,7 @@ node_modules/
 # Personal
 emacs/elfeed.el
 emacs/elfeed.org
-emacs/lisp/sr-startup.el
+emacs/configs/sr-startup.el
 
 .DS_Store
 /.agent-shell/

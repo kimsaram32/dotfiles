@@ -192,7 +192,7 @@ This function is intended to be added to `post-self-insert-hook'."
 
 (keymap-global-set "C-x C-b" #'ibuffer)
 
-(defvar sr/scratch-file-name (expand-file-name "emacs/lisp/sr-scratch.el" sr/dotfiles-directory))
+(defvar sr/scratch-file-name (expand-file-name "emacs/configs/sr-scratch.el" sr/dotfiles-directory))
 
 (defun sr/open-scratch-file ()
   (interactive)
