@@ -94,9 +94,11 @@ returned by `sr/english-get-buffer-page'."
          (start-pos))
     (switch-to-buffer buf)
     (goto-char (point-min))
+    (when (not (org-at-heading-p))
+      (outline-next-heading))
     (setq start-pos (point))
     (save-excursion
-      (insert (format "* A\n\n%s" content))
+      (insert (format "* _\n\n%s" content))
       (fill-region start-pos (point))
       (when page
         (insert (format "\n\n%s" link)))
@@ -123,7 +125,9 @@ returned by `sr/english-get-buffer-page'."
 ;;; Capture buffer
 
 (defun sr/english--capture-org-timestamp-string-to-time (string)
-  (org-timestamp-to-time (org-timestamp-from-string string)))
+  "Convert org timestamp string to time values.
+STRING can be nil, and in this case nil is returned."
+  (and string (org-timestamp-to-time (org-timestamp-from-string string))))
 
 (defun sr/english--capture-hide-entry ()
   (let ((overlay (make-overlay
@@ -139,10 +143,11 @@ returned by `sr/english-get-buffer-page'."
 
 (defun sr/english--capture-is-entry-due ()
   "Return t if entry at point is due today."
-  (let ((time (sr/english--capture-org-timestamp-string-to-time
-               (org-entry-get (point) "NEXT_REVIEW"))))
-     (or (time-less-p time (current-time))
-         (time-equal-p time (current-time)))))
+  (if-let* ((time (sr/english--capture-org-timestamp-string-to-time
+                   (org-entry-get (point) "NEXT_REVIEW"))))
+      (or (time-less-p time (current-time))
+          (time-equal-p time (current-time)))
+    t))
 
 (defvar-local sr/english--capture-non-due-hidden nil)
 
@@ -171,21 +176,28 @@ returned by `sr/english-get-buffer-page'."
       (sr/english-capture-show-non-due)
     (sr/english-capture-hide-non-due)))
 
+(defun sr/english--capture-next-review-date-prompt (entry-epom)
+  (let* ((next-review (sr/english--capture-org-timestamp-string-to-time
+                       (org-entry-get entry-epom "NEXT_REVIEW")))
+         (last-review (sr/english--capture-org-timestamp-string-to-time
+                       (org-entry-get entry-epom "LAST_REVIEW")))
+         (prompt
+          (concat
+           "Next review date"
+           (if (and next-review last-review)
+               (format
+                " (last interval was %d)"
+                (- (time-to-days next-review) (time-to-days last-review)))
+             " (new entry)")
+           ": ")))
+    (date-to-time (org-read-date nil nil nil prompt))))
+
 ;;;###autoload
 (defun sr/english-capture-finish-review-at-point (next-review)
   "Update review properties for entry at point.
 NEXT-REVIEW must be a time value."
   (interactive
-   (list (let* ((last-interval
-                 (-
-                  (time-to-days
-                   (sr/english--capture-org-timestamp-string-to-time
-                    (org-entry-get (point) "NEXT_REVIEW")))
-                  (time-to-days
-                   (sr/english--capture-org-timestamp-string-to-time
-                    (org-entry-get (point) "LAST_REVIEW")))))
-                (prompt (format "Next review date (last interval was %d): " last-interval)))
-           (date-to-time (org-read-date nil nil nil prompt)))))
+   (list (sr/english--capture-next-review-date-prompt (point))))
   (org-entry-put (point) "NEXT_REVIEW"
                  (format-time-string (org-time-stamp-format) next-review))
   (org-entry-put (point) "LAST_REVIEW"
@@ -195,7 +207,7 @@ NEXT-REVIEW must be a time value."
 
 (defvar-keymap sr/english-capture-mode-map
   "C-c C-." #'sr/english-capture-toggle-non-due-visibility
-  "C-c r r" #'sr/english-capture-finish-review-at-point)
+  "C-c d r" #'sr/english-capture-finish-review-at-point)
 
 ;;;###autoload
 (define-minor-mode sr/english-capture-mode
