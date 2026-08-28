@@ -23,6 +23,8 @@
 
 (require 'org)
 
+;;; Customization
+
 (defgroup sr/english nil
   "Personal English learning."
   :group 'application)
@@ -36,6 +38,24 @@
   "~/english.org"
   "Location to the file storing captured English sentences."
   :type 'file)
+
+;; TODO better customizations
+
+(defcustom sr/english-tts-kokoro-port 8880
+  "Port to the Kokoro-FastAPI server."
+  :type 'natnum)
+
+(defcustom sr/english-tts-kokoro-voice "af_aoede"
+  "Voice name for Kokoro."
+  :type 'string)
+
+(defcustom sr/english-tts-kokoro-lang-code "a"
+  "Language code for Kokoro."
+  :type 'string)
+
+(defcustom sr/english-tts-kokoro-timeout 30
+  "Timeout for requests to the Kokoro-FastAPI server, in seconds."
+  :type 'natnum)
 
 ;;; Dictionary
 
@@ -227,6 +247,75 @@ NEXT-REVIEW must be a time value."
         (add-to-invisibility-spec 'english-capture))
     (sr/english-capture-show-non-due)
     (remove-from-invisibility-spec 'english-capture)))
+
+;;; TTS
+
+(defun sr/english--tts-preprocess-text (text)
+  (with-temp-buffer
+    (insert text)
+    (goto-char (point-min))
+    (while (re-search-forward "/\\([^/]+\\)/" nil t)
+      (replace-match "\\1"))
+    (buffer-string)))
+
+(defun sr/english--tts-get-output-file (text)
+  (expand-file-name "~/Downloads/test.mp3"))
+
+(defun sr/english--tts-generate-audio (text output-file callback)
+  (let* ((url (format "http://localhost:%d/v1/audio/speech" sr/english-tts-kokoro-port))
+
+         (url-automatic-caching t)
+         (url-request-method "POST")
+         (url-request-extra-headers
+          '(("Content-Type" . "application/json")))
+         (url-request-data
+          ;; Encode multibyte string to unibyte.
+          (encode-coding-string
+           (json-encode
+           `((model . "kokoro")
+             (input . ,text)
+             (voice . ,sr/english-tts-kokoro-voice)
+             (lang_code . ,sr/english-tts-kokoro-lang-code)
+             (response_format . ,(file-name-extension output-file))
+             (speed . 1)))
+           'us-ascii))
+
+         (url-callback
+          (lambda (status)
+            (let ((http-status
+                   (prog1
+                       (url-http-parse-response)
+                     (goto-char url-http-end-of-headers))))
+              (cond
+               ((= http-status 200)
+                (write-region (1+ (point)) (point-max) output-file)
+                (funcall callback))
+               ((= http-status 422)
+                (error "Bad request format: %s"
+                       (alist-get 'msg (elt (alist-get 'detail (json-read)) 0))))
+               (t
+                (error "Unexpected HTTP status code %s" http-status)))))))
+    (url-retrieve url url-callback)))
+
+(defun sr/english--tts-play-audio (file)
+  (if (executable-find "ffplay")
+      (start-process "*ffplay*" nil "ffplay" "-nodisp" "-autoexit" file)
+    (user-error "ffplay executable not found")))
+
+(defun sr/english-tts-read-text (text)
+  "Read the English text TEXT aloud.
+Interactively, set TEXT to the region's content, if it's active.
+Otherwise, TEXT is set to the paragraph at point.."
+  (interactive (list (if (use-region-p)
+                         (buffer-substring (region-beginning) (region-end))
+                       (thing-at-point 'paragraph t))))
+  (if-let* ((preprocessed-text (sr/english--tts-preprocess-text text))
+            (output-file (sr/english--tts-get-output-file preprocessed-text)))
+      (sr/english--tts-generate-audio
+       preprocessed-text
+       output-file
+       (lambda ()
+         (sr/english--tts-play-audio output-file)))))
 
 ;;; _
 
