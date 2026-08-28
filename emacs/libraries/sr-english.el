@@ -57,10 +57,12 @@
 ;;; Sentence capture
 
 ;; TODO: Maybe merge with `'sr/denote-get-initial-data-dwim'?
-(defun sr/english-get-buffer-page ()
-  "Get the web page information the current buffer is visiting.
-Return a plist consisting of two properties: URL and TITLE. TITLE can be
-nil. When there is no appropriate page data, return nil."
+(defun sr/english-get-buffer-page-data ()
+  "Get the page data the current buffer is visiting.
+A page data is a plist consisting of two properties: URL and TITLE.
+TITLE can be nil.
+
+When there is no appropriate page data, return nil."
   (cond
    ((eq major-mode 'eww-mode)
     (list
@@ -72,17 +74,39 @@ nil. When there is no appropriate page data, return nil."
        :url (elfeed-entry-link entry)
        :title (elfeed-entry-title entry))))))
 
+(defvar sr/english-page-url-history nil
+  "Minibuffer history for URL in `sr/english-page-prompt'.")
+
+(defvar sr/english-page-title-history nil
+  "Minibuffer history for title in `sr/english-page-prompt'.")
+
+(defun sr/english-page-prompt ()
+  "Prompt for page data."
+  (let ((url (read-string
+              "Enter page URL (empty input for no page): "
+              nil sr/english-page-url-history)))
+    (if (string-empty-p url)
+        nil
+      (list
+       :url url
+       :title (let ((title (read-string
+                            "Enter page title: "
+                            nil sr/english-page-title-history)))
+                (if (string-empty-p title) nil title))))))
+
 ;;;###autoload
 (defun sr/english-capture (content page)
   "Add a new entry in the capture file.
 Navigate to the buffer visiting the file, and place the point to the
 beginning of the text.
 
-CONTENT is the English text to capture, and PAGE is either nil or a plist
-returned by `sr/english-get-buffer-page'."
+CONTENT is the English text to capture, and PAGE is either nil or a page
+data"
   (interactive
    (list (read-string-from-buffer "Content: " "")
-         (sr/english-get-buffer-page)))
+         (or
+          (sr/english-get-buffer-page-data)
+          (sr/english-page-prompt))))
   (if (string-empty-p content)
       (user-error "Empty content"))
   (let* ((link (and page
@@ -112,7 +136,7 @@ returned by `sr/english-get-buffer-page'."
     (user-error "The region is not active"))
   (sr/english-capture
      (buffer-substring (region-beginning) (region-end))
-     (sr/english-get-buffer-page)))
+     (sr/english-get-buffer-page-data)))
 
 ;;;###autoload
 (defun sr/english-capture-dwim ()
