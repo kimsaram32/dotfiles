@@ -176,7 +176,7 @@ the encoded identifier."
 (defun sr/denote-periodic-today (type)
   "Find or create the periodic note of TYPE for the current date."
   (interactive (list (sr/denote-periodic-type-prompt)))
-  (sr/denote-periodic-create-or-find-note
+  (sr/denote-periodic-find-or-create-note
    (funcall sr/denote-periodic-get-today-date-function)
    type))
 
