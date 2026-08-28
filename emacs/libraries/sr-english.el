@@ -101,9 +101,11 @@ Navigate to the buffer visiting the file, and place the point to the
 beginning of the text.
 
 CONTENT is the English text to capture, and PAGE is either nil or a page
-data"
+data."
   (interactive
-   (list (read-string-from-buffer "Content: " "")
+   (list (if (use-region-p)
+             (buffer-substring (region-beginning) (region-end))
+           (read-string-from-buffer "Content: " ""))
          (or
           (sr/english-get-buffer-page-data)
           (sr/english-page-prompt))))
@@ -127,24 +129,6 @@ data"
       (when page
         (insert (format "\n\n%s" link)))
       (insert "\n\n"))))
-
-;;;###autoload
-(defun sr/english-capture-region ()
-  "Call `sr/english-capture' with the region's content."
-  (interactive)
-  (unless (use-region-p)
-    (user-error "The region is not active"))
-  (sr/english-capture
-     (buffer-substring (region-beginning) (region-end))
-     (sr/english-get-buffer-page-data)))
-
-;;;###autoload
-(defun sr/english-capture-dwim ()
-  "Add a new entry in the capture file with appropriate data."
-  (interactive)
-  (if (use-region-p)
-      (sr/english-capture-region)
-    (call-interactively #'sr/english-capture)))
 
 ;;; Capture buffer
 

@@ -25,7 +25,7 @@
   (setq sr/english-capture-file (expand-file-name "english2.org" sr/note-root-directory)))
 
 (keymap-global-set "C-c d d" #'sr/english-browse-dictionary-at-point)
-(keymap-global-set "C-c d c" #'sr/english-capture-dwim)
+(keymap-global-set "C-c d c" #'sr/english-capture)
 
 ;;; _
 
