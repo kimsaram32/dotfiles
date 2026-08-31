@@ -161,7 +161,9 @@ STRING can be nil, and in this case nil is returned."
   (let ((overlay (make-overlay
                   (org-entry-beginning-position)
                   (org-entry-end-position))))
-    (overlay-put overlay 'invisible 'english-capture)))
+    (overlay-put overlay 'invisible 'english-capture)
+    ;; Take precedence over other overlays setting the `invisible' property.
+    (overlay-put overlay 'priority 99)))
 
 (defun sr/english--capture-show-entry ()
   (remove-overlays
