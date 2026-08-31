@@ -269,6 +269,9 @@ NEXT-REVIEW must be a time value."
    sr/english-tts-output-directory))
 
 (defun sr/english--tts-generate-audio (text output-file callback)
+  "Generate audio for TEXT to OUTPUT-FILE.
+
+CALLBACK is called with no arguments on successful conversion."
   (let* ((url (format "http://localhost:%d/v1/audio/speech"
                       (plist-get sr/english-tts-kokoro-options :port)))
 
@@ -290,22 +293,29 @@ NEXT-REVIEW must be a time value."
 
          (url-callback
           (lambda (status)
-            (let ((http-status
-                   (prog1
-                       (url-http-parse-response)
-                     (goto-char url-http-end-of-headers))))
-              (cond
-               ((= http-status 200)
-                (write-region (1+ (point)) (point-max) output-file)
-                (funcall callback))
-               ((= http-status 422)
-                (error "Bad request format: %s"
-                       (alist-get 'msg (elt (alist-get 'detail (json-read)) 0))))
-               (t
-                (error "Unexpected HTTP status code %s" http-status)))))))
-    (url-retrieve url url-callback)))
+            (if (plist-member status :error)
+                (progn
+                  (if-let ((err (plist-get status :error)))
+                      (signal (car err) (cdr err))
+                    (error "TTS failed with unknown error")))
+              (let ((http-status
+                     (prog1
+                         (url-http-parse-response)
+                       (goto-char url-http-end-of-headers))))
+                (cond
+                 ((= http-status 200)
+                  (write-region (1+ (point)) (point-max) output-file)
+                  (funcall callback))
+                 ((= http-status 422)
+                  (error "Bad request format: %s"
+                         (alist-get 'msg (elt (alist-get 'detail (json-read)) 0))))
+                 (t
+                  (error "Unexpected HTTP status code %s" http-status))))))))
+    (url-retrieve url url-callback)
+    (message "Generating audio...")))
 
 (defun sr/english--tts-play-audio (file)
+  (message "Playing audio...")
   (if (executable-find "ffplay")
       (start-process "*ffplay*" nil "ffplay" "-nodisp" "-autoexit" file)
     (user-error "ffplay executable not found")))
