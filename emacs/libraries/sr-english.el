@@ -41,21 +41,22 @@
 
 ;; TODO better customizations
 
-(defcustom sr/english-tts-kokoro-port 8880
-  "Port to the Kokoro-FastAPI server."
-  :type 'natnum)
+(defcustom sr/english-tts-kokoro-options
+  '(:port 8880
+          :voice "af_aoede"
+          :lang-code "a")
+  "Plist of options for using Kokoro.
 
-(defcustom sr/english-tts-kokoro-voice "af_aoede"
-  "Voice name for Kokoro."
-  :type 'string)
+- `:port' is the port to the Kokoro-FastAPI server.
 
-(defcustom sr/english-tts-kokoro-lang-code "a"
-  "Language code for Kokoro."
-  :type 'string)
+- `:voice' and `:lang-code' is the voice name and language code for
+  Kokoro, respectively."
+  :type 'plist)
 
-(defcustom sr/english-tts-kokoro-timeout 30
-  "Timeout for requests to the Kokoro-FastAPI server, in seconds."
-  :type 'natnum)
+(defcustom sr/english-tts-output-directory
+  (locate-user-emacs-file "english-tts")
+  "Directory to store generated TTS audio files."
+  :type 'directory)
 
 ;;; Dictionary
 
@@ -261,10 +262,15 @@ NEXT-REVIEW must be a time value."
     (buffer-string)))
 
 (defun sr/english--tts-get-output-file (text)
-  (expand-file-name "~/Downloads/test.mp3"))
+  (expand-file-name
+   (concat
+    (secure-hash 'sha1 (prin1-to-string (list sr/english-tts-kokoro-options text)))
+    ".mp3")
+   sr/english-tts-output-directory))
 
 (defun sr/english--tts-generate-audio (text output-file callback)
-  (let* ((url (format "http://localhost:%d/v1/audio/speech" sr/english-tts-kokoro-port))
+  (let* ((url (format "http://localhost:%d/v1/audio/speech"
+                      (plist-get sr/english-tts-kokoro-options :port)))
 
          (url-automatic-caching t)
          (url-request-method "POST")
@@ -276,8 +282,8 @@ NEXT-REVIEW must be a time value."
            (json-encode
            `((model . "kokoro")
              (input . ,text)
-             (voice . ,sr/english-tts-kokoro-voice)
-             (lang_code . ,sr/english-tts-kokoro-lang-code)
+             (voice . ,(plist-get sr/english-tts-kokoro-options :voice))
+             (lang_code . ,(plist-get sr/english-tts-kokoro-options :lang-code))
              (response_format . ,(file-name-extension output-file))
              (speed . 1)))
            'us-ascii))
@@ -304,20 +310,33 @@ NEXT-REVIEW must be a time value."
       (start-process "*ffplay*" nil "ffplay" "-nodisp" "-autoexit" file)
     (user-error "ffplay executable not found")))
 
-(defun sr/english-tts-read-text (text)
+(defun sr/english-tts-read-text (text &optional no-cache)
   "Read the English text TEXT aloud.
-Interactively, set TEXT to the region's content, if it's active.
-Otherwise, TEXT is set to the paragraph at point.."
+The generated audio file is saved in `sr/english-tts-output-directory',
+and is used later in caching.
+
+When optional argument NO-CACHE is non-nil, do not reuse the cached
+output.
+
+Interactively, TEXT is either the region's content or the paragraph at
+point, depending on whether the region is active. NO-CACHE is set when
+the prefix argument is present."
   (interactive (list (if (use-region-p)
                          (buffer-substring (region-beginning) (region-end))
-                       (thing-at-point 'paragraph t))))
+                       (thing-at-point 'paragraph t))
+                     (and current-prefix-arg)))
   (if-let* ((preprocessed-text (sr/english--tts-preprocess-text text))
             (output-file (sr/english--tts-get-output-file preprocessed-text)))
-      (sr/english--tts-generate-audio
-       preprocessed-text
-       output-file
-       (lambda ()
-         (sr/english--tts-play-audio output-file)))))
+      (if (and (not no-cache)
+               (file-regular-p output-file))
+          (sr/english--tts-play-audio output-file)
+        (if (not (file-directory-p sr/english-tts-output-directory))
+            (make-directory sr/english-tts-output-directory))
+        (sr/english--tts-generate-audio
+         preprocessed-text
+         output-file
+         (lambda ()
+           (sr/english--tts-play-audio output-file))))))
 
 ;;; _
 
