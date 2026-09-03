@@ -47,13 +47,50 @@
   "Directory to store generated TTS audio files."
   :type 'directory)
 
+;; TODO Maybe move quote normalization to a separate library
+
+(defcustom sr/tts-quote-rewrites
+  '((?‘ . ?')
+    (?’ . ?')
+    (?“ . ?\")
+    (?” . ?\"))
+  "Alist of quote rewrites.
+Each element looks like (FROM . TO), where FROM and TO are both
+characters. All occurrences of FROM will be replaced with TO."
+  :type '(alist
+          :key-type character
+          :value-type character))
+
+;;; Quote normalization
+
+(defun sr/tts-normalize-quotes (text)
+  "Normalize quotes in TEXT."
+  (let ((regexp (rx-to-string `(| ,@(mapcar #'car sr/tts-quote-rewrites)))))
+    (with-temp-buffer
+      (insert text)
+      (goto-char (point-min))
+      (while (re-search-forward regexp nil t)
+        (replace-match
+         (string (cdr (assq (aref (match-string 0) 0) sr/tts-quote-rewrites)))))
+      (buffer-string))))
+
+(defun sr/tts-normalize-quotes-in-region (beg end)
+  "Normalize quotes in the region between BEG and END.
+Interactively, use the current region for the arguments."
+  (interactive (list (region-beginning) (region-end)))
+  (replace-region-contents
+   beg end
+   (lambda ()
+     (sr/tts-normalize-quotes (buffer-string)))))
+
 ;;; TTS
 
-
-(defun sr/tts-preprocess-text (text)
+(defun sr/tts--preprocess-text (text)
+  "Preprocess TEXT for TTS; Normalize quotes and remove emphases."
   (with-temp-buffer
-    (insert text)
+    (insert (sr/tts-normalize-quotes text))
     (goto-char (point-min))
+    ;; TODO support major mode specific removals
     (while (re-search-forward "/\\([^/]+\\)/" nil t)
       (replace-match "\\1"))
     (buffer-string)))
