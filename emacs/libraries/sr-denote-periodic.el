@@ -98,7 +98,8 @@ note type. PLIST is a plist that consists of the following elements:
 
 Changing the value of this variable does not create or delete the
 convenience \"today\" functions, e.g.,
-`sr/denote-periodic-daily-note-today'."
+`sr/denote-periodic-daily-note-today'. If you need them, you can define
+one with `sr/denote-periodic-define-today-function'."
   :type '(alist :key-type symbol
                 :value-type plist))
 
@@ -191,7 +192,7 @@ create the note without confirmation."
   (let ((date (funcall sr/denote-periodic-get-today-date-function)))
     (sr/denote-periodic-find-or-create-note
      date type
-     (format "No %s note for. Create?" type))))
+     (format "No %s note for today. Create?" type))))
 
 (defmacro sr/denote-periodic-define-today-function (name)
   `(defun ,(intern (format "sr/denote-periodic-%s-note-today" name)) ()
@@ -199,9 +200,13 @@ create the note without confirmation."
      (interactive)
      (sr/denote-periodic-today ',name)))
 
+;;;###autoload (autoload 'sr/denote-periodic-daily-note-today "sr-denote-periodic" nil t)
 (sr/denote-periodic-define-today-function daily)
+;;;###autoload (autoload 'sr/denote-periodic-weekly-note-today "sr-denote-periodic" nil t)
 (sr/denote-periodic-define-today-function weekly)
+;;;###autoload (autoload 'sr/denote-periodic-monthly-note-today "sr-denote-periodic" nil t)
 (sr/denote-periodic-define-today-function monthly)
+;;;###autoload (autoload 'sr/denote-periodic-yearly-note-today "sr-denote-periodic" nil t)
 (sr/denote-periodic-define-today-function yearly)
 
 ;;; Daily note mode
