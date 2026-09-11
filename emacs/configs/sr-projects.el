@@ -87,5 +87,47 @@
 	  (apply 'call-process (append '("git" nil nil nil) args)))
     (message (format "%s uploaded." date-string))))
 
+;;; Dotfiles
+
+(defun sr/project-dotfiles-list-external-software ()
+  "Return the list of external software used in the Emacs configuration."
+  (let* ((files (seq-filter
+                 (lambda (file) (string-suffix-p ".el" file))
+                 (project-files (project-current))))
+         (matches))
+    (with-temp-buffer
+      (apply
+       'call-process
+       "grep" nil t nil "^;; EXTERNAL: "
+       files)
+      (goto-char (point-min))
+      (while (re-search-forward ";; EXTERNAL: \\(.+\\)$" nil t)
+        (push (match-string 1) matches))
+      matches)))
+
+(defun sr/project-dotfiles-insert-external-software ()
+  "Insert the list of external software, formatted as a list."
+  (interactive)
+  (dolist (item (sr/project-dotfiles-list-external-software))
+    (insert "- ")
+    (insert item)
+    (insert "\n")))
+
+(defun sr/project-dotfiles-generate-loaddefs ()
+  "Generate loaddefs for the Lisp libraries."
+  (interactive)
+  (let* ((library-directory
+          (expand-file-name "emacs/libraries" (project-root (project-current))))
+         (output-file
+          (expand-file-name "sr-autoloads.el" library-directory)))
+    (loaddefs-generate library-directory output-file)
+    (message
+     (format
+      "Generated loaddefs file for Lisp files in '%s'"
+      library-directory output-file))))
+
+;;; _
+
 (provide 'sr-projects)
+
 ;;; sr-projects.el ends here
