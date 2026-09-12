@@ -192,14 +192,6 @@ This function is intended to be added to `post-self-insert-hook'."
 
 (keymap-global-set "C-x C-b" #'ibuffer)
 
-(defvar sr/scratch-file-name (expand-file-name "emacs/configs/sr-scratch.el" sr/dotfiles-directory))
-
-(defun sr/open-scratch-file ()
-  (interactive)
-  (find-file sr/scratch-file-name))
-
-(keymap-global-set "<f12>" #'sr/open-scratch-file)
-
 (defun sr/buffer-kill-and-delete-file ()
   "Kill the current buffer, also deleting its file."
   (interactive)

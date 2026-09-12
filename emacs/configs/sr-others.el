@@ -222,6 +222,19 @@ ARG has the same meaning as `vterm'."
 
 (keymap-global-set "C-c d t" #'sr/tts-read-text)
 
+;;; Scratch
+
+(with-eval-after-load 'sr-scratch
+  (setq sr/scratch-file-alist
+        '((emacs-lisp-mode . "test.el")
+          (org-mode . "test.org")
+          (text-mode . "test.txt")))
+
+  (setq sr/scratch-default-major-mode 'emacs-lisp-mode))
+
+(keymap-global-set "C-<f12>" #'sr/scratch-open)
+(keymap-global-set "<f12>" #'sr/scratch-open-default)
+
 ;;; _
 
 (provide 'sr-others)
