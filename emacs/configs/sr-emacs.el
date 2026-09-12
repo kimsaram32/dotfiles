@@ -149,15 +149,24 @@
 (keymap-global-set "C-M-z" 'delete-pair)
 
 (setq-default fill-column 80)
+(keymap-global-set "M-q" #'unfill-toggle)
 
-;; Indentations
+;;;; Insertions
+
+(defun sr/insert-won ()
+  (interactive)
+  (insert "₩"))
+
+(keymap-global-set "C-x 8 w" #'sr/insert-won)
+
+;;;; Indentations
 
 (keymap-global-set "S-<return>" #'electric-indent-just-newline)
 
 (with-eval-after-load 'org
   (keymap-unset org-mode-map "S-<return>"))
 
-;; Automatic whitespace deletion
+;;;; Automatic whitespace deletion
 
 (defun sr/delete-trailing-whitespace-after-newline ()
   "After inserting a newline, delete trailing whitespace in the previous line.
@@ -171,7 +180,7 @@ This function is intended to be added to `post-self-insert-hook'."
 
 (add-hook 'post-self-insert-hook #'sr/delete-trailing-whitespace-after-newline)
 
-;; Expreg
+;;;; Expreg
 
 (keymap-global-set "C-M-SPC" #'expreg-expand)
 
@@ -239,17 +248,17 @@ This function is intended to be added to `post-self-insert-hook'."
     ("cup" "\\cup"))
 
   (sr/make-prefixed-abbrev-table
-    ?'
-    '(("a" "\\alpha" "\\land")
-      ("A" "\\forall" "\\aleph")
-      ("b" "\\beta")
-      ("e" "\\exists" "\\varnothing")
-      ("p" "^\\prime")
-      ("pp" "\\textt{++}")
-      ("v" "\\lor")
-      ("-" "\\neg{")
-      ("." " \\cdot")
-      ("," " \\circ")))))
+   ?'
+   '(("a" "\\alpha" "\\land")
+     ("A" "\\forall" "\\aleph")
+     ("b" "\\beta")
+     ("e" "\\exists" "\\varnothing")
+     ("p" "^\\prime")
+     ("pp" "\\textt{++}")
+     ("v" "\\lor")
+     ("-" "\\neg{")
+     ("." " \\cdot")
+     ("," " \\circ")))))
 
 (sr/define-abbrev-table
  'org-mode-abbrev-table
@@ -307,10 +316,11 @@ window."
 (require-theme 'modus-themes)
 (keymap-global-set "<f5>" 'modus-themes-rotate)
 (setq modus-themes-common-palette-overrides modus-themes-preset-overrides-faint)
-(modus-themes-load-theme 'modus-vivendi-tinted)
 
 ;; Ef themes
 (require-theme 'ef-themes)
+
+(modus-themes-load-theme 'ef-owl)
 
 ;;; _
 

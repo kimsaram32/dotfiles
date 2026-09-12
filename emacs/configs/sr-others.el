@@ -115,26 +115,6 @@
 
 (keymap-global-set "<f6>" #'spray-mode)
 
-;;; SRS
-
-(require 'srs)
-
-(defconst sr/note-flashcards-directory
-  (expand-file-name "flashcards/" sr/note-root-directory)
-  "Directory for flashcards.")
-
-(with-eval-after-load 'srs
-  (add-to-list 'srs-path-list (expand-file-name "*.org" sr/note-flashcards-directory))
-  (add-to-list 'srs-path-list (expand-file-name "*.txt" sr/note-flashcards-directory)))
-
-(defvar-keymap sr/srs-map)
-
-(keymap-global-set "C-c s" sr/srs-map)
-
-(keymap-set sr/srs-map "s" #'srs-menu)
-(keymap-set sr/srs-map "c" #'srs-card-make-at-point)
-(keymap-set sr/srs-map "r" #'srs-review)
-
 ;;; Version control
 
 (defvar sr/clone-project-repo-url-history nil

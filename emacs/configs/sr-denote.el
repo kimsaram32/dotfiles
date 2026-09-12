@@ -194,8 +194,8 @@ This returns a plist of two properties: TITLE and CONTENT."
 
 ;;; Buffer integration
 
-(setq denote-buffer-name-prefix "d: ")
-(setq denote-rename-buffer-format "%i %t")
+(setq denote-buffer-name-prefix "[D] ")
+(setq denote-rename-buffer-format "%t (%i)")
 (denote-rename-buffer-mode 1)
 
 (defun sr/denote-rename-after-save ()

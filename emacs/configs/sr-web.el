@@ -65,7 +65,23 @@
 
 ;;; Elfeed
 
+;;;; Configuration
+
 (keymap-global-set "C-c w" 'elfeed)
+
+(with-eval-after-load 'elfeed
+  (setq-default elfeed-search-filter "+unread -to-read-list")
+  (remove-hook 'elfeed-search-update-hook #'elfeed-search-add-separators)
+
+  (keymap-set elfeed-show-mode-map "w" #'sr/elfeed-show-visit-eww)
+  (keymap-set elfeed-show-mode-map "a" 'sr/elfeed-show-add-to-read)
+  (keymap-set elfeed-show-mode-map "r" #'sr/elfeed-show-read)
+
+  (keymap-set elfeed-search-mode-map "l" 'sr/elfeed-search-show-to-reads)
+  (keymap-set elfeed-search-mode-map "e" 'sr/elfeed-export-entries)
+  (keymap-set elfeed-search-mode-map "r" #'sr/elfeed-search-read)
+
+  (sr/elfeed-load-entries))
 
 (defvar sr/elfeed-to-read-tag 'to-read-list
   "Elfeed tag for 'to read' entries.")
@@ -136,22 +152,6 @@
   "Read current elfeed entry."
   (interactive)
   (elfeed-show-untag 'unread 'to-read-list))
-
-;;;; Configuration
-
-(with-eval-after-load 'elfeed
-  (setq-default elfeed-search-filter "+unread -to-read-list")
-  (remove-hook 'elfeed-search-update-hook #'elfeed-search-add-separators)
-
-  (keymap-set elfeed-show-mode-map "w" #'sr/elfeed-show-visit-eww)
-  (keymap-set elfeed-show-mode-map "a" 'sr/elfeed-show-add-to-read)
-  (keymap-set elfeed-show-mode-map "r" #'sr/elfeed-show-read)
-
-  (keymap-set elfeed-search-mode-map "l" 'sr/elfeed-search-show-to-reads)
-  (keymap-set elfeed-search-mode-map "e" 'sr/elfeed-export-entries)
-  (keymap-set elfeed-search-mode-map "r" #'sr/elfeed-search-read)
-
-  (sr/elfeed-load-entries))
 
 ;;; _
 
