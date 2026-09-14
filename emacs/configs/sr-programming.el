@@ -367,10 +367,12 @@ and LANG-ts-mode is used with org mode source codes.")
 
 ;;;; Emmet
 
-(require 'emmet-mode)
 (add-hook 'html-ts-mode-hook #'emmet-mode)
-(keymap-unset emmet-mode-keymap "C-j")
-(keymap-set emmet-mode-keymap "C-c C-j" #'emmet-expand-line)
+
+(with-eval-after-load 'emmet
+  (keymap-unset emmet-mode-keymap "C-j")
+  (keymap-set emmet-mode-keymap "C-c C-j" #'emmet-expand-line)
+  (setq emmet-self-closing-tag-style ""))
 
 ;;; Markdown
 

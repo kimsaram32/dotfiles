@@ -115,6 +115,21 @@
 
 (keymap-global-set "<f6>" #'spray-mode)
 
+;;; Spacious padding
+
+(with-eval-after-load 'spacious-padding
+  (setq spacious-padding-widths
+        '( :internal-border-width 4
+           :header-line-width 4
+           :mode-line-width 6
+           :custom-button-width 3
+           :tab-width 2
+           :right-divider-width 4
+           :scroll-bar-width 8
+           :fringe-width 12)))
+
+(spacious-padding-mode 1)
+
 ;;; Version control
 
 (defvar sr/clone-project-repo-url-history nil
