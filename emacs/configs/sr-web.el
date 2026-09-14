@@ -153,6 +153,40 @@
   (interactive)
   (elfeed-show-untag 'unread 'to-read-list))
 
+;;; Downloading HTTP documents
+
+(defvar sr/download-directory "~/Downloads/"
+  "Base directory for downloaded documents.")
+
+(defvar sr/download-http-url-prompt-history nil
+  "Minibuffer history for URL prompt in `sr/download-http'.")
+
+(defun sr/download-http (url file)
+  "Retrieve document at URL and save it to FILE."
+  (interactive
+   (let ((url (read-string "URL: " nil sr/download-http-url-prompt-history)))
+     (list url
+           (expand-file-name
+            (read-file-name "File: " sr/download-directory nil nil
+                            (file-name-nondirectory
+                             (car (url-path-and-query (url-generic-parse-url url)))))
+            sr/download-directory))))
+  (when (not (string= (file-name-directory file)
+                      (expand-file-name sr/download-directory)))
+    (user-error
+     "Invalid file name '%s': must be inside `sr/download-directory'"
+     file))
+  (let* ((url-buffer (url-retrieve-synchronously url)))
+    (find-file file)
+    (erase-buffer)
+    (insert-buffer-substring
+     url-buffer
+     (with-current-buffer url-buffer
+       (url-http-parse-headers)
+       (goto-char url-http-end-of-headers)
+       (forward-char)
+       (point)))))
+
 ;;; _
 
 (provide 'sr-web)
