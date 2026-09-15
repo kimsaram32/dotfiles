@@ -482,7 +482,7 @@ and LANG-ts-mode is used with org mode source codes.")
 
 (defun sr/bnf-mode-indent-line ()
   "Indent production continuation lines."
-  (when-let ((amount (sr/bnf-mode-indentation-amount (point))))
+  (when-let* ((amount (sr/bnf-mode-indentation-amount (point))))
     (progn
       (back-to-indentation)
       (delete-horizontal-space)

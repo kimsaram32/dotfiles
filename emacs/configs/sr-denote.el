@@ -143,7 +143,7 @@ This returns a plist of two properties: TITLE and CONTENT."
   (let* ((initial-data (sr/denote-get-initial-data-dwim))
          (denote-use-title (plist-get initial-data :title)))
     (call-interactively 'denote)
-    (when-let ((content (plist-get initial-data :content)))
+    (when-let* ((content (plist-get initial-data :content)))
       (insert content))))
 
 (defun sr/denote-create-note-problem ()
