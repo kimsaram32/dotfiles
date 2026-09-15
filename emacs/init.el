@@ -13,17 +13,8 @@
   :group 'files)
 
 (defcustom sr/dotfiles-directory (expand-file-name "~/me/dotfiles/")
-  "Root directory for dotfiles."
-  :type 'directory)
-
-(defcustom sr/emacs-library-directory
-  (file-name-concat sr/dotfiles-directory "emacs/libraries/")
-  "Directory for personal lisp libraries."
-  :type 'directory)
-
-(defcustom sr/emacs-config-directory
-  (file-name-concat sr/dotfiles-directory "emacs/configs/")
-  "Directory for personal configurations."
+  "Root directory for dotfiles.
+Use `locate-user-emacs-file' when both can be used."
   :type 'directory)
 
 (defcustom sr/note-root-directory (expand-file-name "~/me/myself/")
@@ -85,15 +76,9 @@
 
 ;;; Load path
 
-(add-to-list 'load-path sr/emacs-library-directory)
-(add-to-list 'load-path sr/emacs-config-directory)
-
-;;; Autoloads
-
-(unless (require 'sr-autoloads nil t)
-  (message
-   "Autoload file must be generated in %s; some features might not work"
-   (expand-file-name "sr-autoloads.el" sr/emacs-load-directory)))
+;; The directory for libraries (libraries/) is already handled by
+;; `prepare-user-lisp'.
+(add-to-list 'load-path (locate-user-emacs-file "configs/"))
 
 ;;; Load modules
 
@@ -107,11 +92,6 @@
       (message "Failed to load configuration '%s': `%S'" ,name (cdr err)))))
 
 (require 'sr-environment)
-
-;; This is a private module.
-(sr/load-configuration
-  "Startup"
-  (require 'sr-startup))
 
 (sr/load-configuration
   "Emacs"

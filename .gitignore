@@ -5,11 +5,11 @@ node_modules/
 \#*\#
 .#*
 *-autoloads.el
+*.elc
 
 # Personal
 emacs/elfeed.el
 emacs/elfeed.org
-emacs/configs/sr-startup.el
 
 .DS_Store
 /.agent-shell/
