@@ -98,7 +98,7 @@
 (defun sr/elfeed-show-visit-eww ()
   "Visit the current entry with `eww'."
   (interactive)
-  (when-let ((link (elfeed-entry-link elfeed-show-entry)))
+  (when-let* ((link (elfeed-entry-link elfeed-show-entry)))
     (eww link)))
 
 ;;;; Managing 'to read' entries
