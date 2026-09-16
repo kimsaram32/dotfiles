@@ -42,7 +42,7 @@
  :height 160
  :family "Pretendard Variable")
 
-(setq-default line-spacing 3)
+(setq-default line-spacing '(2 . 2))
 
 ;;; Custom
 
@@ -146,10 +146,11 @@
 (keymap-set ctl-x-r-map "a" #'append-to-register)
 
 (setq delete-pair-blink-delay 0)
-(keymap-global-set "C-M-z" 'delete-pair)
+(setq delete-pair-push-mark t)
+(keymap-global-set "C-M-z" #'delete-pair)
 
 (setq-default fill-column 80)
-(keymap-global-set "M-q" #'unfill-toggle)
+(keymap-global-set "M-Q" #'unfill-paragraph)
 
 ;;;; Insertions
 

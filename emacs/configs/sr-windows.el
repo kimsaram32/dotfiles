@@ -28,6 +28,7 @@
 (keymap-global-set "C-M-c" #'scroll-other-window-down)
 (keymap-global-unset "C-x o")
 (keymap-global-set "M-o" #'other-window)
+(keymap-global-set "M-O" #'other-window-backward)
 
 (setq switch-to-buffer-obey-display-actions t)
 
@@ -39,13 +40,6 @@
 ;; Remove colliding maps
 (with-eval-after-load 'org-agenda
   (keymap-unset org-agenda-mode-map "C-x C-w"))
-
-;;; Windmove
-
-(keymap-set sr/window-map "C-f" #'windmove-swap-states-right)
-(keymap-set sr/window-map "C-b" #'windmove-swap-states-left)
-(keymap-set sr/window-map "C-p" #'windmove-swap-states-up)
-(keymap-set sr/window-map "C-n" #'windmove-swap-states-down)
 
 ;;; Winner mode
 
@@ -74,15 +68,13 @@
 
 ;; Info and apropos
 
-;; (add-to-list
-;;  'display-buffer-alist
-;;  `((or
-;;     (derived-mode Info-mode)
-;;     (derived-mode apropos-mode))
-;;    (display-buffer-reuse-mode-window display-buffer-use-some-window)
-;;    (mode . Info-mode)
-;;    (inhibit-same-window . t)
-;;    (post-command-select-window . t)))
+(add-to-list
+ 'display-buffer-alist
+ `((this-command info)
+   (display-buffer-reuse-mode-window display-buffer-use-some-window)
+   (mode . Info-mode)
+   (inhibit-same-window . t)
+   (post-command-select-window . t)))
 
 ;; Manuals
 

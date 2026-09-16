@@ -35,12 +35,18 @@
         (call-interactively #'project-find-file)))
 
 (with-eval-after-load 'project
-  (setq project-vc-include-untracked t)
   (setq project-mode-line t)
+  (setq project-vc-include-untracked t)
   (setq project-vc-extra-root-markers
         '(".Projectile"))
+  (setq project-switch-commands
+        '((project-dired "Dired")
+          (project-find-file "Find file")
+          (magit-project-status "Magit" "m")
+          (project-any-command "Other")))
 
-  (keymap-set project-prefix-map "F" #'sr/project-other-find-file))
+  (keymap-set project-prefix-map "F" #'sr/project-other-find-file)
+  (keymap-set project-prefix-map "R" #'project-root-find-file))
 
 ;;; Dired
 
