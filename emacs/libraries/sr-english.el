@@ -117,10 +117,8 @@ data."
                     (org-link-make-string
                      (plist-get page :url)
                      (plist-get page :title))))
-         (buf (or (get-file-buffer sr/english-capture-file)
-                  (create-file-buffer sr/english-capture-file)))
          (start-pos))
-    (switch-to-buffer buf)
+    (find-file sr/english-capture-file)
     (goto-char (point-min))
     (when (not (org-at-heading-p))
       (outline-next-heading))
@@ -130,9 +128,12 @@ data."
       (fill-region start-pos (point))
       (when page
         (insert (format "\n\n%s" link)))
-      (insert "\n\n"))))
+      (insert "\n\n"))
+    (sr/english-capture-update-header-line)))
 
 ;;; Capture buffer
+
+(defvar-local sr/english--capture-non-due-hidden nil)
 
 (defun sr/english--capture-org-timestamp-string-to-time (string)
   "Convert org timestamp string to time values.
@@ -161,24 +162,37 @@ STRING can be nil, and in this case nil is returned."
           (time-equal-p time (current-time)))
     t))
 
-(defvar-local sr/english--capture-non-due-hidden nil)
+(defun sr/english-capture-update-header-line ()
+  "Update `header-line-format' in the capture buffer."
+  (interactive)
+  (let ((entries (org-map-entries #'sr/english--capture-is-entry-due)))
+    (setq header-line-format
+          (concat (when sr/english--capture-non-due-hidden
+                    (propertize "[Dues only] " 'face 'bold))
+                  (format
+                   "%d entries due today (%d total)"
+                   (seq-count #'identity entries)
+                   (length entries))))))
 
 ;;;###autoload
 (defun sr/english-capture-hide-non-due ()
   "Hide non-due entries."
   (interactive)
   (setq sr/english--capture-non-due-hidden t)
-  (org-scan-tags
-   #'sr/english--capture-hide-entry
-   (lambda (todo tags level) (not (sr/english--capture-is-entry-due)))
-   nil))
+  (org-map-entries
+   (lambda ()
+     (if (not (sr/english--capture-is-entry-due))
+         (progn
+           (sr/english--capture-hide-entry)))))
+  (sr/english-capture-update-header-line))
 
 ;;;###autoload
 (defun sr/english-capture-show-non-due ()
   "Show non-due entries."
   (interactive)
   (setq sr/english--capture-non-due-hidden nil)
-  (remove-overlays (point-min) (point-max) 'invisible 'english-capture))
+  (remove-overlays (point-min) (point-max) 'invisible 'english-capture)
+  (sr/english-capture-update-header-line))
 
 ;;;###autoload
 (defun sr/english-capture-toggle-non-due-visibility ()
@@ -215,11 +229,13 @@ NEXT-REVIEW must be a time value."
   (org-entry-put (point) "LAST_REVIEW"
                  (format-time-string (org-time-stamp-format) (current-time)))
   (if sr/english--capture-non-due-hidden
-      (sr/english--capture-hide-entry)))
+      (sr/english--capture-hide-entry))
+  (sr/english-capture-update-header-line))
 
 (defvar-keymap sr/english-capture-mode-map
   "C-c C-." #'sr/english-capture-toggle-non-due-visibility
-  "C-c d r" #'sr/english-capture-finish-review-at-point)
+  "C-c d r" #'sr/english-capture-finish-review-at-point
+  "C-c d h" #'sr/english-capture-update-header-line)
 
 ;;;###autoload
 (define-minor-mode sr/english-capture-mode
