@@ -58,6 +58,13 @@
 
 ;;; Sentence capture
 
+(defvar eww-data)
+(declare-function eww-current-url "eww" ())
+
+(defvar elfeed-show-entry)
+(declare-function elfeed-entry-link "elfeed-db")
+(declare-function elfeed-entry-title "elfeed-db")
+
 ;; TODO: Maybe merge with `'sr/denote-get-initial-data-dwim'?
 (defun sr/english-get-buffer-page-data ()
   "Get the page data the current buffer is visiting.
