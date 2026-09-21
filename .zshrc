@@ -123,6 +123,10 @@ export GPG_TTY=$(tty)
 
 export XAPIAN_CJK_NGRAM=1
 
+#### GHCup
+
+source /Users/kimsaram32/.ghcup/env
+
 ### Commands
 
 xqns () {
