@@ -35,7 +35,7 @@
         (call-interactively #'project-find-file)))
 
 (with-eval-after-load 'project
-  (setq project-mode-line t)
+  (setq project-mode-line 'non-remote)
   (setq project-vc-include-untracked t)
   (setq project-vc-extra-root-markers
         '(".Projectile"))
@@ -229,8 +229,9 @@ ARG has the same meaning as `vterm'."
   (setq sr/scratch-file-alist
         '((emacs-lisp-mode . "test.el")
           (org-mode . "test.org")
-          (text-mode . "test.txt")))
-
+          (text-mode . "test.txt")
+          (markdown-mode . "test.md")
+          (diff-mode . "test.diff")))
   (setq sr/scratch-default-major-mode 'emacs-lisp-mode))
 
 (keymap-global-set "C-<f12>" #'sr/scratch-open)

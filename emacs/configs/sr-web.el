@@ -39,6 +39,7 @@
   (when (string-match-p "github\\.com.+\\.diff$" (eww-current-url))
     (diff-mode)))
 
+(add-hook 'eww-mode #'outline-minor-mode)
 (add-hook 'eww-after-render-hook #'sr/eww-enable-diff-mode-github-diff)
 
 ;;; Browse-url

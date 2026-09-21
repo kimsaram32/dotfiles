@@ -72,6 +72,7 @@
 (recentf-mode)
 (savehist-mode)
 (blink-cursor-mode -1)
+(global-so-long-mode)
 
 ;;; Whitespace mode
 
@@ -139,6 +140,7 @@
 (setq sentence-end-base "[.?!…‽,][]\"'”’)}»›]*")
 
 (setq set-mark-command-repeat-pop t)
+(setq exchange-point-and-mark-highlight-region nil)
 
 (setq kill-do-not-save-duplicates t)
 
