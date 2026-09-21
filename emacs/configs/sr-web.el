@@ -21,17 +21,13 @@
 ;;; Commentary:
 ;;; Code:
 
-(require 'shr)
-(require 'eww)
-(require 'browse-url)
-(require 'goto-addr)
-
 ;;; Shr
 
-(setq shr-max-width 80)
-(setq shr-use-colors nil)
-(setq shr-max-image-proportion 0.7)
-(setq shr-bullet "- ")
+(with-eval-after-load 'shr
+  (setq shr-max-width 80)
+  (setq shr-use-colors nil)
+  (setq shr-max-image-proportion 0.7)
+  (setq shr-bullet "- "))
 
 ;;; EWW
 
@@ -39,8 +35,9 @@
   (when (string-match-p "github\\.com.+\\.diff$" (eww-current-url))
     (diff-mode)))
 
-(add-hook 'eww-mode #'outline-minor-mode)
-(add-hook 'eww-after-render-hook #'sr/eww-enable-diff-mode-github-diff)
+(with-eval-after-load 'eww
+  (add-hook 'eww-mode #'outline-minor-mode)
+  (add-hook 'eww-after-render-hook #'sr/eww-enable-diff-mode-github-diff))
 
 ;;; Browse-url
 
@@ -48,27 +45,29 @@
 ;; providing an option to use external browsers. (2) Use external browsers for
 ;; URLs known to require JavaScript.
 
-(setq browse-url-browser-function #'eww-browse-url)
-(setq browse-url-secondary-browser-function #'browse-url-default-browser)
+(with-eval-after-load 'browse-url
+  (setq browse-url-browser-function #'eww-browse-url)
+  (setq browse-url-secondary-browser-function #'browse-url-default-browser)
 
-(setq browse-url-handlers
-      '(("github\\.com.+\\.diff$" . eww-browse-url)
-        ("github\\.com" . browse-url-default-browser)
-        ("youtube\\.com" . browse-url-default-browser)
-        ("youtu\\.be" . browse-url-default-browser)
-        ("reddit\\.com" . browse-url-default-browser)
-        ("lobste\\.rs" . browse-url-default-browser)
-        ("localhost" . browse-url-default-browser)))
+  (setq browse-url-handlers
+        '(("github\\.com.+\\.diff$" . eww-browse-url)
+          ("github\\.com" . browse-url-default-browser)
+          ("youtube\\.com" . browse-url-default-browser)
+          ("youtu\\.be" . browse-url-default-browser)
+          ("reddit\\.com" . browse-url-default-browser)
+          ("lobste\\.rs" . browse-url-default-browser)
+          ("localhost" . browse-url-default-browser))))
 
 ;;; Goto address mode
 
-(keymap-set goto-address-highlight-keymap "C-c C-o" #'goto-address-at-point)
+(with-eval-after-load 'goto-addr
+  (keymap-set goto-address-highlight-keymap "C-c C-o" #'goto-address-at-point))
 
 ;;; Elfeed
 
 ;;;; Configuration
 
-(keymap-global-set "C-c w" 'elfeed)
+(keymap-global-set "C-c w" #'elfeed)
 
 (with-eval-after-load 'elfeed
   (setq-default elfeed-search-filter "+unread -to-read-list")
