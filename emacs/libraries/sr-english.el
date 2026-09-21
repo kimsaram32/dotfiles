@@ -251,9 +251,11 @@ NEXT-REVIEW must be a time value."
   :lighter " Eng"
   (if sr/english-capture-mode
       (progn
-        (add-to-invisibility-spec 'english-capture))
+        (add-to-invisibility-spec 'english-capture)
+        (sr/english-capture-update-header-line))
     (sr/english-capture-show-non-due)
-    (remove-from-invisibility-spec 'english-capture)))
+    (remove-from-invisibility-spec 'english-capture)
+    (setq header-line-format nil)))
 
 ;;; _
 
