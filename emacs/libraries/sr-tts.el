@@ -102,6 +102,12 @@ Interactively, use the current region for the arguments."
     ".mp3")
    sr/tts-output-directory))
 
+(defvar url-automatic-caching)
+(defvar url-request-method)
+(defvar url-request-extra-headers)
+(defvar url-request-data)
+(defvar url-callback)
+
 (defun sr/tts--generate-audio (text output-file callback)
   "Generate audio for TEXT to OUTPUT-FILE.
 
