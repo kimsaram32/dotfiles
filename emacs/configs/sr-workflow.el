@@ -55,6 +55,7 @@ changes in the note directory."
   (setq sr/denote-periodic-directory sr/note-periodic-directory)
   (setq sr/denote-periodic-get-today-date-function #'sr/note-current-date))
 
+(keymap-global-set "C-c j f" #'sr/denote-periodic-find-or-create-note)
 (keymap-global-set "C-c j j" #'sr/denote-periodic-daily-note-today)
 (keymap-global-set "C-c j w" #'sr/denote-periodic-weekly-note-today)
 (keymap-global-set "C-c j m" #'sr/denote-periodic-monthly-note-today)

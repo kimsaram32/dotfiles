@@ -34,7 +34,9 @@
 
 ;;; Compilation mode
 
-(add-hook 'compilation-filter-hook 'ansi-color-compilation-filter)
+(with-eval-after-load 'compile
+  (keymap-global-set "C-c r" #'compile)
+  (add-hook 'compilation-filter-hook 'ansi-color-compilation-filter))
 
 ;;; Display line numbers mode
 

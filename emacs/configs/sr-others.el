@@ -42,6 +42,7 @@
   (setq project-switch-commands
         '((project-dired "Dired")
           (project-find-file "Find file")
+          (project-find-regexp "Find regexp")
           (magit-project-status "Magit" "m")
           (project-any-command "Other")))
 

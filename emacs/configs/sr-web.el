@@ -31,11 +31,21 @@
 
 ;;; EWW
 
+(defun sr/eww-rename-buffer ()
+  (when (eq major-mode 'eww-mode)
+    (when-let* ((name (or (plist-get eww-data :title)
+                          (plist-get eww-data :url)
+                          "Untitled")))
+      (format "*eww: %s*" name))))
+
 (defun sr/eww-enable-diff-mode-github-diff ()
   (when (string-match-p "github\\.com.+\\.diff$" (eww-current-url))
     (diff-mode)))
 
 (with-eval-after-load 'eww
+  (setq eww-auto-rename-buffer #'sr/eww-rename-buffer)
+  (setq eww-browse-url-new-window-is-tab nil)
+
   (add-hook 'eww-mode #'outline-minor-mode)
   (add-hook 'eww-after-render-hook #'sr/eww-enable-diff-mode-github-diff))
 
