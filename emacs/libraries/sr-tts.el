@@ -24,6 +24,9 @@
 
 ;;; Code:
 
+(require 'url)
+(require 'url-http)
+
 ;;; Customization
 
 (defgroup sr/tts nil
@@ -102,11 +105,7 @@ Interactively, use the current region for the arguments."
     ".mp3")
    sr/tts-output-directory))
 
-(defvar url-automatic-caching)
-(defvar url-request-method)
-(defvar url-request-extra-headers)
-(defvar url-request-data)
-(defvar url-callback)
+(defvar url-http-end-of-headers)
 
 (defun sr/tts--generate-audio (text output-file callback)
   "Generate audio for TEXT to OUTPUT-FILE.
@@ -123,19 +122,19 @@ CALLBACK is called with no arguments on successful conversion."
           ;; Encode multibyte string to unibyte.
           (encode-coding-string
            (json-encode
-           `((model . "kokoro")
-             (input . ,text)
-             (voice . ,(plist-get sr/tts-kokoro-options :voice))
-             (lang_code . ,(plist-get sr/tts-kokoro-options :lang-code))
-             (response_format . ,(file-name-extension output-file))
-             (speed . 1)))
+            `((model . "kokoro")
+              (input . ,text)
+              (voice . ,(plist-get sr/tts-kokoro-options :voice))
+              (lang_code . ,(plist-get sr/tts-kokoro-options :lang-code))
+              (response_format . ,(file-name-extension output-file))
+              (speed . 1)))
            'us-ascii))
 
          (url-callback
           (lambda (status)
             (if (plist-member status :error)
                 (progn
-                  (if-let ((err (plist-get status :error)))
+                  (if-let* ((err (plist-get status :error)))
                       (signal (car err) (cdr err))
                     (error "TTS failed with unknown error")))
               (let ((http-status
