@@ -142,10 +142,6 @@ Use `locate-user-emacs-file' when both can be used."
   (require 'sr-latex))
 
 (sr/load-configuration
-  "English"
-  (require 'sr-english-config))
-
-(sr/load-configuration
   "Calendar"
   (require 'sr-calendar))
 

@@ -325,12 +325,10 @@ pngpaste is used to retrieve the image from clipboard."
 
   (setq
    org-capture-templates
-
-   `(
-     ("t" "Todo"
-      entry (file ,(expand-file-name "todo.org" sr/note-root-directory))
-      "* TODO %?"
-      :prepend t))))
+   `( ("t" "Todo"
+       entry (file ,(expand-file-name "todo.org" sr/note-root-directory))
+       "* TODO %?"
+       :prepend t))))
 
 ;;; Citation
 

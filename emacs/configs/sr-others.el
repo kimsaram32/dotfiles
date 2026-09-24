@@ -237,6 +237,14 @@ ARG has the same meaning as `vterm'."
 (keymap-global-set "C-<f12>" #'sr/scratch-open)
 (keymap-global-set "<f12>" #'sr/scratch-open-default)
 
+;;; English
+
+(with-eval-after-load 'sr-english
+  (setq sr/english-capture-file (expand-file-name "english2.org" sr/note-root-directory)))
+
+(keymap-global-set "C-c d d" #'sr/english-browse-dictionary-at-point)
+(keymap-global-set "C-c d c" #'sr/english-capture)
+
 ;;; _
 
 (provide 'sr-others)

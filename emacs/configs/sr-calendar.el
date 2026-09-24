@@ -22,15 +22,14 @@
 
 ;;; Code:
 
-(require 'calendar)
-
 ;;; Date/time formats
 
-(setq calendar-week-start-day 1)
-(calendar-set-date-style 'iso)
+(with-eval-after-load 'calendar
+  (setq calendar-week-start-day 1)
+  (calendar-set-date-style 'iso)
 
-(setq calendar-time-zone-style 'numeric)
-(setq calendar-date-display-form calendar-iso-date-display-form)
+  (setq calendar-time-zone-style 'numeric)
+  (setq calendar-date-display-form calendar-iso-date-display-form))
 
 ;;; Holidays
 
@@ -50,42 +49,45 @@
     (holiday-fixed   12 25 "크리스마스"))
   "Korean holidays.")
 
-;; The standard way here is customizing `holiday-general-holidays', but the
-;; calendar buffer uses `calendar-holidays', which by default includes other
-;; kinds of holidays too. I don't want to see any other holidays in it, so I set
-;; calendar-holidays directly.
-(setq calendar-holidays sr/calendar-korean-holidays)
+(with-eval-after-load 'calendar
+  ;; The standard way here is customizing `holiday-general-holidays', but the
+  ;; calendar buffer uses `calendar-holidays', which by default includes other
+  ;; kinds of holidays too. I don't want to see any other holidays in it, so I set
+  ;; calendar-holidays directly.
+  (setq calendar-holidays sr/calendar-korean-holidays))
 
 ;;; Buffer display
 
-(setq calendar-left-margin 8)
-(setq calendar-intermonth-text
+(with-eval-after-load 'calendar
+  (setq calendar-left-margin 8)
+  (setq calendar-intermonth-text
         '(propertize
           (format "%2d"
                   (car
                    (calendar-iso-from-absolute
                     (calendar-absolute-from-gregorian (list month day year)))))
           'face 'font-lock-function-name-face))
-(setq calendar-intermonth-spacing 4)
-(setq calendar-intermonth-header
-      '(propertize
-        "W"
-        'face 'calendar-weekday-header))
+  (setq calendar-intermonth-spacing 4)
+  (setq calendar-intermonth-header
+        '(propertize
+          "W"
+          'face 'calendar-weekday-header))
 
-(setq calendar-mark-holidays-flag t)
-(setq calendar-date-echo-text
-      '(format "ISO date: %s"
-               (calendar-iso-date-string
-                (list month day year))))
+  (setq calendar-mark-holidays-flag t)
+  (setq calendar-date-echo-text
+        '(format "ISO date: %s"
+                 (calendar-iso-date-string
+                  (list month day year))))
 
-(add-hook 'calendar-today-visible-hook #'calendar-mark-today)
+  (add-hook 'calendar-today-visible-hook #'calendar-mark-today))
 
 ;;; Window setup
 
 (defun sr/calendar-dedicate-window ()
   (set-window-dedicated-p (get-buffer-window calendar-buffer) t))
 
-(add-hook 'calendar-initial-window-hook #'sr/calendar-dedicate-window)
+(with-eval-after-load 'calendar
+  (add-hook 'calendar-initial-window-hook #'sr/calendar-dedicate-window))
 
 (provide 'sr-calendar)
 

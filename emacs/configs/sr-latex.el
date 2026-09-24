@@ -57,8 +57,6 @@ Used in `TeX-view-program-list'."
 (keymap-set org-mode-map "$" #'math-delimiters-insert)
 (keymap-set LaTeX-mode-map "$" #'math-delimiters-insert)
 
-(require 'cdlatex)
-
 ;;; Cdlatex
 
 (with-eval-after-load 'cdlatex

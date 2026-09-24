@@ -40,12 +40,12 @@ changes in the note directory."
   (interactive)
   (save-some-buffers t)
   (let ((default-directory sr/note-root-directory)
-	    (subcommands `(("add" ".")
-			           ("commit" "-m"
-			            ,(format-time-string "%Y%m%d" (sr/note-current-date)))
-			           ("push"))))
+	(subcommands `(("add" ".")
+		       ("commit" "-m"
+			,(format-time-string "%Y%m%d" (sr/note-current-date)))
+		       ("push"))))
     (dolist (args subcommands)
-	  (apply 'call-process (append '("git" nil nil nil) args)))
+      (apply 'call-process (append '("git" nil nil nil) args)))
     (message "Commited and pushed changes in the note directory.")
     (message "Done. Good night :)")))
 
