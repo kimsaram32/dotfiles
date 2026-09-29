@@ -127,6 +127,10 @@ export XAPIAN_CJK_NGRAM=1
 
 source /Users/kimsaram32/.ghcup/env
 
+#### Elan
+
+source $HOME/.elan/env
+
 ### Commands
 
 xqns () {
