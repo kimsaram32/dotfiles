@@ -158,7 +158,8 @@ the encoded identifier."
 If `org' is available, use `org-read-date'. Else, fall back to
 `calendar-read-date'."
   (if (require 'org t)
-       (org-parse-time-string (org-read-date))
+      (encode-time
+       (decoded-time-set-defaults (org-parse-time-string (org-read-date))))
     (sr/denote-periodic--calendar-date-to-time (calendar-read-date))))
 
 (defun sr/denote-periodic-type-prompt ()
