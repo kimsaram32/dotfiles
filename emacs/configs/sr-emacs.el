@@ -34,7 +34,7 @@
 
 (set-face-attribute
  'default nil
- :height 160
+ :height 150
  :family "Aporetic Sans Mono")
 
 (set-face-attribute

@@ -54,14 +54,15 @@
 (vertico-mode)
 (vertico-multiform-mode)
 
-(keymap-set vertico-map "M-n" #'vertico-next)
-(keymap-set vertico-map "M-p" #'vertico-previous)
-(keymap-set vertico-map "M-TAB" #'vertico-insert)
-(keymap-set vertico-map "RET" #'vertico-exit-input)
-(keymap-set vertico-map "M-RET" #'vertico-exit)
+(with-eval-after-load 'vertico
+  (keymap-set vertico-map "M-n" #'vertico-next)
+  (keymap-set vertico-map "M-p" #'vertico-previous)
+  (keymap-set vertico-map "M-TAB" #'vertico-insert)
+  (keymap-set vertico-map "RET" #'vertico-exit-input)
+  (keymap-set vertico-map "M-RET" #'vertico-exit)
 
-(keymap-set vertico-map "C-n" #'next-history-element)
-(keymap-set vertico-map "C-p" #'previous-history-element)
+  (keymap-set vertico-map "C-n" #'next-history-element)
+  (keymap-set vertico-map "C-p" #'previous-history-element))
 
 ;;; Marginalia
 

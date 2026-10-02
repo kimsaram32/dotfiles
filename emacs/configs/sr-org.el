@@ -41,9 +41,7 @@
 
   (setq org-extend-today-until sr/note-day-start-hour))
 
-;;; Editing
-
-;;;; Configuration
+;;; Faces
 
 (defface sr/org-bold
   '((default :inherit bold))
@@ -72,17 +70,22 @@
   (add-hook 'modus-themes-after-load-theme-hook #'sr/org-customize-faces-with-modus-themes))
 
 (with-eval-after-load 'org
-  (setq org-startup-indented t)
-  (setq org-startup-with-inline-images t)
-  (setq-default org-startup-folded 'showeverything)
-
   (setq org-emphasis-alist
         '(("*" sr/org-bold bold)
           ("/" sr/org-italic italic)
           ("_" underline)
           ("=" org-verbatim verbatim)
           ("~" org-code verbatim)
-          ("+" (:strike-through t))))
+          ("+" (:strike-through t)))))
+
+;;; Editing
+
+;;;; Configuration
+
+(with-eval-after-load 'org
+  (setq org-startup-indented t)
+  (setq org-startup-with-inline-images t)
+  (setq-default org-startup-folded 'showeverything)
 
   (setq org-blank-before-new-entry '((heading . auto) (plain-list-item auto)))
 
@@ -93,7 +96,6 @@
 
   (setq org-list-allow-alphabetical t)
 
-  ;; Unbind conflicting keys.
   (setq
    org-fold-show-context-detail
    '((isearch . lineage)
@@ -110,6 +112,16 @@
   (setq org-export-backends '(ascii md html icalendar latex))
   (setq org-export-with-toc nil)
 
+  (add-hook 'org-mode-hook #'auto-fill-mode))
+
+;;;; Key bindings
+
+(defun sr/org-toggle-emphasis-markers ()
+  (interactive)
+  (setq-local org-hide-emphasis-markers (not org-hide-emphasis-markers))
+  (font-lock-update))
+
+(with-eval-after-load 'org
   (keymap-unset org-mode-map "C-'")
 
   (keymap-set org-mode-map "M-{" #'org-backward-element)
@@ -124,10 +136,9 @@
   ;; Swap these two bindings, since I use the footnotes feature more.
   (keymap-set org-mode-map "C-c C-x C-f" #'org-footnote-action)
   (keymap-set org-mode-map "C-c C-x f" #'org-emphasize)
+  (keymap-set org-mode-map "C-c C-x u" #'sr/org-toggle-emphasis-markers)
 
-  (keymap-set org-mode-map "C-c C-8" #'org-list-make-subtree)
-
-  (add-hook 'org-mode-hook #'auto-fill-mode))
+  (keymap-set org-mode-map "C-c C-8" #'org-list-make-subtree))
 
 ;;;; Insert image from clipboard (Denote integration)
 

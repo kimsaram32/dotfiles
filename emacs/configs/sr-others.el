@@ -106,18 +106,6 @@
 
   (add-hook 'agent-shell-mode-hook #'corfu-mode))
 
-;;; Avy
-
-;; (keymap-global-set "C-M-'" #'avy-goto-char-timer)
-;; (keymap-global-set "M-g t" #'avy-goto-char-2)
-;; (keymap-global-set "M-g b" #'avy-goto-char)
-
-(with-eval-after-load 'avy
-  (setq avy-timeout-seconds 0.3)
-  ;; I use Colemak layout, so the keys are adjusted accordingly.
-  ;; The default is '(?a ?s ?d ?f ?g ?h ?j ?k ?l).
-  (setq avy-keys '(?a ?r ?s ?t ?d ?n ?e ?i ?o ?h)))
-
 ;;; Spray
 
 (keymap-global-set "<f6>" #'spray-mode)
