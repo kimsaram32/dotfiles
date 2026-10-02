@@ -336,6 +336,21 @@ pngpaste is used to retrieve the image from clipboard."
   (setq org-cite-global-bibliography
         (list (expand-file-name "refs/pkm.bib" sr/note-root-directory))))
 
+;;; Zettelkasten
+
+(defconst sr/org-zk-structure-link-regexp ".+\\( \\)--- "
+  "Regular expression matching link items in a structure note.")
+
+(defun sr/org-zk-setup-structure-link-align ()
+  (add-to-list
+   'align-mode-rules-list
+   `(zk-structure-link
+     (regexp . ,sr/org-zk-structure-link-regexp)
+     (group . 1)
+     (modes  . 'org-mode))))
+
+(add-hook 'org-mode-hook #'sr/org-zk-setup-structure-link-align)
+
 ;;; _
 
 (provide 'sr-org)
