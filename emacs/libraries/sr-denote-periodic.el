@@ -37,6 +37,8 @@
 
 ;;; Code:
 
+(require 'time-date)
+(require 'calendar)
 (require 'denote)
 
 ;;; Note types
@@ -153,6 +155,9 @@ the encoded identifier."
      (calendar-extract-year date)
      nil -1 nil))))
 
+(declare-function org-read-date "org")
+(declare-function org-parse-time-string "org-macs")
+
 (defun sr/denote-periodic-time-prompt ()
   "Prompt for a time value.
 If `org' is available, use `org-read-date'. Else, fall back to
@@ -233,7 +238,7 @@ if IDENTIFIER is invalid as a daily note identifier, return nil."
 (defun sr/denote-periodic-find-previous-daily-note ()
   "Find the previous daily note."
   (interactive)
-  (if-let ((date (sr/denote-periodic-daily-note-buffer-date)))
+  (if-let* ((date (sr/denote-periodic-daily-note-buffer-date)))
       (sr/denote-periodic-find-or-create-note
        (time-subtract date (days-to-time 1))
        'daily
@@ -244,7 +249,7 @@ if IDENTIFIER is invalid as a daily note identifier, return nil."
 (defun sr/denote-periodic-find-next-daily-note ()
   "Find the next daily note."
   (interactive)
-  (if-let ((date (sr/denote-periodic-daily-note-buffer-date)))
+  (if-let* ((date (sr/denote-periodic-daily-note-buffer-date)))
       (sr/denote-periodic-find-or-create-note
        (time-add date (days-to-time 1))
        'daily
