@@ -55,18 +55,28 @@
 ;; providing an option to use external browsers. (2) Use external browsers for
 ;; URLs known to require JavaScript.
 
+(defvar sr/browse-url-external-url-regexp-list
+  '("github\\.com"
+    "youtube\\.com"
+    "youtu\\.be"
+    "reddit\\.com"
+    "lobste\\.rs"
+    "merriam-webster\\.com"
+    "dictionary\\.cambridge\\.org"
+    "localhost")
+  "List of regexps that match external URLs.
+Used to set the value for `browse-url-handlers'.")
+
 (with-eval-after-load 'browse-url
   (setq browse-url-browser-function #'eww-browse-url)
   (setq browse-url-secondary-browser-function #'browse-url-default-browser)
 
   (setq browse-url-handlers
-        '(("github\\.com.+\\.diff$" . eww-browse-url)
-          ("github\\.com" . browse-url-default-browser)
-          ("youtube\\.com" . browse-url-default-browser)
-          ("youtu\\.be" . browse-url-default-browser)
-          ("reddit\\.com" . browse-url-default-browser)
-          ("lobste\\.rs" . browse-url-default-browser)
-          ("localhost" . browse-url-default-browser))))
+        `(("github\\.com.+\\.diff$" . eww-browse-url)
+          ,@(mapcar
+             (lambda (regexp)
+               (cons regexp #'browse-url-default-browser))
+             sr/browse-url-external-url-regexp-list))))
 
 ;;; Goto address mode
 

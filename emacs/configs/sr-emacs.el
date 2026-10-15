@@ -117,7 +117,7 @@
         (tab-mark     ?\t    [?» ?\t] [?\\ ?\t])
         ))
 
-;;; Outline minor mode
+;;; Outline mode
 
 (keymap-global-set "<f10>" #'outline-minor-mode)
 (setq outline-minor-mode-cycle t)
@@ -133,6 +133,8 @@
 
 (keymap-set outline-minor-mode-map "C-c C-j" #'sr/consult-outline)
 (keymap-set outline-minor-mode-map "M-h" #'outline-mark-subtree)
+
+(keymap-unset outline-mode-map "C-c C-o")
 
 ;;; Editing
 
@@ -160,7 +162,7 @@
   (interactive)
   (insert "₩"))
 
-(keymap-global-set "C-x 8 w" #'sr/insert-won)
+(keymap-global-set "C-x C-8" #'sr/insert-won)
 
 ;;;; Indentations
 
