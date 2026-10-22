@@ -207,6 +207,42 @@ Used to set the value for `browse-url-handlers'.")
        (forward-char)
        (point)))))
 
+;;; Quicklinks
+
+(defvar sr/quicklink-alist
+  '((merriam-webster
+     :url "https://www.merriam-webster.com/dictionary/%s")
+    (google
+     :url "https://google.com/search?q=%s&udm=14&lr=lang_en")))
+
+(defun sr/quicklink-word-dwim ()
+  "Return the appropriate word to use in quicklinks.
+Currently, it tries the following in order:
+1. The region's text, if it's active.
+2. The word at point."
+  (if (region-active-p)
+      (buffer-substring (region-beginning) (region-end))
+    (word-at-point t)))
+
+(defun sr/quicklink-open (url word)
+  (interactive
+   (let ((quicklink
+          (alist-get (intern (completing-read
+                              "Select quicklink: "
+                              (mapcar
+                               (lambda (s) (symbol-name (car s)))
+                               sr/quicklink-alist)
+                              nil t))
+                     sr/quicklink-alist)))
+     (list
+      (plist-get quicklink :url)
+      (or (sr/quicklink-word-dwim) (user-error "No word found at point")))))
+  ;; Do not use EWW.
+  (let ((browse-url-browser-function 'browse-url-default-browser))
+    (browse-url (url-encode-url (format url word)))))
+
+(keymap-global-set "C-c d d" #'sr/quicklink-open)
+
 ;;; _
 
 (provide 'sr-web)

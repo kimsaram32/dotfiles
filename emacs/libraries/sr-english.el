@@ -29,32 +29,10 @@
   "Personal English learning."
   :group 'application)
 
-(defcustom sr/english-dictionary-url
-  "https://www.merriam-webster.com/dictionary/%s"
-  "Format string for opening English dictionary."
-  :type 'string)
-
 (defcustom sr/english-capture-file
   "~/english.org"
   "Location to the file storing captured English sentences."
   :type 'file)
-
-;;; Dictionary
-
-;; I tried using EWW to browse words inside Emacs, but the site feels broken
-;; when rendered in pure HTML. EWW overrides `browse-url-browser-function' to
-;; `eww-browse-url', so to avoid using EWW, I overrode it.
-
-;;;###autoload
-(defun sr/english-browse-dictionary-at-point ()
-  "Look up dictionary for a word at point."
-  (interactive)
-  (if-let* ((word (if (region-active-p)
-                      (buffer-substring (region-beginning) (region-end))
-                    (word-at-point t)))
-            (browse-url-browser-function 'browse-url-default-browser)) ; do not use EWW
-      (browse-url (url-encode-url (format sr/english-dictionary-url word)))
-    (user-error "No word found at point")))
 
 ;;; Sentence capture
 
