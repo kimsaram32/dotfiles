@@ -135,6 +135,7 @@
 (keymap-set outline-minor-mode-map "M-h" #'outline-mark-subtree)
 
 (keymap-unset outline-mode-map "C-c C-o")
+(keymap-unset outline-mode-map "C-c C-c")
 
 ;;; Editing
 

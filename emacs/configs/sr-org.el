@@ -296,34 +296,34 @@ pngpaste is used to retrieve the image from clipboard."
   (setq
    org-agenda-custom-commands
    '(("d" "Daily agenda"
-	  ((agenda ""
-		       ((org-agenda-span 'day)
-		        (org-deadline-past-days 0)
-		        (org-agenda-deadline-faces
-		         '((1.0 . org-scheduled-today)
-		           (0.5 . org-scheduled)
-		           (0.0 . org-scheduled)))
-		        (org-agenda-overriding-header "Events")
-		        (org-super-agenda-groups
-		         '((:name "Events"
-			              :tag ("event"))
-		           (:discard (:anything))))
-		        (org-agenda-buffer-name "*Org Daily Agenda*")))
-	   (agenda ""
-		       ((org-agenda-span 'day)
-		        (org-agenda-overriding-header "Today")
-		        (org-super-agenda-groups
-		         '((:discard (:tag "event"))
-                   (:name "Goals"
-                          :tag ("#weekly" "#monthly" "okr"))
-                   (:name "Work"
-			              :tag ("work"))
-		           (:name "Todo"
-			              :and (:todo ("TODO" "WORKING")
-                                      :not (:tag "trivial")))
-                   (:name "Trivial tasks"
-			              :and (:todo ("TODO" "WORKING")
-					                  :tag "trivial"))))))))))
+      ((agenda ""
+               ((org-agenda-span 'day)
+                (org-deadline-past-days 0)
+                (org-agenda-deadline-faces
+                 '((1.0 . org-scheduled-today)
+                   (0.5 . org-scheduled)
+                   (0.0 . org-scheduled)))
+                (org-agenda-overriding-header "Events")
+                (org-super-agenda-groups
+                 '(( :name "Events"
+                     :tag ("event"))
+                   (:discard (:anything))))
+                (org-agenda-buffer-name "*Org Daily Agenda*")))
+       (agenda ""
+               ((org-agenda-span 'day)
+                (org-agenda-overriding-header "Today")
+                (org-super-agenda-groups
+                 '((:discard (:tag "event"))
+                   ( :name "Goals"
+                     :tag ("#weekly" "#monthly" "okr"))
+                   ( :name "School"
+                     :tag ("school"))
+                   ( :name "Todo"
+                     :and ( :todo ("TODO" "WORKING")
+                            :not (:tag "trivial")))
+                   ( :name "Trivial tasks"
+                     :and ( :todo ("TODO" "WORKING")
+                            :tag "trivial"))))))))))
 
   (require 'org-super-agenda)
   (org-super-agenda-mode))

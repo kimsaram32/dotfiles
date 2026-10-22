@@ -21,26 +21,27 @@
 ;;; Commentary:
 ;;; Code:
 
-;; Workaround: 'Invalid function: org-element-with-disabled-cache'
+;;; Workaround: 'Invalid function: org-element-with-disabled-cache'
 ;; https://www.reddit.com/r/emacs/comments/1hayavx/invalid_function_orgelementwithdisabledcache/
 
 (setq native-comp-jit-compilation-deny-list '(".*org-element.*"))
 (load-library "org-element.el")
 
-;; mise integration
+;;; mise integration
 ;; https://mise.jdx.dev/ide-integration.html#emacs
 
 (setenv "PATH" (concat (getenv "PATH") ":/home/user/.local/share/mise/shims"))
 (setq exec-path (append exec-path '("/home/user/.local/share/mise/shims")))
 
-;; exec-path-from-shell
+;;; exec-path-from-shell
 
 (when (memq window-system '(mac ns x))
   (exec-path-from-shell-initialize))
 
-;; macOS keyboard
+;;; macOS keyboard
 
 (setq mac-option-modifier 'meta)
+(setq mac-command-modifier 'super)
 
 ;;; _
 
