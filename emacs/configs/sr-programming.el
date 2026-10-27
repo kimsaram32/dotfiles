@@ -371,7 +371,7 @@ and LANG-ts-mode is used with org mode source codes.")
 
 (add-hook 'html-ts-mode-hook #'emmet-mode)
 
-(with-eval-after-load 'emmet
+(with-eval-after-load 'emmet-mode
   (keymap-unset emmet-mode-keymap "C-j")
   (keymap-set emmet-mode-keymap "C-c C-j" #'emmet-expand-line)
   (setq emmet-self-closing-tag-style ""))

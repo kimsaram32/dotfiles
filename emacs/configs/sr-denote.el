@@ -35,17 +35,17 @@
 
 (keymap-set sr/denote-map "n" #'sr/denote-create-note-zettelkasten)
 (keymap-set sr/denote-map "s" #'sr/denote-create-note-second-brain)
+(keymap-set sr/denote-map "i" #'sr/denote-create-note-hrbacek)
 
 (keymap-set sr/denote-map "r" #'denote-rename-file)
-(keymap-set sr/denote-map "R" #'denote-rename-file-using-front-matter)
 
 (keymap-set sr/denote-map "l l" #'denote-link)
 (keymap-set sr/denote-map "l b" #'sr/consult-denote-backlinks)
 (keymap-set sr/denote-map "l f" #'sr/denote-link-from-last-buffer)
 (keymap-set sr/denote-map "l 4" #'sr/denote-link-from-other-window)
 (keymap-set sr/denote-map "l w" #'sr/denote-save-link-to-kill-ring)
-(keymap-set sr/denote-map "a" #'denote-find-link)
 
+(keymap-set sr/denote-map "a" #'denote-find-link)
 (keymap-set sr/denote-map "d" #'denote-dired)
 (keymap-set sr/denote-map "f" #'sr/denote-find-note)
 (keymap-set sr/denote-map "A" #'sr/denote-find-all-files)
@@ -164,9 +164,7 @@ This returns a plist of two properties: TITLE and CONTENT."
                (format " (%s)" comment)
              "")))
          (denote-use-keywords
-          (append
-           (denote-keywords-prompt)
-           '("problem"))))
+          (append (denote-keywords-prompt) '("problem"))))
     (call-interactively 'denote)))
 
 (defun sr/denote-create-note-zettelkasten ()
@@ -175,6 +173,13 @@ This returns a plist of two properties: TITLE and CONTENT."
   (interactive)
   (let ((denote-use-directory sr/note-zk-directory))
     (call-interactively 'denote)))
+
+(defun sr/denote-create-note-hrbacek ()
+  (declare (interactive-only t))
+  (interactive)
+  (let ((denote-use-keywords
+         (append (denote-keywords-prompt) '("introset"))))
+    (call-interactively 'sr/denote-create-note-zettelkasten)))
 
 ;;; Other commands
 

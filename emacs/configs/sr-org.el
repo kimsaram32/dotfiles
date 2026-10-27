@@ -48,7 +48,7 @@
   "Org face for bold text.")
 
 (defface sr/org-italic
-  '((default :inherit italic))
+  '((default :inherit lin-yellow))
   "Org face for italic text.")
 
 (defun sr/org-customize-faces-with-modus-themes ()
@@ -264,7 +264,7 @@ pngpaste is used to retrieve the image from clipboard."
 (with-eval-after-load 'ol
   (setq org-link-abbrev-alist
         `(("zk" . ,(expand-file-name "id:%s" sr/note-root-directory))
-	      ("media" . ,sr/note-media-directory)))
+	  ("media" . ,sr/note-media-directory)))
   (setf (cdr (assoc 'file org-link-frame-setup)) 'find-file))
 
 ;;; Ids

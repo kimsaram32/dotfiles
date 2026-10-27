@@ -213,7 +213,9 @@ Used to set the value for `browse-url-handlers'.")
   '((merriam-webster
      :url "https://www.merriam-webster.com/dictionary/%s")
     (google
-     :url "https://google.com/search?q=%s&udm=14&lr=lang_en")))
+     :url "https://google.com/search?q=%s&udm=14&lr=lang_en")
+    (cambridge
+     :url "https://dictionary.cambridge.org/dictionary/english/%s")))
 
 (defun sr/quicklink-word-dwim ()
   "Return the appropriate word to use in quicklinks.

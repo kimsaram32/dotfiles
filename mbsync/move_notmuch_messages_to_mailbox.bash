@@ -31,7 +31,7 @@ if [ ! -d ${new_dir} ]; then
     exit 1
 fi
 
-full_query="${QUERY} NOT folder:${MAILBOX}"
+full_query="${QUERY} AND NOT folder:${MAILBOX}"
 count=$(notmuch count ${full_query})
 
 if [ ${count} -eq 0 ]; then

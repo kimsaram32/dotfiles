@@ -87,6 +87,87 @@
 	  (apply 'call-process (append '("git" nil nil nil) args)))
     (message (format "%s uploaded." date-string))))
 
+;;;; Convert Markdown to Org
+
+(defvar sr/project-public-is-conversion-target-p
+  (lambda (file) (string-suffix-p ".org" file)))
+
+(defvar sr/project-public-get-conversion-dest-file
+  (lambda (src) (concat (file-name-sans-extension src) ".md")))
+
+(defvar sr/project-public-conversion-pandoc-args
+  '("--from" "org" "--to" "markdown-inline_code_attributes" "--columns" "80"))
+
+(defvar sr/project-public-after-conversion-hook nil
+  "Hook run after generating a conversion preview.
+It is called inside the conversion buffer.")
+
+(add-hook 'sr/project-public-after-conversion-hook #'markdown-mode)
+
+(defvar sr/project-public--conversion-dired-buffer nil)
+(defvar sr/project-public--conversion-queue nil)
+
+(defun sr/project-public--finalize-conversion ()
+  (interactive)
+  (let* ((src (car sr/project-public--conversion-queue))
+         (buf (current-buffer))
+         (dest (funcall sr/project-public-get-conversion-dest-file src)))
+    (with-current-buffer (find-file-noselect dest)
+      (erase-buffer)
+      (insert-buffer buf)
+      (save-buffer))
+    (sr/project-public--skip-conversion)))
+
+(defun sr/project-public--skip-conversion ()
+  (interactive)
+  (kill-buffer (find-file-noselect (car sr/project-public--conversion-queue)))
+  (setq sr/project-public--conversion-queue
+        (cdr sr/project-public--conversion-queue))
+  (sr/project-public--process-next-conversion))
+
+(defun sr/project-public--display-src-buffer ()
+  (display-buffer
+   (find-file-noselect (car sr/project-public--conversion-queue))
+   '(display-buffer-pop-up-window)))
+
+(defvar-keymap sr/project-public--conversion-minor-mode-map
+  "C-c C-f" #'sr/project-public--finalize-conversion
+  "C-c C-s" #'sr/project-public--skip-conversion)
+
+(define-minor-mode sr/project-public--conversion-minor-mode
+  "Minor mode for confirming/skipping markdown conversions."
+  :lighter " Conversion"
+  (setq header-line-format
+        (substitute-command-keys
+         "Type \\[sr/project-public--finalize-conversion] to finalize, \
+and \\[sr/project-public--skip-conversion] to skip.")))
+
+(defun sr/project-public--process-next-conversion ()
+  (let ((src (car sr/project-public--conversion-queue))
+        (buf (get-buffer-create "*conversion preview*")))
+    (if src
+        (progn
+          (switch-to-buffer buf)
+          (erase-buffer)
+          (apply #'call-process "pandoc" src t nil sr/project-public-conversion-pandoc-args)
+          (run-hooks 'sr/project-public-after-conversion-hook)
+          (sr/project-public--conversion-minor-mode 1)
+          (sr/project-public--display-src-buffer))
+      (kill-buffer buf)
+      (message "Conversion finished")
+      (switch-to-buffer sr/project-public--conversion-dired-buffer)
+      (revert-buffer))))
+
+(defun sr/project-public-convert-marked-files ()
+  (interactive)
+  (unless (derived-mode-p 'dired-mode)
+    (user-error "Not in a Dired buffer"))
+  (setq
+   sr/project-public--conversion-queue
+   (dired-get-marked-files nil nil sr/project-public-is-conversion-target-p nil t))
+  (setq sr/project-public--conversion-dired-buffer (current-buffer))
+  (sr/project-public--process-next-conversion))
+
 ;;; Dotfiles
 
 (defun sr/project-dotfiles-list-external-software ()

@@ -293,7 +293,7 @@ window."
 ;; Do not let automatic scrolling recenter point.
 (setq scroll-conservatively 101)
 
-(setq scroll-margin 4)
+(setq scroll-margin 0)
 
 ;; Adjust the point to keep the cursor at the same screen position
 ;; whenever a scroll command moves it off-window.
