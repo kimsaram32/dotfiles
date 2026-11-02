@@ -207,6 +207,25 @@ and \\[sr/project-public--skip-conversion] to skip.")))
       "Generated loaddefs file for Lisp files in '%s'"
       library-directory output-file))))
 
+;;; Website accounts
+
+(defconst sr/website-account-list-file
+  "/Users/kimsaram32/me/secrets/accounts.txt"
+  "File to record websites where I have created an account.")
+
+(defun sr/website-account-check-existence (url)
+  "Check whether an account exists on website for URL."
+  (interactive (list (read-string "Enter URL for website: "))))
+
+(defun sr/website-account-record (host)
+  "Record that an account is created for website with HOST."
+  (interactive (list (read-string "I have an account on: ")))
+  (with-current-buffer (find-file-noselect sr/website-account-list-file)
+    (goto-char (point-max))
+    (insert host)
+    (insert "\n"))
+  (message (format "Recorded %s" host)))
+
 ;;; _
 
 (provide 'sr-projects)
