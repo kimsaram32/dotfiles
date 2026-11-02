@@ -27,7 +27,7 @@
 (tool-bar-mode -1)
 (scroll-bar-mode -1)
 
-(setq frame-inhibit-implied-resize t)
+(setq frame-inhibit-implied-resize '(font tab-bar-lines))
 (setq-default frame-title-format "")
 (set-frame-parameter nil 'ns-transparent-toolbar t)
 (add-to-list 'default-frame-alist '(ns-transparent-titlebar . t))
@@ -136,6 +136,8 @@
 
 (keymap-unset outline-mode-map "C-c C-o")
 (keymap-unset outline-mode-map "C-c C-c")
+(keymap-unset outline-mode-map "C-c C-e")
+(keymap-unset outline-mode-map "C-c C-l")
 
 ;;; Editing
 

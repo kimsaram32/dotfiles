@@ -201,6 +201,7 @@ This returns a plist of two properties: TITLE and CONTENT."
 
 (setq denote-buffer-name-prefix "[D] ")
 (setq denote-rename-buffer-format "%t (%i)")
+
 (denote-rename-buffer-mode 1)
 
 (defun sr/denote-rename-after-save ()
@@ -213,6 +214,12 @@ This function is intended to be added to `after-save-hook'."
 (add-hook 'after-save-hook #'sr/denote-rename-after-save)
 
 ;;; Dired integration
+
+(set-face-attribute 'denote-faces-date nil
+                    :foreground "#444444")
+
+(set-face-attribute 'denote-faces-delimiter nil
+                    :foreground "#444444")
 
 (add-hook 'dired-mode-hook #'denote-dired-mode)
 

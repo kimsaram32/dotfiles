@@ -60,6 +60,8 @@ Used in `TeX-view-program-list'."
 ;;; Cdlatex
 
 (with-eval-after-load 'cdlatex
+  (keymap-unset cdlatex-mode-map "$")
+
   (setq cdlatex-math-symbol-alist
         '(
           ( ?a  ("\\alpha"          ))
@@ -67,7 +69,7 @@ Used in `TeX-view-program-list'."
           ( ?b  ("\\beta"           ))
           ( ?B  (""                 ))
           ( ?c  (""                 ""                "\\cos"))
-          ( ?C  (""                 ""                "\\arccos"))
+          ( ?C  ("\\bigcap"         ""                "\\arccos"))
           ( ?d  ("\\delta"          "\\partial"))
           ( ?D  ("\\Delta"          "\\nabla"))
           ( ?e  ("\\epsilon"        "\\varepsilon"    "\\exp"))
@@ -102,10 +104,10 @@ Used in `TeX-view-program-list'."
           ( ?S  ("\\Sigma"          ""                "\\arcsin"))
           ( ?t  ("\\tau"            ""                "\\tan"))
           ( ?T  (""                 ""                "\\arctan"))
-          ( ?u  ("\\upsilon"        ))
-          ( ?U  ("\\Upsilon"        ))
+          ( ?u  ("\\upsilon"        "\\bigcup"))
+          ( ?U  ("\\bigcup"         "\\Upsilon"))
           ( ?v  ("\\vee"            ))
-          ( ?V  (""            ))
+          ( ?V  (""                 ))
           ( ?w  ("\\xi"             ))
           ( ?W  ("\\Xi"             ))
           ( ?x  ("\\chi"            ))
@@ -135,9 +137,9 @@ Used in `TeX-view-program-list'."
           ( ?\? (""                 ))
           ( ?~  ("\\approx"         "\\simeq"))
           ( ?_  ("\\downarrow"      ))
-          ( ?+  ("\\cup"            "\\bigcup"))
+          ( ?+  ("\\cup"))
           ( ?-  ("\\leftrightarrow" "\\longleftrightarrow" ))
-          ( ?*  ("\\times"          "\\bigcap"))
+          ( ?*  ("\\times"))
           ( ?/  ("\\not"            ))
           ( ?|  ("\\mapsto"         "\\longmapsto"))
           ( ?\\ ("\\setminus"       ))
@@ -155,6 +157,16 @@ Used in `TeX-view-program-list'."
           ( ?'  ("\\prime"          ))
           ( ?.  ("\\cdot"           ))
           )))
+
+
+(defun sr/cdlatex-compute-tables ()
+  (interactive)
+  (cdlatex-compute-tables))
+
+;;; Prettify symbols mode
+
+(with-eval-after-load 'prog-mode
+  (setq prettify-symbols-unprettify-at-point 'right-edge))
 
 ;;; _
 

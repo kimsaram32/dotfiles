@@ -21,7 +21,7 @@
 ;;; Commentary:
 ;;; Code:
 
-;;; Configurations
+;;; Configuration
 
 (setq window-combination-resize t)
 
