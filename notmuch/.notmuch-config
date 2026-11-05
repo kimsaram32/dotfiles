@@ -13,7 +13,7 @@ hook_dir=mail/.notmuch/hooks
 
 [user]
 name=Minjeong Kim
-primary_email=kimsaram32@fastmail.com
+primary_email=mail@kimsaram.dev
 
 [new]
 tags=unread;new

@@ -2,7 +2,7 @@
 
 ;; Copyright (C) Minjeong Kim
 
-;; Author: Minjeong Kim <kimsaram32@fastmail.com>
+;; Author: Minjeong Kim <mail@kimsaram.dev>
 ;; URL: https://github.com/kimsaram32/dotfiles
 
 ;; This file is NOT part of GNU Emacs.
@@ -36,7 +36,7 @@
       smtpmail-smtp-service 587)
 
 (setq user-full-name "Minjeong Kim")
-(setq user-mail-address "kimsaram32@fastmail.com")
+(setq user-mail-address "mail@kimsaram.dev")
 
 (keymap-global-set "C-c m" #'notmuch)
 

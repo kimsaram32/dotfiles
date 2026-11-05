@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2026  Minjeong Kim
 
-;; Author: Minjeong Kim <kimsaram32@fastmail.com>
+;; Author: Minjeong Kim <mail@kimsaram.dev>
 ;; URL: https://github.com/kimsaram32/dotfiles
 
 ;; This program is free software; you can redistribute it and/or modify

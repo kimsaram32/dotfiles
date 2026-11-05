@@ -9,3 +9,4 @@ notmuch tag -new +list +bug -- subject:/^bug#/ and not tag:list
 notmuch tag -new +list +patch -- subject:/PATCH/
 
 notmuch tag -new +sent -- from:kimsaram32@fastmail.com
+notmuch tag -new +sent -- from:mail@kimsaram.dev
